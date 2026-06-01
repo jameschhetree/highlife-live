@@ -23,13 +23,21 @@ jobs:
           for i in $(seq 1 40); do
             JSON=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
               "https://api.vercel.com/v6/deployments?projectId=$PROJECT_ID&teamId=$TEAM_ID&limit=10&target=production")
-            URL=$(echo "$JSON" | jq -r --arg sha "$SHA" '.deployments[] | select(.meta.githubCommitSha == $sha and .readyState == "READY") | .url' | head -1)
+            if [ "$i" = "1" ]; then
+              echo "=== First API response (first 500 chars) ==="
+              echo "$JSON" | head -c 500
+              echo ""
+              echo "=== Response keys ==="
+              echo "$JSON" | jq -r 'keys[]?' 2>&1 | head -5
+              echo "==="
+            fi
+            URL=$(echo "$JSON" | jq -r --arg sha "$SHA" '.deployments[]? | select(.meta.githubCommitSha == $sha and .readyState == "READY") | .url' 2>/dev/null | head -1)
             if [ -n "$URL" ] && [ "$URL" != "null" ]; then
               echo "Matching READY deployment found: $URL"
               echo "deploy_url=$URL" >> $GITHUB_OUTPUT
               exit 0
             fi
-            ANY=$(echo "$JSON" | jq -r --arg sha "$SHA" '.deployments[] | select(.meta.githubCommitSha == $sha) | "\(.readyState) \(.url)"' | head -1)
+            ANY=$(echo "$JSON" | jq -r --arg sha "$SHA" '.deployments[]? | select(.meta.githubCommitSha == $sha) | "\(.readyState) \(.url)"' 2>/dev/null | head -1)
             echo "Attempt $i: $ANY"
             sleep 12
           done
