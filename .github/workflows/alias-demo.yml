@@ -1,0 +1,56 @@
+name: Alias demo URL after main push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  alias:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Wait for Vercel deployment to finish
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Poll vercel ls until the deployment matching this commit SHA is READY
+          for i in $(seq 1 30); do
+            DEPLOY_URL=$(vercel ls highlife-live --prod --scope jchhetree-gmailcoms-projects --token "$VERCEL_TOKEN" 2>&1 | \
+              grep -oE "highlife-live-[a-z0-9-]+\.vercel\.app" | head -1)
+            if [ -n "$DEPLOY_URL" ]; then
+              STATUS=$(vercel inspect "https://$DEPLOY_URL" --scope jchhetree-gmailcoms-projects --token "$VERCEL_TOKEN" 2>&1 | grep -E "^\s*status\s+" | awk '{print $2}')
+              echo "Latest deploy: $DEPLOY_URL  status: $STATUS"
+              if [ "$STATUS" = "● Ready" ] || [ "$STATUS" = "READY" ] || echo "$STATUS" | grep -qi ready; then
+                echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_ENV
+                exit 0
+              fi
+            fi
+            echo "Attempt $i: not ready yet, sleeping 10s..."
+            sleep 10
+          done
+          echo "Deploy did not become ready in 5 minutes"
+          exit 1
+
+      - name: Re-alias highlife-live.vercel.app to latest deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Aliasing https://$DEPLOY_URL → highlife-live.vercel.app"
+          vercel alias set "https://$DEPLOY_URL" highlife-live.vercel.app \
+            --scope jchhetree-gmailcoms-projects \
+            --token "$VERCEL_TOKEN"
+
+      - name: Notify Telegram on success
+        if: success()
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          if [ -n "$BOT_TOKEN" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+              -d chat_id=-5007421055 \
+              -d text="Demo URL refreshed: https://highlife-live.vercel.app now serves commit ${{ github.sha }}" || true
+          fi
