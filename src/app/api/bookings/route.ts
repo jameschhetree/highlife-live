@@ -99,11 +99,14 @@ async function sendNotificationEmail(booking: {
   source: string;
   submittedAt: Date;
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
+  const rawKey = process.env.RESEND_API_KEY;
+  console.log("[Booking email] env key length:", rawKey?.length, "starts:", rawKey?.slice(0, 6));
+  if (!rawKey) {
     console.warn("[Booking email] RESEND_API_KEY not set, skipping email");
     return;
   }
+  // Strip stray whitespace/newlines that can sneak in via env var setup
+  const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
 
   const { Resend } = await import("resend");
   const resend = new Resend(apiKey);
@@ -177,10 +180,11 @@ async function sendNotificationEmail(booking: {
     </div>
   `;
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: "HighLife Live <onboarding@resend.dev>",
     to: ["liam@highlifedmv.com"],
     subject: `New booking inquiry: ${booking.artistName} for ${booking.venueName}`,
     html,
   });
+  console.log("[Booking email] Resend response:", JSON.stringify(result));
 }
