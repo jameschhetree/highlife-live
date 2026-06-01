@@ -1,0 +1,250 @@
+// HighLife Live -- Database Seed Script
+// Imports demo data from admin-data.ts and upserts into Postgres via Prisma.
+// Run: npm run seed
+
+import dotenv from "dotenv";
+import path from "path";
+
+// Load .env.local (Next.js convention)
+dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
+// Fallback to .env
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import {
+  demoArtists,
+  demoVenues,
+  demoCampaigns,
+  demoOpportunities,
+  demoEpks,
+  demoResearchQueue,
+} from "../src/lib/admin-data";
+
+const url = process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL || process.env.POSTGRES_URL;
+if (!url) {
+  console.error("No DATABASE_URL or PRISMA_DATABASE_URL set in .env.local");
+  process.exit(1);
+}
+const adapter = new PrismaPg({ connectionString: url });
+const prisma = new PrismaClient({ adapter });
+
+async function main() {
+  console.log("Seeding HighLife Live database...\n");
+
+  // ── Artists ─────────────────────────────────────────────
+  console.log(`Seeding ${demoArtists.length} artists...`);
+  for (const a of demoArtists) {
+    await prisma.artist.upsert({
+      where: { id: a.id },
+      update: {},
+      create: {
+        id: a.id,
+        name: a.name,
+        status: a.status,
+        legalName: a.legalName,
+        email: a.email,
+        phone: a.phone,
+        managerContact: a.managerContact,
+        homeCity: a.homeCity,
+        homeState: a.homeState,
+        primaryMarket: a.primaryMarket,
+        primaryGenre: a.primaryGenre,
+        secondaryGenres: a.secondaryGenres,
+        performanceType: a.performanceType,
+        typicalSetLength: a.typicalSetLength,
+        bookingFeeRange: a.bookingFeeRange,
+        travelWillingness: a.travelWillingness,
+        targetVenueTypes: a.targetVenueTypes,
+        ageDemoAppeal: a.ageDemoAppeal,
+        cleanExplicit: a.cleanExplicit,
+        bio: a.bio,
+        shortPitch: a.shortPitch,
+        longPitch: a.longPitch,
+        pressQuotes: a.pressQuotes,
+        highlights: a.highlights,
+        internalNotes: a.internalNotes,
+        reliabilityNotes: a.reliabilityNotes,
+        bestFitVenueNotes: a.bestFitVenueNotes,
+        image: a.image,
+        isDemo: true,
+        // Flatten socials
+        socialInstagram: a.socials.instagram ?? "",
+        socialTiktok: a.socials.tiktok ?? "",
+        socialYoutube: a.socials.youtube ?? "",
+        socialSpotify: a.socials.spotify ?? "",
+        socialAppleMusic: a.socials.appleMusic ?? "",
+        socialSoundcloud: a.socials.soundcloud ?? "",
+        socialWebsite: a.socials.website ?? "",
+        socialLinktree: a.socials.linktree ?? "",
+        // Flatten scoring
+        scorePotential: a.scoring.potential,
+        scoreLivePerformance: a.scoring.livePerformance,
+        scoreMarketability: a.scoring.marketability,
+        scoreReliability: a.scoring.reliability,
+        scoreBookingPriority: a.scoring.bookingPriority,
+        scoreOverall: a.scoring.overall,
+        scoreNotes: a.scoring.notes,
+        // Create social stats snapshot
+        socialStats: {
+          create: {
+            instagramFollowers: a.stats.instagramFollowers,
+            tiktokFollowers: a.stats.tiktokFollowers,
+            youtubeSubscribers: a.stats.youtubeSubscribers,
+            spotifyMonthlyListeners: a.stats.spotifyMonthlyListeners,
+            avgEngagement: a.stats.avgEngagement,
+            estimatedTotalAudience: a.stats.estimatedTotalAudience,
+            snapshotDate: a.stats.lastRefreshed
+              ? new Date(a.stats.lastRefreshed)
+              : new Date(),
+          },
+        },
+      },
+    });
+  }
+  console.log("  Artists seeded.");
+
+  // ── Venues ──────────────────────────────────────────────
+  console.log(`Seeding ${demoVenues.length} venues...`);
+  for (const v of demoVenues) {
+    await prisma.venue.upsert({
+      where: { id: v.id },
+      update: {},
+      create: {
+        id: v.id,
+        name: v.name,
+        contactPerson: v.contactPerson,
+        contactTitle: v.contactTitle,
+        email: v.email,
+        phone: v.phone,
+        website: v.website,
+        instagram: v.instagram,
+        address: v.address,
+        city: v.city,
+        state: v.state,
+        region: v.region,
+        venueType: v.venueType,
+        capacity: v.capacity,
+        typicalGenres: v.typicalGenres,
+        bookingEmail: v.bookingEmail,
+        talentBuyerEmail: v.talentBuyerEmail,
+        source: v.source,
+        sourceUrl: v.sourceUrl,
+        sourceDate: v.sourceDate,
+        contactConfidence: v.contactConfidence,
+        reviewStatus: v.reviewStatus,
+        notes: v.notes,
+        tags: v.tags,
+        lastContacted: v.lastContacted ? new Date(v.lastContacted) : null,
+        nextFollowUp: v.nextFollowUp ? new Date(v.nextFollowUp) : null,
+        relationshipStatus: v.relationshipStatus,
+        isDemo: true,
+      },
+    });
+  }
+  console.log("  Venues seeded.");
+
+  // ── Campaigns ───────────────────────────────────────────
+  console.log(`Seeding ${demoCampaigns.length} campaigns...`);
+  for (const c of demoCampaigns) {
+    await prisma.campaign.upsert({
+      where: { id: c.id },
+      update: {},
+      create: {
+        id: c.id,
+        name: c.name,
+        artistId: c.artistId,
+        targetMarket: c.targetMarket,
+        targetSegment: c.targetSegment,
+        status: c.status,
+        outreachPlatform: c.outreachPlatform,
+        objective: c.objective,
+        contactCount: c.contactCount,
+        emailSequence: JSON.parse(JSON.stringify(c.emailSequence)),
+        owner: c.owner,
+        createdDate: c.createdDate,
+        approvedBy: c.approvedBy,
+        sentDate: c.sentDate,
+        notes: c.notes,
+        isDemo: true,
+      },
+    });
+  }
+  console.log("  Campaigns seeded.");
+
+  // ── Opportunities ───────────────────────────────────────
+  console.log(`Seeding ${demoOpportunities.length} opportunities...`);
+  for (const o of demoOpportunities) {
+    await prisma.opportunity.upsert({
+      where: { id: o.id },
+      update: {},
+      create: {
+        id: o.id,
+        artistId: o.artistId,
+        venueId: o.venueId,
+        campaignId: o.campaignId,
+        eventDate: o.eventDate ? new Date(o.eventDate) : null,
+        proposedFee: o.proposedFee,
+        expectedFee: o.expectedFee,
+        confirmedFee: o.confirmedFee,
+        status: o.status,
+        probability: o.probability,
+        nextTask: o.nextTask,
+        owner: o.owner,
+        notes: o.notes,
+        isDemo: true,
+      },
+    });
+  }
+  console.log("  Opportunities seeded.");
+
+  // ── EPKs ────────────────────────────────────────────────
+  console.log(`Seeding ${demoEpks.length} EPKs...`);
+  for (const e of demoEpks) {
+    await prisma.ePK.upsert({
+      where: { id: e.id },
+      update: {},
+      create: {
+        id: e.id,
+        artistId: e.artistId,
+        status: e.status,
+        publishUrl: e.publishUrl,
+        isDemo: true,
+      },
+    });
+  }
+  console.log("  EPKs seeded.");
+
+  // ── Research Queue (Contact model) ──────────────────────
+  console.log(`Seeding ${demoResearchQueue.length} research contacts...`);
+  for (const r of demoResearchQueue) {
+    await prisma.contact.upsert({
+      where: { id: r.id },
+      update: {},
+      create: {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        organization: r.organization,
+        role: r.role,
+        sourceUrl: r.sourceUrl,
+        sourceDate: r.sourceDate,
+        region: r.region,
+        venueType: r.venueType,
+        action: r.action,
+        notes: r.notes,
+        isDemo: true,
+      },
+    });
+  }
+  console.log("  Research contacts seeded.");
+
+  console.log("\nSeed complete.");
+}
+
+main()
+  .then(() => prisma.$disconnect())
+  .catch(async (e) => {
+    console.error("Seed failed:", e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

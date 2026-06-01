@@ -1,0 +1,270 @@
+// HighLife Live -- Prisma Schema
+// This is a scaffold. Migrations will be run once DATABASE_URL is set.
+// Field shapes match admin-data.ts types exactly.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Users & Auth ────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   @default("Viewer") // Owner/Admin, Manager, Booker, Researcher, Viewer
+  status    String   @default("Active") // Active, Invited, Deactivated
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Artists ─────────────────────────────────────────────────
+
+model Artist {
+  id                 String   @id @default(cuid())
+  name               String
+  status             String   @default("Testing") // Testing, Active, Priority, Paused, Archived
+  legalName          String   @default("")
+  email              String   @default("")
+  phone              String   @default("")
+  managerContact     String   @default("")
+  homeCity           String   @default("")
+  homeState          String   @default("")
+  primaryMarket      String   @default("")
+  primaryGenre       String   @default("")
+  secondaryGenres    String[] @default([])
+  performanceType    String   @default("Solo Artist")
+  typicalSetLength   String   @default("")
+  bookingFeeRange    String   @default("")
+  travelWillingness  String   @default("")
+  targetVenueTypes   String[] @default([])
+  ageDemoAppeal      String   @default("")
+  cleanExplicit      String   @default("")
+  bio                String   @default("")
+  shortPitch         String   @default("")
+  longPitch          String   @default("")
+  pressQuotes        String[] @default([])
+  highlights         String[] @default([])
+  internalNotes      String   @default("")
+  reliabilityNotes   String   @default("")
+  bestFitVenueNotes  String   @default("")
+  image              String   @default("")
+
+  // Socials (flattened from ArtistSocials interface)
+  socialInstagram    String   @default("")
+  socialTiktok       String   @default("")
+  socialYoutube      String   @default("")
+  socialSpotify      String   @default("")
+  socialAppleMusic   String   @default("")
+  socialSoundcloud   String   @default("")
+  socialWebsite      String   @default("")
+  socialLinktree     String   @default("")
+
+  // Scoring (flattened from ArtistScoring interface)
+  scorePotential       Float @default(5)
+  scoreLivePerformance Float @default(5)
+  scoreMarketability   Float @default(5)
+  scoreReliability     Float @default(5)
+  scoreBookingPriority Float @default(5)
+  scoreOverall         Float @default(5)
+  scoreNotes           String @default("")
+
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  socialStats  ArtistSocialStat[]
+  campaigns    Campaign[]
+  opportunities Opportunity[]
+  epks         EPK[]
+}
+
+model ArtistSocialStat {
+  id                     String   @id @default(cuid())
+  artistId               String
+  artist                 Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  instagramFollowers     Int      @default(0)
+  tiktokFollowers        Int      @default(0)
+  youtubeSubscribers     Int      @default(0)
+  spotifyMonthlyListeners Int     @default(0)
+  avgEngagement          String   @default("0%")
+  estimatedTotalAudience Int      @default(0)
+  snapshotDate           DateTime @default(now())
+}
+
+// ── Venues ──────────────────────────────────────────────────
+
+model Venue {
+  id                 String   @id @default(cuid())
+  name               String
+  contactPerson      String   @default("")
+  contactTitle       String   @default("")
+  email              String   @default("")
+  phone              String   @default("")
+  website            String   @default("")
+  instagram          String   @default("")
+  address            String   @default("")
+  city               String   @default("")
+  state              String   @default("")
+  region             String   @default("")
+  venueType          String   @default("Other")
+  capacity           Int      @default(0)
+  typicalGenres      String[] @default([])
+  bookingEmail       String   @default("")
+  talentBuyerEmail   String   @default("")
+  source             String   @default("Manual") // Manual, CSV Import, Public Research, Authorized API, Referral
+  sourceUrl          String   @default("")
+  sourceDate         String   @default("")
+  contactConfidence  Int      @default(5)
+  reviewStatus       String   @default("Needs Review") // Needs Review, Verified, Do Not Contact, Duplicate
+  notes              String   @default("")
+  tags               String[] @default([])
+  lastContacted      DateTime?
+  nextFollowUp       DateTime?
+  relationshipStatus String   @default("Cold")
+
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  opportunities Opportunity[]
+}
+
+// ── Contacts ────────────────────────────────────────────────
+
+model Contact {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  phone        String   @default("")
+  organization String   @default("")
+  role         String   @default("")
+  sourceUrl    String   @default("")
+  sourceDate   String   @default("")
+  region       String   @default("")
+  venueType    String   @default("")
+  action       String   @default("Pending") // Pending, Verified, Duplicate, Do Not Contact
+  notes        String   @default("")
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  campaignContacts CampaignContact[]
+}
+
+// ── Campaigns ───────────────────────────────────────────────
+
+model Campaign {
+  id                String   @id @default(cuid())
+  name              String
+  artistId          String
+  artist            Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  targetMarket      String   @default("")
+  targetSegment     String   @default("")
+  status            String   @default("Draft")
+  outreachPlatform  String   @default("None/Manual")
+  objective         String   @default("Book Show")
+  contactCount      Int      @default(0)
+  emailSequence     Json     @default("[]") // JSON array of CampaignEmail objects
+  owner             String   @default("")
+  createdDate       String   @default("")
+  approvedBy        String?
+  sentDate          String?
+  notes             String   @default("")
+  isDemo            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  contacts     CampaignContact[]
+  opportunities Opportunity[]
+}
+
+model CampaignContact {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status     String   @default("Pending") // Pending, Sent, Opened, Replied, Bounced
+  sentAt     DateTime?
+  openedAt   DateTime?
+  repliedAt  DateTime?
+
+  @@unique([campaignId, contactId])
+}
+
+// ── Opportunities ───────────────────────────────────────────
+
+model Opportunity {
+  id           String   @id @default(cuid())
+  artistId     String
+  artist       Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  venueId      String
+  venue        Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  eventDate    DateTime?
+  proposedFee  Float    @default(0)
+  expectedFee  Float    @default(0)
+  confirmedFee Float?
+  status       String   @default("Lead")
+  probability  Int      @default(10)
+  nextTask     String   @default("")
+  owner        String   @default("")
+  notes        String   @default("")
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ── EPKs ────────────────────────────────────────────────────
+
+model EPK {
+  id          String   @id @default(cuid())
+  artistId    String
+  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  status      String   @default("Draft") // Draft, Approved, Published, Archived
+  publishUrl  String?
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Suppression List ────────────────────────────────────────
+
+model SuppressionListEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String   @default("")
+  addedDate String   @default("")
+  createdAt DateTime @default(now())
+}
+
+// ── Import Batches ──────────────────────────────────────────
+
+model ImportBatch {
+  id            String   @id @default(cuid())
+  type          String   // "venues" | "artists" | "contacts"
+  fileName      String   @default("")
+  rowCount      Int      @default(0)
+  addedCount    Int      @default(0)
+  dupeCount     Int      @default(0)
+  importedBy    String   @default("")
+  createdAt     DateTime @default(now())
+}
+
+// ── Audit Log ───────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // "create" | "update" | "delete" | "import" | "approve" | etc.
+  entityType String   // "artist" | "venue" | "campaign" | etc.
+  entityId   String
+  userId     String   @default("")
+  details    Json?
+  createdAt  DateTime @default(now())
+}

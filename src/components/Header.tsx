@@ -1,0 +1,223 @@
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ShoppingBag } from "lucide-react";
+import { getCartCount } from "@/lib/cart";
+import { isAuthenticated } from "@/lib/auth";
+
+const navLinks = [
+  { href: "/roster", label: "Roster" },
+  { href: "/events", label: "Events" },
+  { href: "/book", label: "Book" },
+  { href: "/shop", label: "Shop" },
+  { href: "/admin", label: "Admin" },
+];
+
+export function Header() {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [authed, setAuthed] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Admin console has its own shell — don't render the public header inside /admin
+  if (pathname?.startsWith("/admin")) return null;
+
+  useEffect(() => {
+    setCartCount(getCartCount());
+    setAuthed(isAuthenticated());
+
+    const onCartUpdate = () => setCartCount(getCartCount());
+    window.addEventListener("cart-updated", onCartUpdate);
+    window.addEventListener("storage", onCartUpdate);
+
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("cart-updated", onCartUpdate);
+      window.removeEventListener("storage", onCartUpdate);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    setAuthed(isAuthenticated());
+  }, [pathname]);
+
+  return (
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled
+            ? "bg-background/75 backdrop-blur-xl border-b border-border/50"
+            : "bg-transparent"
+        }`}
+      >
+        <nav className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3.5 lg:px-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Records Home">
+            <span className="relative w-10 h-10 inline-block shrink-0">
+              <Image
+                src="/logo.png"
+                alt=""
+                fill
+                priority
+                sizes="40px"
+                className="object-contain"
+              />
+            </span>
+            <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
+              HighLife Records
+            </span>
+            <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
+              HighLife
+            </span>
+          </Link>
+
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex items-center gap-7">
+            <Link
+              href="/find-an-agent"
+              className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
+                pathname === "/find-an-agent" ? "text-foreground" : "text-silver hover:text-foreground"
+              }`}
+            >
+              Find An Agent
+            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 ${
+                  pathname === link.href
+                    ? "text-foreground"
+                    : "text-silver hover:text-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right Side */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              href="/shop"
+              className="relative p-2 text-silver hover:text-foreground transition-colors"
+              aria-label={`Shopping bag, ${cartCount} items`}
+            >
+              <ShoppingBag size={18} strokeWidth={1.5} />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background text-[10px] font-medium flex items-center justify-center rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href={authed ? "/portal" : "/login"}
+              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
+            >
+              {authed ? "Portal" : "Partner Login"}
+            </Link>
+
+            <Link
+              href="/admin"
+              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
+            >
+              Admin Login
+            </Link>
+
+            <Link
+              href="/book"
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 btn-gradient text-xs tracking-[0.18em] uppercase font-semibold rounded-full"
+            >
+              Book Talent
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              className="lg:hidden p-2 text-foreground"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl flex flex-col items-center justify-center lg:hidden"
+          >
+            <nav className="flex flex-col items-center gap-8">
+              <Link
+                href="/find-an-agent"
+                onClick={() => setMobileOpen(false)}
+                className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+              >
+                Find An Agent
+              </Link>
+              {navLinks.map((link, i) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 + i * 0.05, duration: 0.3 }}
+                >
+                  <Link
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`text-2xl font-display tracking-[0.15em] uppercase ${
+                      pathname === link.href ? "text-foreground" : "text-silver"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              >
+                <Link
+                  href={authed ? "/portal" : "/login"}
+                  onClick={() => setMobileOpen(false)}
+                  className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+                >
+                  {authed ? "Portal" : "Partner Login"}
+                </Link>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.3 }}
+              >
+                <Link
+                  href="/book"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 px-8 py-3 btn-gradient text-lg tracking-wide uppercase font-semibold rounded-full"
+                >
+                  Book Talent
+                </Link>
+              </motion.div>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
