@@ -174,7 +174,7 @@ async function sendNotificationEmail(booking: {
   `;
 
   await resend.emails.send({
-    from: "HighLife Live <bookings@highlifedmv.com>",
+    from: "HighLife Live <onboarding@resend.dev>",
     to: ["liam@highlifedmv.com"],
     subject: `New booking inquiry: ${booking.artistName} for ${booking.venueName}`,
     html,
