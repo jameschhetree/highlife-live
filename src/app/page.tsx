@@ -55,7 +55,7 @@ export default function HomePage() {
               transition={{ duration: 1, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
             >
               <span className="text-gradient-hero block">Highlife</span>
-              <span className="text-gradient-hero block">Records</span>
+              <span className="text-gradient-hero block">Life</span>
             </motion.h1>
 
             <motion.p
