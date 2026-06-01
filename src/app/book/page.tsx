@@ -8,7 +8,6 @@ import { CheckCircle, ArrowRight, Send } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { artists } from "@/lib/data";
-import { saveBooking } from "@/lib/bookings";
 import { isAuthenticated } from "@/lib/auth";
 
 interface BookingForm {
@@ -48,6 +47,7 @@ function BookingFormContent() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState<BookingForm>(emptyForm(preselected));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -77,7 +77,7 @@ function BookingFormContent() {
     return errs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -90,26 +90,41 @@ function BookingFormContent() {
     const artist = artists.find((a) => a.slug === form.artistSlug);
     const artistName = artist?.name ?? form.artistSlug;
 
-    if (authed) {
-      const saved = saveBooking({
-        artistSlug: form.artistSlug,
-        artistName,
-        venueName: form.venueName,
-        venueAddress: form.venueAddress,
-        eventDate: form.eventDate,
-        proposedOffer: form.proposedOffer,
-        contactName: form.contactName,
-        contactEmail: form.contactEmail,
-        contactPhone: form.contactPhone,
-        eventDescription: form.eventDescription,
-        messageToAgent: form.messageToAgent,
-        source: "authenticated",
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistSlug: form.artistSlug,
+          artistName,
+          venueName: form.venueName,
+          venueAddress: form.venueAddress,
+          eventDate: form.eventDate,
+          proposedOffer: form.proposedOffer,
+          contactName: form.contactName,
+          contactEmail: form.contactEmail,
+          contactPhone: form.contactPhone,
+          eventDescription: form.eventDescription,
+          messageToAgent: form.messageToAgent,
+          source: authed ? "authenticated" : "public",
+        }),
       });
-      router.push(`/booking-confirmation?id=${saved.id}`);
-      return;
-    }
 
-    setSubmitted(true);
+      if (!res.ok) throw new Error("Failed to submit");
+
+      const data = await res.json();
+
+      if (authed) {
+        router.push(`/booking-confirmation?id=${data.id}`);
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      setErrors({ artistSlug: "Something went wrong. Please try again." });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -335,11 +350,12 @@ function BookingFormContent() {
             </p>
             <button
               type="submit"
-              className="group inline-flex items-center justify-center gap-2.5 px-8 py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full"
+              disabled={submitting}
+              className="group inline-flex items-center justify-center gap-2.5 px-8 py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send size={14} strokeWidth={2} />
-              Send Inquiry
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              {submitting ? "Sending..." : "Send Inquiry"}
+              {!submitting && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </div>
         </form>

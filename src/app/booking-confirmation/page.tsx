@@ -6,21 +6,47 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, Clock } from "lucide-react";
-import { getBookings, type BookingSubmission } from "@/lib/bookings";
+
+interface BookingData {
+  id: string;
+  artistName: string;
+  venueName: string;
+  eventDate: string;
+  status: string;
+  submittedAt: string;
+}
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
   const requestedId = searchParams.get("id");
-  const [booking, setBooking] = useState<BookingSubmission | null>(null);
+  const [booking, setBooking] = useState<BookingData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const bookings = getBookings();
-    if (requestedId) {
-      setBooking(bookings.find((b) => b.id === requestedId) ?? null);
-    } else if (bookings.length > 0) {
-      setBooking(bookings[bookings.length - 1]);
+    if (!requestedId) {
+      setLoading(false);
+      return;
     }
+
+    fetch(`/api/bookings/${requestedId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+      })
+      .then((data) => setBooking(data))
+      .catch(() => setBooking(null))
+      .finally(() => setLoading(false));
   }, [requestedId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-32 bg-radial-atmosphere flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">
+          Loading...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-28 pb-24 bg-radial-atmosphere">
@@ -45,7 +71,7 @@ function ConfirmationContent() {
               <p className="text-silver text-base mb-7">
                 Request{" "}
                 <span className="text-foreground font-semibold">
-                  #{booking.id}
+                  #{booking.id.slice(-8).toUpperCase()}
                 </span>{" "}
                 is in your portal.
               </p>

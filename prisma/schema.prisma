@@ -244,6 +244,29 @@ model SuppressionListEntry {
   createdAt DateTime @default(now())
 }
 
+// ── Bookings ────────────────────────────────────────────────
+
+model Booking {
+  id               String   @id @default(cuid())
+  artistSlug       String
+  artistName       String
+  venueName        String
+  venueAddress     String
+  eventDate        String
+  proposedOffer    String
+  contactName      String
+  contactEmail     String
+  contactPhone     String
+  eventDescription String   @db.Text
+  messageToAgent   String   @db.Text
+  source           String   @default("public") // "public" | "authenticated"
+  submittedAt      DateTime @default(now())
+  status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
+  adminNotes       String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 // ── Import Batches ──────────────────────────────────────────
 
 model ImportBatch {
