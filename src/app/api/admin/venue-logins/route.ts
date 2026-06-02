@@ -13,6 +13,17 @@ export async function GET(request: NextRequest) {
 
   const rows = await prisma.venueLogin.findMany({
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      organizationName: true,
+      accountType: true,
+      isActive: true,
+      sourceRequestId: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
   return Response.json(rows);
 }
@@ -69,5 +80,6 @@ export async function POST(request: NextRequest) {
     }).catch(() => {/* request may not exist, that's ok */});
   }
 
-  return Response.json(created, { status: 201 });
+  const { passwordHash: _ph, ...safe } = created;
+  return Response.json(safe, { status: 201 });
 }

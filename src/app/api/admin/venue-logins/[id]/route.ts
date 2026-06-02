@@ -21,7 +21,8 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   const { id } = await ctx.params;
   const row = await prisma.venueLogin.findUnique({ where: { id } });
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
-  return Response.json(row);
+  const { passwordHash: _ph, ...safe } = row;
+  return Response.json(safe);
 }
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
@@ -49,7 +50,8 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   }
 
   const row = await prisma.venueLogin.update({ where: { id }, data });
-  return Response.json(row);
+  const { passwordHash: _ph2, ...safe2 } = row;
+  return Response.json(safe2);
 }
 
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
