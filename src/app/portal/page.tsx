@@ -14,36 +14,66 @@ import {
   LogOut,
   Plus,
   XCircle,
+  Eye,
+  Reply,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { isAuthenticated, logout, getUser } from "@/lib/auth";
 import { artists } from "@/lib/data";
-import { getBookings, type BookingSubmission } from "@/lib/bookings";
+
+interface BookingRecord {
+  id: string;
+  artistSlug: string;
+  artistName: string;
+  venueName: string;
+  venueAddress: string;
+  eventDate: string;
+  proposedOffer: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  eventDescription: string;
+  messageToAgent: string;
+  submittedAt: string;
+  status: string;
+  source: string;
+}
 
 const statusConfig: Record<
-  BookingSubmission["status"],
+  string,
   { icon: typeof Clock; color: string; bg: string }
 > = {
-  "Pending Review": {
+  New: {
     icon: Clock,
     color: "text-amber-300",
     bg: "bg-amber-400/10 border-amber-400/20",
   },
-  "Availability Check": {
-    icon: Search,
+  Reviewed: {
+    icon: Eye,
     color: "text-sky-300",
     bg: "bg-sky-400/10 border-sky-400/20",
   },
-  Confirmed: {
+  Replied: {
+    icon: Reply,
+    color: "text-violet-300",
+    bg: "bg-violet-400/10 border-violet-400/20",
+  },
+  Booked: {
     icon: CheckCircle,
     color: "text-emerald-300",
     bg: "bg-emerald-400/10 border-emerald-400/20",
   },
-  Declined: {
+  Lost: {
     icon: XCircle,
     color: "text-rose-300",
     bg: "bg-rose-400/10 border-rose-400/20",
   },
+};
+
+const defaultStatus = {
+  icon: Clock,
+  color: "text-zinc-400",
+  bg: "bg-zinc-400/10 border-zinc-400/20",
 };
 
 const savedSlugs = ["tone-brady", "nyla-vale"];
@@ -52,7 +82,7 @@ export default function PortalPage() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [userBookings, setUserBookings] = useState<BookingSubmission[]>([]);
+  const [userBookings, setUserBookings] = useState<BookingRecord[]>([]);
   const [userName, setUserName] = useState("Promoter");
 
   useEffect(() => {
@@ -61,10 +91,20 @@ export default function PortalPage() {
       return;
     }
     setAuthed(true);
-    setUserBookings(getBookings());
     const user = getUser();
     if (user?.name) setUserName(user.name);
-    setChecking(false);
+
+    // Fetch bookings from API -- try by contactEmail, fall back to all recent
+    const email = user?.email;
+    const url = email
+      ? `/api/bookings?contactEmail=${encodeURIComponent(email)}`
+      : "/api/bookings";
+
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setUserBookings(data))
+      .catch(() => setUserBookings([]))
+      .finally(() => setChecking(false));
   }, [router]);
 
   const handleLogout = () => {
@@ -76,7 +116,7 @@ export default function PortalPage() {
     return (
       <div className="min-h-screen bg-radial-atmosphere flex items-center justify-center">
         <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">
-          Verifying access…
+          Verifying access...
         </span>
       </div>
     );
@@ -154,42 +194,39 @@ export default function PortalPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userBookings
-                  .slice()
-                  .reverse()
-                  .map((b) => {
-                    const config = statusConfig[b.status];
-                    const Icon = config.icon;
-                    return (
-                      <motion.div
-                        key={b.id}
-                        whileHover={{ y: -2 }}
-                        className={`glass-card rounded-2xl p-5 border ${config.bg}`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-                            #{b.id}
-                          </span>
-                          <Icon size={14} className={config.color} />
-                        </div>
-                        <h3 className="text-sm font-medium mb-1">{b.artistName}</h3>
-                        <p className="text-xs text-zinc-500 mb-3">
-                          {b.venueName} ·{" "}
-                          {new Date(b.eventDate || b.submittedAt).toLocaleDateString()}
-                        </p>
-                        {b.eventDescription && (
-                          <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                            {b.eventDescription}
-                          </p>
-                        )}
-                        <span
-                          className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}
-                        >
-                          {b.status}
+                {userBookings.map((b) => {
+                  const config = statusConfig[b.status] || defaultStatus;
+                  const Icon = config.icon;
+                  return (
+                    <motion.div
+                      key={b.id}
+                      whileHover={{ y: -2 }}
+                      className={`glass-card rounded-2xl p-5 border ${config.bg}`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
+                          #{b.id.slice(-8).toUpperCase()}
                         </span>
-                      </motion.div>
-                    );
-                  })}
+                        <Icon size={14} className={config.color} />
+                      </div>
+                      <h3 className="text-sm font-medium mb-1">{b.artistName}</h3>
+                      <p className="text-xs text-zinc-500 mb-3">
+                        {b.venueName} ·{" "}
+                        {new Date(b.eventDate || b.submittedAt).toLocaleDateString()}
+                      </p>
+                      {b.eventDescription && (
+                        <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+                          {b.eventDescription}
+                        </p>
+                      )}
+                      <span
+                        className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}
+                      >
+                        {b.status}
+                      </span>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </div>

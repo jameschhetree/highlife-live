@@ -82,12 +82,12 @@ export function Header() {
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
             <Link
-              href="/find-an-agent"
+              href="/findanagent"
               className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
-                pathname === "/find-an-agent" ? "text-foreground" : "text-silver hover:text-foreground"
+                pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
               }`}
             >
-              Find An Agent
+              Auditions
             </Link>
             {navLinks.map((link) => (
               <Link
@@ -164,11 +164,11 @@ export function Header() {
           >
             <nav className="flex flex-col items-center gap-8">
               <Link
-                href="/find-an-agent"
+                href="/findanagent"
                 onClick={() => setMobileOpen(false)}
                 className="text-xl font-display tracking-[0.15em] uppercase text-silver"
               >
-                Find An Agent
+                Auditions
               </Link>
               {navLinks.map((link, i) => (
                 <motion.div

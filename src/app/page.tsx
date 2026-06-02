@@ -105,10 +105,10 @@ export default function HomePage() {
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                href="/find-an-agent"
+                href="/findanagent"
                 className="group flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 hover:bg-black/55 hover:border-white/20 px-5 py-4 text-xs tracking-[0.18em] uppercase font-semibold transition-all duration-300"
               >
-                <span>Find An Agent</span>
+                <span>Auditions</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </motion.div>

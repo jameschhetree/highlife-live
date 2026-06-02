@@ -9,13 +9,13 @@ import { adminLogin } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const ok = adminLogin(username, password);
+    const ok = adminLogin(email, password);
     if (!ok) {
       setError("Invalid credentials");
       return;
@@ -56,17 +56,17 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div>
               <label className="block text-[11px] tracking-[0.2em] uppercase text-silver mb-2">
-                Username
+                Email
               </label>
               <input
-                type="text"
-                value={username}
+                type="email"
+                value={email}
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setEmail(e.target.value);
                   setError("");
                 }}
-                placeholder="admin"
-                autoComplete="username"
+                placeholder=""
+                autoComplete="email"
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors"
                 required
               />
@@ -102,9 +102,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-            Demo creds · admin / admin
-          </p>
         </div>
 
         <div className="text-center mt-6">

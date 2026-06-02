@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  Inbox,
+  Mic,
   Users,
   MapPinned,
   Megaphone,
@@ -19,6 +21,8 @@ import { adminLogout } from "@/lib/admin-auth";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/bookings", label: "Bookings", icon: Inbox },
+  { href: "/admin/auditions", label: "Auditions", icon: Mic },
   { href: "/admin/artists", label: "Artists", icon: Users },
   { href: "/admin/venues", label: "Venues", icon: MapPinned },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
