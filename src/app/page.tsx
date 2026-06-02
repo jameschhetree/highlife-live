@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { NowBookingMascot } from "@/components/NowBookingMascot";
 import { artists } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
@@ -40,40 +41,8 @@ export default function HomePage() {
             transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
-            {/* Status pill — mic mascot floats in an arc above it; pill links to /book */}
-            <div className="relative inline-block mb-7">
-              <span
-                aria-hidden
-                className="mascot-mic w-8 h-8 pointer-events-none"
-              >
-                <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
-                  {/* Mic head */}
-                  <rect x="11" y="3" width="10" height="16" rx="5" fill="#1f1f25" stroke="rgba(255,255,255,0.22)" strokeWidth="0.8" />
-                  {/* Grille lines */}
-                  <line x1="12" y1="7" x2="20" y2="7" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
-                  <line x1="12" y1="10" x2="20" y2="10" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
-                  <line x1="12" y1="13" x2="20" y2="13" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
-                  <line x1="12" y1="16" x2="20" y2="16" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
-                  {/* Stand arc */}
-                  <path d="M 8 18 Q 8 24 16 24 Q 24 24 24 18" stroke="#ec4899" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-                  {/* Stem */}
-                  <line x1="16" y1="24" x2="16" y2="29" stroke="rgba(255,255,255,0.6)" strokeWidth="1.4" strokeLinecap="round" />
-                  {/* Base */}
-                  <line x1="13" y1="29.5" x2="19" y2="29.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.4" strokeLinecap="round" />
-                  {/* Highlight glint */}
-                  <circle cx="13.5" cy="6" r="0.8" fill="rgba(255,255,255,0.5)" />
-                </svg>
-              </span>
-              <Link
-                href="/book"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 hover:border-pink-400/40 backdrop-blur transition-colors group"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 group-hover:text-foreground font-medium transition-colors">
-                  Now Booking 2026 &amp; 2027
-                </span>
-              </Link>
-            </div>
+            {/* Interactive pill + mic mascot — paces by default, click mic to make it fly + chase */}
+            <NowBookingMascot />
 
             <motion.h1
               className="font-display uppercase leading-[0.92] tracking-[-0.01em] text-[clamp(2.75rem,9vw,7.5rem)] mb-6"
