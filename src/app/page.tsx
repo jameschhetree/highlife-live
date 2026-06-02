@@ -192,15 +192,15 @@ export default function HomePage() {
             <ScrollReveal delay={0.2}>
               <div className="relative aspect-[4/5] bg-card border border-border/30 overflow-hidden rounded-2xl">
                 <div
-                  className="absolute inset-0 bg-cover bg-center img-bw"
+                  className="absolute inset-0 bg-cover bg-center"
                   style={{
-                    backgroundImage: "url(https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80)",
+                    backgroundImage: "url(/hero-djbooth.jpg)",
                   }}
                   role="img"
-                  aria-label="Live concert atmosphere"
+                  aria-label="DJ behind the booth at a packed HighLife Live show"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.25),transparent_60%)] mix-blend-screen" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen" />
               </div>
             </ScrollReveal>
           </div>
