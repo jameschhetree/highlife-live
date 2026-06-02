@@ -49,33 +49,24 @@ export function Header() {
       >
         <nav className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3.5 lg:px-8">
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
-              <span className="relative w-10 h-10 inline-block shrink-0">
-                <Image
-                  src="/HighLifeLogo.png"
-                  alt=""
-                  fill
-                  priority
-                  sizes="40px"
-                  className="object-contain"
-                />
-              </span>
-              <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
-                HighLife Live
-              </span>
-              <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
-                HighLife
-              </span>
-            </Link>
-            <Link
-              href="/admin"
-              aria-label="Admin login"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-[10px] font-bold leading-none text-white/55 transition-colors hover:border-white/30 hover:text-white/85"
-            >
-              A
-            </Link>
-          </div>
+          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
+            <span className="relative w-10 h-10 inline-block shrink-0">
+              <Image
+                src="/HighLifeLogo.png"
+                alt=""
+                fill
+                priority
+                sizes="40px"
+                className="object-contain"
+              />
+            </span>
+            <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
+              HighLife Live
+            </span>
+            <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
+              HighLife
+            </span>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
@@ -103,19 +94,21 @@ export function Header() {
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-5">
+            {/* Agent Login text-link (formerly Partner Login slot) */}
             <Link
-              href={authed ? "/portal" : "/login"}
-              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
+              href="/admin/login"
+              className="hidden sm:inline text-xs tracking-[0.18em] uppercase text-white/85 hover:text-white underline underline-offset-4 decoration-white/40 hover:decoration-white/80 transition-colors"
             >
-              {authed ? "Portal" : "Partner Login"}
+              Agent Login
             </Link>
 
+            {/* Partner Login button (formerly Book Talent slot) — brighter gray, on-theme, not gradient */}
             <Link
-              href="/book"
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 btn-gradient text-xs tracking-[0.18em] uppercase font-semibold rounded-full"
+              href={authed ? "/portal" : "/login"}
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-xs tracking-[0.18em] uppercase font-semibold rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/15 hover:border-white/35 transition-colors"
             >
-              Book Talent
+              {authed ? "Portal" : "Partner Login"}
             </Link>
 
             {/* Mobile Menu Toggle */}
@@ -169,27 +162,27 @@ export function Header() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.3 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
               >
                 <Link
-                  href={authed ? "/portal" : "/login"}
+                  href="/admin/login"
                   onClick={() => setMobileOpen(false)}
-                  className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+                  className="text-xl font-display tracking-[0.15em] uppercase text-white/85 underline underline-offset-4 decoration-white/40"
                 >
-                  {authed ? "Portal" : "Partner Login"}
+                  Agent Login
                 </Link>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.3 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
               >
                 <Link
-                  href="/book"
+                  href={authed ? "/portal" : "/login"}
                   onClick={() => setMobileOpen(false)}
-                  className="mt-2 px-8 py-3 btn-gradient text-lg tracking-wide uppercase font-semibold rounded-full"
+                  className="mt-2 px-8 py-3 text-lg tracking-wide uppercase font-semibold rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/15"
                 >
-                  Book Talent
+                  {authed ? "Portal" : "Partner Login"}
                 </Link>
               </motion.div>
             </nav>
