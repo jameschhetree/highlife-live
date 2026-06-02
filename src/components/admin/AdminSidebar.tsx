@@ -24,26 +24,44 @@ import {
   MessageSquare,
   UserCog,
   Crown,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Gauge,
 } from "lucide-react";
 import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
-const nav = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, gate: "all" },
-  { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, gate: "all" },
-  { href: "/admin/bookings", label: "Bookings", icon: Inbox, gate: "all" },
-  { href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
-  { href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
-  { href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
-  { href: "/admin/agent-logins", label: "Agent Logins", icon: UserCog, gate: "owner" },
-  { href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
-  { href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
-  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
-  { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
-  { href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
-  { href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
-  { href: "/admin/settings", label: "Settings", icon: Settings, gate: "all" },
-  { href: "/admin/owner-special", label: "Owner Hub", icon: Crown, gate: "owner" },
+type Gate = "all" | "owner" | "auditions" | "venue-logins";
+type NavLeaf = { kind: "leaf"; href: string; label: string; icon: typeof LayoutDashboard; gate: Gate };
+type NavGroup = { kind: "group"; key: string; label: string; icon: typeof Crown; gate: Gate; children: NavLeaf[] };
+type NavItem = NavLeaf | NavGroup;
+
+const nav: NavItem[] = [
+  { kind: "leaf", href: "/admin", label: "Dashboard", icon: LayoutDashboard, gate: "all" },
+  { kind: "leaf", href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, gate: "all" },
+  { kind: "leaf", href: "/admin/bookings", label: "Bookings", icon: Inbox, gate: "all" },
+  { kind: "leaf", href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
+  { kind: "leaf", href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
+  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
+  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
+  { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
+  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
+  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
+  { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "all" },
+  {
+    kind: "group",
+    key: "owner-hub",
+    label: "Owner Hub",
+    icon: Crown,
+    gate: "owner",
+    children: [
+      { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
+      { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
+      { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
+      { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
+      { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },
+    ],
+  },
 ];
 
 export function AdminSidebar() {
@@ -75,40 +93,81 @@ export function AdminSidebar() {
     router.push("/admin/login");
   };
 
-  const visibleNav = nav.filter((item) => {
-    if (item.gate === "auditions") return canViewAuditions(session);
-    if (item.gate === "venue-logins") return canManageVenueLogins(session);
-    if (item.gate === "owner") return isOwnerAdmin(session);
+  const passesGate = (gate: Gate): boolean => {
+    if (gate === "auditions") return canViewAuditions(session);
+    if (gate === "venue-logins") return canManageVenueLogins(session);
+    if (gate === "owner") return isOwnerAdmin(session);
     return true;
-  });
+  };
+
+  const visibleNav: NavItem[] = nav
+    .filter((item) => passesGate(item.gate))
+    .map((item) =>
+      item.kind === "group"
+        ? { ...item, children: item.children.filter((c) => passesGate(c.gate)) }
+        : item
+    )
+    .filter((item) => item.kind !== "group" || item.children.length > 0);
+
+  // Owner Hub group expands automatically when a child route is active
+  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/auditions", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins"];
+  const ownerHubActive = ownerHubChildHrefs.some((h) => pathname?.startsWith(h));
+  const [ownerHubOpen, setOwnerHubOpen] = useState(false);
+  useEffect(() => {
+    if (ownerHubActive) setOwnerHubOpen(true);
+  }, [ownerHubActive]);
+
+  const renderLeaf = (leaf: NavLeaf, onItemClick: (() => void) | undefined, indent: boolean) => {
+    const Icon = leaf.icon;
+    const active =
+      leaf.href === "/admin" ? pathname === "/admin" : pathname?.startsWith(leaf.href);
+    return (
+      <li key={leaf.href}>
+        <Link
+          href={leaf.href}
+          onClick={onItemClick}
+          className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${indent ? "ml-4 pl-3 border-l border-white/8" : ""} ${
+            active
+              ? "bg-white/8 text-foreground border-l-2 border-pink-400"
+              : "text-zinc-400 hover:text-foreground hover:bg-white/4"
+          }`}
+        >
+          <Icon size={16} strokeWidth={1.6} />
+          <span className="tracking-wide">{leaf.label}</span>
+        </Link>
+      </li>
+    );
+  };
 
   const navList = (onItemClick?: () => void) => (
     <ul className="space-y-0.5 px-2">
       {visibleNav.map((item) => {
-        const Icon = item.icon;
-        const active =
-          item.href === "/admin"
-            ? pathname === "/admin"
-            : pathname?.startsWith(item.href);
-        const isOwnerHub = item.gate === "owner" && item.href === "/admin/owner-special";
+        if (item.kind === "leaf") return renderLeaf(item, onItemClick, false);
+        const GroupIcon = item.icon;
+        const Chevron = ownerHubOpen ? ChevronDown : ChevronRight;
         return (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              onClick={onItemClick}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
-                active
-                  ? isOwnerHub
-                    ? "bg-gradient-to-r from-pink-500/15 to-violet-500/15 text-foreground border-l-2 border-pink-400"
-                    : "bg-white/8 text-foreground border-l-2 border-pink-400"
-                  : isOwnerHub
-                    ? "text-pink-300/80 hover:text-foreground hover:bg-pink-500/8"
-                    : "text-zinc-400 hover:text-foreground hover:bg-white/4"
+          <li key={item.key} className="pt-1">
+            <button
+              type="button"
+              onClick={() => setOwnerHubOpen((o) => !o)}
+              className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
+                ownerHubActive
+                  ? "bg-gradient-to-r from-pink-500/15 to-violet-500/15 text-foreground border-l-2 border-pink-400"
+                  : "text-pink-300/80 hover:text-foreground hover:bg-pink-500/8"
               }`}
+              aria-expanded={ownerHubOpen}
             >
-              <Icon size={16} strokeWidth={1.6} />
-              <span className="tracking-wide">{item.label}</span>
-            </Link>
+              <span className="flex items-center gap-3">
+                <GroupIcon size={16} strokeWidth={1.6} />
+                <span className="tracking-wide">{item.label}</span>
+              </span>
+              <Chevron size={14} strokeWidth={1.8} className="text-zinc-500" />
+            </button>
+            {ownerHubOpen && (
+              <ul className="mt-1 space-y-0.5">
+                {item.children.map((child) => renderLeaf(child, onItemClick, true))}
+              </ul>
+            )}
           </li>
         );
       })}
