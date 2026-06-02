@@ -197,6 +197,21 @@ function BookingFormContent() {
           </div>
         </ScrollReveal>
 
+        {/* Disclaimer raised ABOVE the form so it's visible without scrolling
+            past the entire form on mobile. Same copy also rendered below the
+            form for desktop readers who reach the submit. */}
+        {!authed && (
+          <div className="mb-6 rounded-2xl border border-pink-400/30 bg-pink-500/10 px-5 py-4 text-center">
+            <p className="text-sm text-zinc-200 leading-relaxed">
+              Public inquiries are reviewed by our team. If you are a venue or promoter,{" "}
+              <Link href="/login" className="text-pink-300 hover:text-pink-200 underline underline-offset-4 font-semibold">
+                request a partner login
+              </Link>{" "}
+              for priority tracking and direct access to your inquiry status.
+            </p>
+          </div>
+        )}
+
         <form
           onSubmit={handleSubmit}
           className="glass-card rounded-3xl p-6 sm:p-9 lg:p-11 space-y-7"
@@ -367,7 +382,7 @@ function BookingFormContent() {
           </div>
         </form>
 
-        {/* Helpful notice for public inquiries -- replaces the old 31-day disclaimer */}
+        {/* Helpful notice for public inquiries — same copy renders ABOVE the form too (raisedDisclaimer) for visibility */}
         {!authed && (
           <div className="mt-6 glass-card rounded-2xl p-5 text-center">
             <p className="text-sm text-zinc-300 leading-relaxed">

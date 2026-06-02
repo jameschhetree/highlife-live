@@ -60,15 +60,26 @@ export function NowBookingMascot() {
     setMode("flying");
   }, []);
 
-  // Mouse tracking is always on while in any flight mode (so the flee logic
-  // can read it without needing a useEffect re-mount).
+  // Cursor / touch tracking — flee logic reads from lastMouseRef every frame.
+  // Mouse AND touch supported so the chase works on phones too.
   useEffect(() => {
     if (mode === "pacing" || mode === "coupon") return;
     const onMove = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
     };
+    const onTouch = (e: TouchEvent) => {
+      const t = e.touches[0] ?? e.changedTouches[0];
+      if (!t) return;
+      lastMouseRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
+    };
     window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchmove", onTouch);
+      window.removeEventListener("touchstart", onTouch);
+    };
   }, [mode]);
 
   // Single animation loop that handles flying / homing — runs while mode is
