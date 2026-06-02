@@ -60,26 +60,15 @@ export function NowBookingMascot() {
     setMode("flying");
   }, []);
 
-  // Cursor / touch tracking — flee logic reads from lastMouseRef every frame.
-  // Mouse AND touch supported so the chase works on phones too.
+  // Cursor tracking — flee logic reads lastMouseRef every frame.
+  // Desktop only per scope; touch handlers intentionally not added.
   useEffect(() => {
     if (mode === "pacing" || mode === "coupon") return;
     const onMove = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
     };
-    const onTouch = (e: TouchEvent) => {
-      const t = e.touches[0] ?? e.changedTouches[0];
-      if (!t) return;
-      lastMouseRef.current = { x: t.clientX, y: t.clientY, t: performance.now() };
-    };
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onTouch, { passive: true });
-    window.addEventListener("touchstart", onTouch, { passive: true });
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("touchmove", onTouch);
-      window.removeEventListener("touchstart", onTouch);
-    };
+    return () => window.removeEventListener("mousemove", onMove);
   }, [mode]);
 
   // Single animation loop that handles flying / homing — runs while mode is
@@ -122,28 +111,30 @@ export function NowBookingMascot() {
         let nextY = py;
 
         if (dist < MIN_DIST && dist > 0.1) {
-          // Need a fresh escape if expired OR cursor is dangerously close
-          const tooClose = dist < 130;
-          if (now > escapeRef.current.expiresAt || tooClose) {
+          // Re-evaluate escape direction ONLY on expiry. The previous build
+          // also recalced when cursor was "too close" (< 130px), which made
+          // the mic stutter — escape vector flipped with a fresh random kick
+          // every frame while the user was on top of it. Now: pick a direction
+          // and commit for the full 500-900ms window so it actually runs.
+          if (now > escapeRef.current.expiresAt) {
             const ux = dx / dist;
             const uy = dy / dist;
-            // Random angular kick of ±50° off pure-radial — gives the
-            // mid-run feel of "I'm running, but not in a straight line"
-            const kickAngle = (Math.random() - 0.5) * (Math.PI / 1.8);
+            // Random angular kick of ±30° off pure-radial — enough to look
+            // alive, narrow enough to feel like a coherent escape, not a flail
+            const kickAngle = (Math.random() - 0.5) * (Math.PI / 3);
             const cosK = Math.cos(kickAngle);
             const sinK = Math.sin(kickAngle);
-            // Rotate the radial unit vector by kickAngle
             const ekx = ux * cosK - uy * sinK;
             const eky = ux * sinK + uy * cosK;
             escapeRef.current = {
               vx: ekx,
               vy: eky,
-              expiresAt: now + 400 + Math.random() * 300,
+              expiresAt: now + 500 + Math.random() * 400,
             };
           }
           // Speed scales with how close the cursor is — sprint when close
           const intensity = Math.pow(1 - dist / MIN_DIST, 1.4);
-          const sprintSpeed = 14 + intensity * 18; // px per 16ms baseline
+          const sprintSpeed = 14 + intensity * 22; // px per 16ms baseline
           const step = sprintSpeed * (dt / 16);
           nextX = px + escapeRef.current.vx * step;
           nextY = py + escapeRef.current.vy * step;
