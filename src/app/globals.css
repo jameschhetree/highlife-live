@@ -39,7 +39,7 @@ body {
   color: #fff;
 }
 
-/* Scrollbar — gliding spectrum */
+/* Scrollbar — gliding spectrum (seamless loop) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -48,17 +48,18 @@ body {
   background: #050608;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #fde047, #fb923c, #ec4899, #a855f7, #38bdf8, #fde047);
-  background-size: 100% 300%;
+  background: linear-gradient(180deg, #fde047, #fb923c, #ec4899, #a855f7, #38bdf8, #34d399, #fde047);
+  background-size: 100% 200%;
+  background-repeat: repeat;
   border-radius: 3px;
-  animation: scrollbar-glide 9s linear infinite;
+  animation: scrollbar-glide 8s linear infinite;
 }
 ::-webkit-scrollbar-thumb:hover {
   filter: brightness(1.15) saturate(1.2);
 }
 @keyframes scrollbar-glide {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 0% -300%; }
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
 }
 
 /* Focus states */
@@ -67,30 +68,33 @@ body {
   outline-offset: 2px;
 }
 
-/* Hero gradient text — gliding spectrum, loops the full yellow→orange→pink→purple→cyan→yellow ring */
+/* Hero gradient text — gliding spectrum, seamless loop */
 .text-gradient-hero {
   background: linear-gradient(
     90deg,
-    #fde047 0%,
-    #fb923c 16%,
-    #ec4899 33%,
-    #a855f7 50%,
-    #38bdf8 66%,
-    #34d399 83%,
-    #fde047 100%
+    #fde047,
+    #fb923c,
+    #ec4899,
+    #a855f7,
+    #38bdf8,
+    #34d399,
+    #fde047
   );
-  background-size: 250% auto;
+  background-size: 200% 100%;
+  background-repeat: repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: text-gradient-glide 10s linear infinite;
+  animation: spectrum-glide 8s linear infinite;
 }
-@keyframes text-gradient-glide {
-  to { background-position: -250% center; }
+@keyframes spectrum-glide {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .text-gradient-hero { animation: none; }
+  .text-gradient-hero,
+  .btn-gradient,
   ::-webkit-scrollbar-thumb { animation: none; }
 }
 
@@ -102,10 +106,22 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* CTA gradient button — yellow → pink → purple */
+/* CTA gradient button — gliding spectrum, seamless loop matching hero text */
 .btn-gradient {
-  background: linear-gradient(90deg, #fde047 0%, #ec4899 50%, #a855f7 100%);
+  background: linear-gradient(
+    90deg,
+    #fde047,
+    #fb923c,
+    #ec4899,
+    #a855f7,
+    #38bdf8,
+    #34d399,
+    #fde047
+  );
+  background-size: 200% 100%;
+  background-repeat: repeat;
   color: #0a0a0a;
+  animation: spectrum-glide 8s linear infinite;
   transition: filter 220ms cubic-bezier(0.32, 0.72, 0, 1), transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 .btn-gradient:hover {

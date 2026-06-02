@@ -15,6 +15,31 @@ const ALLOWED_VIDEO_EXTENSIONS = new Set([
   "mkv", "flv", "3gp", "3g2", "mpg", "mpeg", "mts", "m2ts",
 ]);
 
+// Vercel Blob validates the uploaded blob's content-type against this list at write time.
+// The browser's inferred MIME can differ from what we resolve client-side (audio/wav vs
+// audio/x-wav vs audio/wave for the same .wav file), so we hand Blob a wide allowlist.
+const BLOB_ALLOWED_CONTENT_TYPES = [
+  "audio/mpeg", "audio/mp3",
+  "audio/wav", "audio/wave", "audio/x-wav", "audio/vnd.wave",
+  "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/aac",
+  "audio/ogg", "audio/opus",
+  "audio/flac", "audio/x-flac",
+  "audio/aiff", "audio/x-aiff",
+  "audio/webm",
+  "audio/x-ms-wma",
+  "audio/*",
+  "video/mp4", "video/x-m4v",
+  "video/quicktime", "video/x-quicktime",
+  "video/webm", "video/ogg",
+  "video/x-msvideo", "video/avi",
+  "video/x-matroska",
+  "video/x-ms-wmv",
+  "video/x-flv",
+  "video/3gpp", "video/3gpp2",
+  "video/mpeg", "video/mp2t",
+  "video/*",
+];
+
 function extensionOf(filename: string): string {
   const dot = filename.lastIndexOf(".");
   if (dot < 0) return "";
@@ -31,14 +56,6 @@ function isAllowedMedia(contentType: string, filename: string): boolean {
     return true;
   }
   return false;
-}
-
-function effectiveContentType(contentType: string, filename: string): string {
-  if (contentType && contentType !== "application/octet-stream") return contentType;
-  const ext = extensionOf(filename);
-  if (ALLOWED_AUDIO_EXTENSIONS.has(ext)) return `audio/${ext === "m4a" ? "mp4" : ext}`;
-  if (ALLOWED_VIDEO_EXTENSIONS.has(ext)) return `video/${ext === "mov" ? "quicktime" : ext}`;
-  return contentType || "application/octet-stream";
 }
 
 function parseClientPayload(payload: string | null | undefined): {
@@ -97,11 +114,9 @@ export async function POST(request: NextRequest): Promise<Response> {
           throw new Error("Each file must be 300MB or smaller.");
         }
 
-        const resolvedType = effectiveContentType(payload.contentType, payload.filename);
-
         return {
           pathname: `findanagent/${Date.now()}-${sanitizeFilename(payload.filename)}`,
-          allowedContentTypes: [resolvedType],
+          allowedContentTypes: BLOB_ALLOWED_CONTENT_TYPES,
           maximumSizeInBytes: MAX_FILE_SIZE_BYTES,
           tokenPayload: JSON.stringify({
             source: "findanagent",
