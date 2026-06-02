@@ -49,14 +49,31 @@ export default function AdminDashboardPage() {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [accessChecked, setAccessChecked] = useState(false);
   const agentView = isAgentAdmin(session);
+  const [agentAssignedCount, setAgentAssignedCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!agentView) return;
+    fetch("/api/admin/artists", { headers: { "x-admin-email": session?.email ?? "" } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.artists ?? [];
+        setAgentAssignedCount(list.length);
+      })
+      .catch(() => setAgentAssignedCount(0));
+  }, [agentView, session?.email]);
+  const assignedLabel =
+    agentAssignedCount === null
+      ? "—"
+      : agentAssignedCount === 0
+      ? "none assigned"
+      : `${agentAssignedCount} artist${agentAssignedCount === 1 ? "" : "s"}`;
   const visibleStats = agentView
     ? [
-        { label: "Assigned Artists", value: "2", delta: "Tone Brady + Nyla Vale", icon: Users },
-        { label: "Active Roster", value: "2", delta: "assigned demo view", icon: TrendingUp },
-        { label: "Active Campaigns", value: "2", delta: "assigned artists only", icon: Megaphone },
-        { label: "Venues Contacted", value: "50", delta: "assigned campaigns", icon: MapPinned },
-        { label: "Positive Replies", value: "3", delta: "assigned campaigns", icon: CheckCircle },
-        { label: "Bookings Won", value: "1", delta: "assigned artists", icon: Inbox },
+        { label: "Assigned Artists", value: String(agentAssignedCount ?? "—"), delta: assignedLabel, icon: Users },
+        { label: "Active Roster", value: String(agentAssignedCount ?? "—"), delta: "assigned to you", icon: TrendingUp },
+        { label: "Active Campaigns", value: "—", delta: "your campaigns", icon: Megaphone },
+        { label: "Venues Contacted", value: "—", delta: "your campaigns", icon: MapPinned },
+        { label: "Positive Replies", value: "—", delta: "your campaigns", icon: CheckCircle },
+        { label: "Bookings Won", value: "—", delta: "your artists", icon: Inbox },
       ]
     : stats;
   const visibleDrafts = agentView ? [] : drafts;

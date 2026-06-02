@@ -242,7 +242,7 @@ function BookingFormContent() {
             />
           </Field>
 
-          <Field label="Venue Address" required error={errors.venueAddress} id="field-venueAddress">
+          <Field label={authed ? "Venue Address" : "Address"} required error={errors.venueAddress} id="field-venueAddress">
             <AddressAutocomplete
               value={form.venueAddress}
               onChange={(v) => update("venueAddress", v)}

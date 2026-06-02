@@ -154,8 +154,8 @@ export default function OwnerSpecialPage() {
               <span className="text-zinc-300">Data cleanup complete</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <AlertTriangle size={14} className="text-amber-400" />
-              <span className="text-zinc-300">Hero image: needs DJ booth photo from James</span>
+              <CheckCircle size={14} className="text-emerald-400" />
+              <span className="text-zinc-300">Hero image live (transparent logo + DJ booth photo)</span>
             </div>
           </div>
         </motion.div>
