@@ -119,7 +119,7 @@ function ConfirmationContent() {
           )}
 
           <p className="text-sm text-zinc-400 leading-relaxed max-w-md mx-auto mb-10">
-            The HighLife Records team will review your request and reach out if
+            The HighLife Live team will review your request and reach out if
             the opportunity is a good fit for the artist and event.
           </p>
 

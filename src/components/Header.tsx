@@ -5,42 +5,31 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag } from "lucide-react";
-import { getCartCount } from "@/lib/cart";
+import { Menu, X } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
 
 const navLinks = [
   { href: "/roster", label: "Roster" },
   { href: "/events", label: "Events" },
   { href: "/book", label: "Book" },
-  { href: "/shop", label: "Shop" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Admin console has its own shell — don't render the public header inside /admin
+  // Admin console has its own shell -- don't render the public header inside /admin
   if (pathname?.startsWith("/admin")) return null;
 
   useEffect(() => {
-    setCartCount(getCartCount());
     setAuthed(isAuthenticated());
-
-    const onCartUpdate = () => setCartCount(getCartCount());
-    window.addEventListener("cart-updated", onCartUpdate);
-    window.addEventListener("storage", onCartUpdate);
 
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("cart-updated", onCartUpdate);
-      window.removeEventListener("storage", onCartUpdate);
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
@@ -60,10 +49,10 @@ export function Header() {
       >
         <nav className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3.5 lg:px-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Records Home">
+          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
             <span className="relative w-10 h-10 inline-block shrink-0">
               <Image
-                src="/logo.png"
+                src="/HighLifeLogo.png"
                 alt=""
                 fill
                 priority
@@ -72,7 +61,7 @@ export function Header() {
               />
             </span>
             <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
-              HighLife Records
+              HighLife Live
             </span>
             <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
               HighLife
@@ -81,14 +70,6 @@ export function Header() {
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
-            <Link
-              href="/findanagent"
-              className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
-                pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
-              }`}
-            >
-              Auditions
-            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -102,42 +83,32 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/findanagent"
+              className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
+                pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
+              }`}
+            >
+              Auditions
+            </Link>
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-5">
+            {/* Agent Login text-link */}
             <Link
-              href="/shop"
-              className="relative p-2 text-silver hover:text-foreground transition-colors"
-              aria-label={`Shopping bag, ${cartCount} items`}
+              href="/admin/login"
+              className="hidden sm:inline text-xs tracking-[0.18em] uppercase text-white/85 hover:text-white underline underline-offset-4 decoration-white/40 hover:decoration-white/80 transition-colors"
             >
-              <ShoppingBag size={18} strokeWidth={1.5} />
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background text-[10px] font-medium flex items-center justify-center rounded-full">
-                  {cartCount}
-                </span>
-              )}
+              Agent Login
             </Link>
 
+            {/* Partner Login button -- animated glow border, not the rainbow gradient */}
             <Link
               href={authed ? "/portal" : "/login"}
-              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-xs tracking-[0.18em] uppercase font-semibold rounded-full partner-login-btn"
             >
               {authed ? "Portal" : "Partner Login"}
-            </Link>
-
-            <Link
-              href="/admin"
-              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
-            >
-              Admin Login
-            </Link>
-
-            <Link
-              href="/book"
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 btn-gradient text-xs tracking-[0.18em] uppercase font-semibold rounded-full"
-            >
-              Book Talent
             </Link>
 
             {/* Mobile Menu Toggle */}
@@ -163,13 +134,6 @@ export function Header() {
             className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl flex flex-col items-center justify-center lg:hidden"
           >
             <nav className="flex flex-col items-center gap-8">
-              <Link
-                href="/findanagent"
-                onClick={() => setMobileOpen(false)}
-                className="text-xl font-display tracking-[0.15em] uppercase text-silver"
-              >
-                Auditions
-              </Link>
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -188,6 +152,26 @@ export function Header() {
                   </Link>
                 </motion.div>
               ))}
+              <Link
+                href="/findanagent"
+                onClick={() => setMobileOpen(false)}
+                className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+              >
+                Auditions
+              </Link>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+              >
+                <Link
+                  href="/admin/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="text-xl font-display tracking-[0.15em] uppercase text-white/85 underline underline-offset-4 decoration-white/40"
+                >
+                  Agent Login
+                </Link>
+              </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -196,22 +180,9 @@ export function Header() {
                 <Link
                   href={authed ? "/portal" : "/login"}
                   onClick={() => setMobileOpen(false)}
-                  className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+                  className="mt-2 px-8 py-3 text-lg tracking-wide uppercase font-semibold rounded-full partner-login-btn"
                 >
                   {authed ? "Portal" : "Partner Login"}
-                </Link>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.3 }}
-              >
-                <Link
-                  href="/book"
-                  onClick={() => setMobileOpen(false)}
-                  className="mt-2 px-8 py-3 btn-gradient text-lg tracking-wide uppercase font-semibold rounded-full"
-                >
-                  Book Talent
                 </Link>
               </motion.div>
             </nav>

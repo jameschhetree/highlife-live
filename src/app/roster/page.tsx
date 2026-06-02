@@ -15,59 +15,59 @@ export default function RosterPage() {
       : artists.filter((a) => a.category === activeFilter);
 
   return (
-    <div className="pt-28 pb-24">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Header */}
-        <ScrollReveal>
-          <div className="mb-16">
-            <span className="text-[10px] tracking-[0.3em] uppercase text-muted border border-border/50 px-3 py-1 mb-6 inline-block">
-              Artist Roster
-            </span>
-            <h1 className="font-serif text-5xl md:text-6xl font-light tracking-tight mb-4">
-              The Roster
-            </h1>
-            <p className="text-silver max-w-xl leading-relaxed">
-              Curated talent built for unforgettable rooms. Browse our roster,
-              filter by genre, and request a booking.
-            </p>
-          </div>
-        </ScrollReveal>
+    <div className="bg-radial-atmosphere min-h-screen">
+      <div className="pt-32 pb-24">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Header */}
+          <ScrollReveal>
+            <div className="mb-14">
+              <span className="chip mb-6">Entertainment Roster</span>
+              <h1 className="font-display uppercase text-5xl md:text-7xl tracking-tight leading-[0.95] mb-5">
+                The <span className="text-gradient-hero">Roster</span>
+              </h1>
+              <p className="text-silver max-w-xl leading-relaxed text-base">
+                Curated talent built for unforgettable rooms. Browse our roster,
+                filter by genre, and request a booking.
+              </p>
+            </div>
+          </ScrollReveal>
 
-        {/* Filters */}
-        <ScrollReveal delay={0.1}>
-          <div className="flex flex-wrap gap-2 mb-12">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveFilter(cat)}
-                className={`text-xs tracking-[0.15em] uppercase px-4 py-2 border transition-all duration-300 ${
-                  activeFilter === cat
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-transparent text-silver border-border hover:border-silver hover:text-foreground"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </ScrollReveal>
+          {/* Filters */}
+          <ScrollReveal delay={0.1}>
+            <div className="glass-card rounded-2xl p-2.5 mb-10 inline-flex flex-wrap gap-1.5">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveFilter(cat)}
+                  className={`text-[10px] tracking-[0.18em] uppercase px-4 py-2 rounded-full transition-colors ${
+                    activeFilter === cat
+                      ? "bg-foreground text-background"
+                      : "text-silver hover:text-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </ScrollReveal>
 
-        {/* Grid */}
-        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((artist, i) => (
-              <ArtistCard key={artist.slug} artist={artist} index={i} />
-            ))}
-          </AnimatePresence>
-        </motion.div>
+          {/* Grid */}
+          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((artist, i) => (
+                <ArtistCard key={artist.slug} artist={artist} index={i} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-24">
-            <p className="text-muted text-sm">
-              No artists found in this category.
-            </p>
-          </div>
-        )}
+          {filtered.length === 0 && (
+            <div className="glass-card rounded-2xl text-center py-24">
+              <p className="text-zinc-400 text-sm">
+                No artists found in this category.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

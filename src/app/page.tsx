@@ -35,9 +35,9 @@ export default function HomePage() {
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+            initial={{ opacity: 0, y: 18, filter: "blur(3px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 1, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
             {/* Status pill */}
@@ -92,16 +92,16 @@ export default function HomePage() {
             >
               <Link
                 href="/roster"
-                className="group flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 hover:bg-black/55 hover:border-white/20 px-5 py-4 text-xs tracking-[0.18em] uppercase font-semibold transition-all duration-300"
+                className="group flex items-center justify-center gap-2 rounded-2xl btn-gradient px-5 py-4 text-xs tracking-[0.18em] uppercase font-bold"
               >
-                <span>Browse the Roster</span>
+                <span>Roster</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                href="/book"
-                className="group flex items-center justify-center gap-2 rounded-2xl btn-gradient px-5 py-4 text-xs tracking-[0.18em] uppercase font-bold"
+                href="/login"
+                className="group flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 hover:bg-black/55 hover:border-white/20 px-5 py-4 text-xs tracking-[0.18em] uppercase font-semibold transition-all duration-300"
               >
-                <span>Book Talent</span>
+                <span>Request Venue Login</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
@@ -124,18 +124,31 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Logo ticker pinned to bottom */}
+        {/* Logo ticker pinned to bottom -- duplicated content for seamless loop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/5 bg-black/40 backdrop-blur py-5 overflow-hidden">
           <div className="ticker-track">
+            {/* First set */}
             {Array.from({ length: 14 }).map((_, i) => (
-              <span key={i} className="relative w-12 h-12 inline-block opacity-90">
+              <span key={`a-${i}`} className="relative w-12 h-12 inline-block opacity-90 shrink-0">
                 <Image
-                  src="/logo.png"
+                  src="/HighLifeLogo.png"
                   alt=""
                   fill
                   sizes="48px"
                   className="object-contain"
                   priority={i < 2}
+                />
+              </span>
+            ))}
+            {/* Duplicate set for seamless infinite scroll */}
+            {Array.from({ length: 14 }).map((_, i) => (
+              <span key={`b-${i}`} className="relative w-12 h-12 inline-block opacity-90 shrink-0">
+                <Image
+                  src="/HighLifeLogo.png"
+                  alt=""
+                  fill
+                  sizes="48px"
+                  className="object-contain"
                 />
               </span>
             ))}
@@ -160,13 +173,13 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <ScrollReveal>
-              <span className="chip mb-6 inline-flex">About the Label</span>
+              <span className="chip mb-6 inline-flex">About the Agency</span>
               <h2 className="font-display uppercase text-5xl md:text-6xl tracking-tight mb-8 leading-[0.95]">
                 Talent that{" "}
                 <span className="text-gradient-hero">moves rooms.</span>
               </h2>
               <p className="text-silver leading-relaxed text-base mb-6">
-                HighLife Records is the booking and artist development arm of the
+                HighLife Live is the booking and artist development arm of the
                 HighLife ecosystem — connecting venues, promoters, brands, and
                 private clients with talent built for unforgettable rooms.
               </p>
@@ -179,15 +192,15 @@ export default function HomePage() {
             <ScrollReveal delay={0.2}>
               <div className="relative aspect-[4/5] bg-card border border-border/30 overflow-hidden rounded-2xl">
                 <div
-                  className="absolute inset-0 bg-cover bg-center img-bw"
+                  className="absolute inset-0 bg-cover bg-center"
                   style={{
-                    backgroundImage: "url(https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&q=80)",
+                    backgroundImage: "url(/hero-djbooth.jpg)",
                   }}
                   role="img"
-                  aria-label="Live concert atmosphere"
+                  aria-label="DJ behind the booth at a packed HighLife Live show"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.25),transparent_60%)] mix-blend-screen" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen" />
               </div>
             </ScrollReveal>
           </div>
@@ -239,7 +252,7 @@ export default function HomePage() {
               </h2>
               <p className="text-silver leading-relaxed mb-10">
                 Log in to browse bookable artists, track inquiries, and manage
-                booking conversations with the HighLife Records team.
+                booking conversations with the HighLife Live team.
               </p>
               <Link
                 href="/login"

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trash2, ExternalLink, Mail, Phone, Music } from "lucide-react";
+import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -29,24 +30,34 @@ export default function AuditionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const [session, setSession] = useState<AdminSession | null>(null);
   const [row, setRow] = useState<Audition | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/admin/auditions/${id}`)
+    const current = getAdminSession();
+    if (!current || !canViewAuditions(current)) {
+      router.replace("/admin");
+      return;
+    }
+    setSession(current);
+
+    fetch(`/api/admin/auditions/${id}`, {
+      headers: { "x-admin-email": current.email },
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then(setRow)
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, router]);
 
   const updateStatus = async (newStatus: string) => {
-    if (!row) return;
+    if (!row || !session) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/auditions/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
@@ -59,8 +70,12 @@ export default function AuditionDetailPage() {
   };
 
   const remove = async () => {
+    if (!session) return;
     if (!confirm("Delete this audition? This cannot be undone.")) return;
-    await fetch(`/api/admin/auditions/${id}`, { method: "DELETE" });
+    await fetch(`/api/admin/auditions/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
+    });
     router.push("/admin/auditions");
   };
 
@@ -88,7 +103,7 @@ export default function AuditionDetailPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link
           href="/admin/auditions"
           className="inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors mb-3"
@@ -132,7 +147,7 @@ export default function AuditionDetailPage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 grid lg:grid-cols-3 gap-5">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 grid lg:grid-cols-3 gap-5">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { canViewAuditionsEmail, getAdminEmailFromRequest } from "@/lib/admin-permissions";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +8,15 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(_request: NextRequest, ctx: RouteContext) {
+function forbidIfNotAuditionsOwner(request: NextRequest): Response | null {
+  if (canViewAuditionsEmail(getAdminEmailFromRequest(request))) return null;
+  return Response.json({ error: "Forbidden" }, { status: 403 });
+}
+
+export async function GET(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const forbidden = forbidIfNotAuditionsOwner(request);
+  if (forbidden) return forbidden;
   const { id } = await ctx.params;
   const row = await prisma.agentApplication.findUnique({ where: { id } });
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
@@ -17,6 +25,8 @@ export async function GET(_request: NextRequest, ctx: RouteContext) {
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const forbidden = forbidIfNotAuditionsOwner(request);
+  if (forbidden) return forbidden;
   const { id } = await ctx.params;
   const body = (await request.json()) as { status?: string; adminNotes?: string };
   const data: Record<string, unknown> = {};
@@ -26,8 +36,10 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   return Response.json(row);
 }
 
-export async function DELETE(_request: NextRequest, ctx: RouteContext) {
+export async function DELETE(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const forbidden = forbidIfNotAuditionsOwner(request);
+  if (forbidden) return forbidden;
   const { id } = await ctx.params;
   await prisma.agentApplication.delete({ where: { id } });
   return Response.json({ ok: true });

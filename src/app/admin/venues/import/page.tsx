@@ -124,7 +124,7 @@ export default function VenueImportPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link
           href="/admin/venues"
           className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground mb-3 transition-colors"
@@ -141,7 +141,7 @@ export default function VenueImportPage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 max-w-5xl space-y-8">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 max-w-5xl space-y-8">
         {/* Step 1: Upload */}
         <AnimatePresence mode="wait">
           {(state === "idle" || state === "error") && (

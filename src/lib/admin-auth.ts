@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  canManageArtistsEmail,
+  canManageVenueLoginsEmail,
+  canViewArtistEmail,
+  canViewAuditionsEmail,
+  filterArtistsForEmail,
+  isAgentAdminEmail,
+  isOwnerAdminEmail,
+  type ArtistAccessRecord,
+} from "@/lib/admin-permissions";
+
 const ADMIN_KEY = "highlife_admin";
 
 interface AdminUser {
@@ -17,8 +28,9 @@ const ADMIN_USERS: ReadonlyArray<AdminUser> = [
 export interface AdminSession {
   email: string;
   displayName: string;
-  role: "admin";
+  role: "admin" | "agent";
   loggedInAt: string;
+  agentLoginId?: string; // populated for DB-backed agent logins
 }
 
 export function adminLogin(emailOrUsername: string, password: string): AdminSession | null {
@@ -28,13 +40,19 @@ export function adminLogin(emailOrUsername: string, password: string): AdminSess
   const session: AdminSession = {
     email: match.email,
     displayName: match.displayName,
-    role: "admin",
+    role: isOwnerAdminEmail(match.email) ? "admin" : "agent",
     loggedInAt: new Date().toISOString(),
   };
   if (typeof window !== "undefined") {
     sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
   }
   return session;
+}
+
+export function setAdminSession(session: AdminSession): void {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
+  }
 }
 
 export function adminLogout(): void {
@@ -56,4 +74,38 @@ export function getAdminSession(): AdminSession | null {
 
 export function isAdminAuthed(): boolean {
   return getAdminSession() !== null;
+}
+
+export function isOwnerAdmin(session: AdminSession | null = getAdminSession()): boolean {
+  return isOwnerAdminEmail(session?.email);
+}
+
+export function isAgentAdmin(session: AdminSession | null = getAdminSession()): boolean {
+  return isAgentAdminEmail(session?.email) || session?.role === "agent";
+}
+
+export function canViewAuditions(session: AdminSession | null = getAdminSession()): boolean {
+  return canViewAuditionsEmail(session?.email);
+}
+
+export function canManageArtists(session: AdminSession | null = getAdminSession()): boolean {
+  return canManageArtistsEmail(session?.email);
+}
+
+export function canManageVenueLogins(session: AdminSession | null = getAdminSession()): boolean {
+  return canManageVenueLoginsEmail(session?.email);
+}
+
+export function canViewArtist(
+  artist: ArtistAccessRecord,
+  session: AdminSession | null = getAdminSession()
+): boolean {
+  return canViewArtistEmail(session?.email, artist);
+}
+
+export function filterArtistsForSession<T extends ArtistAccessRecord>(
+  artists: T[],
+  session: AdminSession | null = getAdminSession()
+): T[] {
+  return filterArtistsForEmail(session?.email, artists);
 }

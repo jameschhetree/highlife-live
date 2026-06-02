@@ -127,7 +127,7 @@ export default function PipelinePage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Booking Pipeline
         </p>
@@ -146,7 +146,7 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-6">
+      <div className="px-4 sm:px-6 lg:px-10 py-6">
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-3 min-w-[1200px]">
             {columns.map((col) => {

@@ -306,6 +306,126 @@ model ImportBatch {
   createdAt     DateTime @default(now())
 }
 
+// ── Partner Login Requests ──────────────────────────────────
+
+model PartnerLoginRequest {
+  id                String   @id @default(cuid())
+  accountType       String   // "Venue" | "Promoter"
+  organizationName  String   // Venue Name or Promotion Name
+  address           String   @default("")
+  role              String   // Owner, Talent Buyer, Promoter, Venue Manager, Event Coordinator, Other
+  contactName       String
+  workPhone         String   @default("")
+  mobilePhone       String   @default("")
+  workEmail         String
+  requestedLoginEmail String
+  howHeard          String   @default("")
+  preferredGenre    String   @default("")
+  extraNotes        String   @default("") @db.Text
+  status            String   @default("New") // New, Approved, Rejected, Converted, Archived
+  submittedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status, submittedAt])
+}
+
+// ── Active Venue Logins ────────────────────────────────────
+
+model VenueLogin {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String   // bcrypt or similar hash
+  displayName      String
+  organizationName String   @default("")
+  accountType      String   @default("Venue") // "Venue" | "Promoter"
+  isActive         Boolean  @default(true)
+  sourceRequestId  String?  // optional link to PartnerLoginRequest.id
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ── Inquiries (Workstream 5) ────────────────────────────────
+
+model Inquiry {
+  id               String   @id @default(cuid())
+  inquiryNumber    String   @unique // Human-readable e.g. "HL-10001"
+  source           String   @default("public") // "public" | "venue_partner"
+  venueLoginId     String?  // link to VenueLogin if venue_partner source
+  artistSlug       String
+  artistName       String
+  venueName        String
+  venueAddress     String   @default("")
+  eventDate        String
+  contactName      String
+  contactEmail     String
+  contactPhone     String
+  eventDescription String   @default("") @db.Text
+  messageToAgent   String   @default("") @db.Text
+  status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
+  adminNotes       String?  @db.Text
+  bookingOffer     String?  // optional opening offer (e.g. "$12,000"). Stripped from agent-facing responses.
+  submittedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([source, submittedAt])
+  @@index([venueLoginId])
+  @@index([contactEmail])
+}
+
+// ── Agent Logins (Workstream 6) ────────────────────────────
+
+model AgentLogin {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  artistAssignments AgentArtistAssignment[]
+  auditionAssignments AuditionAssignment[]
+}
+
+model AgentArtistAssignment {
+  id           String     @id @default(cuid())
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  artistId     String     // references Artist.id
+  createdAt    DateTime   @default(now())
+
+  @@unique([agentLoginId, artistId])
+  @@index([artistId])
+}
+
+// ── Audition Assignments (Workstream 6A) ───────────────────
+
+model AuditionAssignment {
+  id              String     @id @default(cuid())
+  auditionId      String     // references AgentApplication.id
+  agentLoginId    String
+  agentLogin      AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  notes           String     @default("") @db.Text
+  status          String     @default("Assigned") // Assigned, In Progress, Done
+  assignedAt      DateTime   @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([auditionId, agentLoginId])
+  @@index([agentLoginId])
+}
+
+// ── Email Subscribers (Workstream 8) ───────────────────────
+
+model EmailSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
 // ── Audit Log ───────────────────────────────────────────────
 
 model AuditLog {

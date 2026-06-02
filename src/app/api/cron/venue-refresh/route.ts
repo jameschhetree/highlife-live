@@ -78,7 +78,7 @@ async function generateCandidatesViaClaude(existingNames: string[]): Promise<Ven
     ? `\n\nWe already track these — DO NOT include them:\n${existingNames.slice(0, 100).join(", ")}`
     : "";
 
-  const prompt = `You are a DMV (DC / Maryland / Virginia) live music venue researcher for HighLife Records, a booking agency. Generate 15 candidate venues in the DMV that book live music, club nights, comedy, or cultural performances. Mix venue types: clubs (200–800 cap), theaters (500–3000 cap), restaurants/bars with stage programming, college venues, and cultural centers.
+  const prompt = `You are a DMV (DC / Maryland / Virginia) live music venue researcher for HighLife Live, a booking agency. Generate 15 candidate venues in the DMV that book live music, club nights, comedy, or cultural performances. Mix venue types: clubs (200–800 cap), theaters (500–3000 cap), restaurants/bars with stage programming, college venues, and cultural centers.
 
 Return STRICT JSON only — no markdown, no commentary. Schema:
 {

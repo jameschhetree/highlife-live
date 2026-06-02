@@ -2,32 +2,52 @@
 
 const AUTH_KEY = "highlife_auth";
 
-interface VenuePartner {
+interface StoredUser {
+  id: string;
   email: string;
-  password: string;
   name: string;
+  organizationName?: string;
+  accountType?: string;
 }
 
-const VENUE_PARTNERS: ReadonlyArray<VenuePartner> = [
-  { email: "testvenue3307@gmail.com", password: "testingVenues3307", name: "Venue Partner" },
-];
-
-export function login(emailOrUsername: string, password: string): boolean {
+export async function login(emailOrUsername: string, password: string): Promise<boolean> {
   const email = emailOrUsername.trim().toLowerCase();
-  const match = VENUE_PARTNERS.find((u) => u.email === email && u.password === password);
-  if (!match) return false;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(
-      AUTH_KEY,
-      JSON.stringify({ email: match.email, name: match.name })
-    );
+  try {
+    const res = await fetch("/api/venue-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.ok) return false;
+    if (typeof window !== "undefined") {
+      const stored: StoredUser = {
+        id: data.id,
+        email: data.email,
+        name: data.displayName,
+        organizationName: data.organizationName,
+        accountType: data.accountType,
+      };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(stored));
+    }
+    return true;
+  } catch {
+    return false;
   }
-  return true;
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
   if (typeof window !== "undefined") {
     localStorage.removeItem(AUTH_KEY);
+  }
+  // Clear server-side signed cookie too. Fire-and-forget — if it fails the
+  // localStorage clear above is enough to log the user out client-side.
+  try {
+    await fetch("/api/venue-auth", { method: "DELETE", credentials: "include" });
+  } catch {
+    // ignore
   }
 }
 
@@ -36,12 +56,12 @@ export function isAuthenticated(): boolean {
   return localStorage.getItem(AUTH_KEY) !== null;
 }
 
-export function getUser(): { email: string; name: string } | null {
+export function getUser(): StoredUser | null {
   if (typeof window === "undefined") return null;
   const data = localStorage.getItem(AUTH_KEY);
   if (!data) return null;
   try {
-    return JSON.parse(data);
+    return JSON.parse(data) as StoredUser;
   } catch {
     return null;
   }

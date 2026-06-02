@@ -27,11 +27,29 @@ export function useDB(): boolean {
 // ── API helpers (DB mode) ───────────────────────────────────
 
 const API = "/api/admin";
+const ADMIN_KEY = "highlife_admin";
+
+function getAdminAccessHeaders(initHeaders?: HeadersInit): Headers {
+  const headers = new Headers(initHeaders);
+  headers.set("Content-Type", "application/json");
+
+  if (typeof window === "undefined") return headers;
+
+  try {
+    const raw = sessionStorage.getItem(ADMIN_KEY);
+    const session = raw ? (JSON.parse(raw) as { email?: string }) : null;
+    if (session?.email) headers.set("x-admin-email", session.email);
+  } catch {
+    // Keep the request usable if a stale demo session is malformed.
+  }
+
+  return headers;
+}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...init,
+    headers: getAdminAccessHeaders(init?.headers),
   });
   if (!res.ok) {
     throw new Error(`API ${init?.method ?? "GET"} ${path} failed: ${res.status}`);

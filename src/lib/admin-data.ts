@@ -367,7 +367,7 @@ export const demoArtists: AdminArtist[] = [
     legalName: "Nyla Valentine",
     email: "nyla@nylavale.com",
     phone: "(404) 555-0233",
-    managerContact: "James Carter (james@highliferecords.com)",
+    managerContact: "James Carter (james@highlifedmv.com)",
     homeCity: "Atlanta",
     homeState: "GA",
     primaryMarket: "Atlanta / East Coast",

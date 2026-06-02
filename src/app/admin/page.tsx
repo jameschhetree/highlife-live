@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -14,6 +15,7 @@ import {
   Activity,
   ArrowRight,
 } from "lucide-react";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
 
 const stats = [
   { label: "Total Artists", value: "12", delta: "+3 this month", icon: Users },
@@ -44,6 +46,53 @@ const activity = [
 ];
 
 export default function AdminDashboardPage() {
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  const agentView = isAgentAdmin(session);
+  const [agentAssignedCount, setAgentAssignedCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!agentView) return;
+    fetch("/api/admin/artists", { headers: { "x-admin-email": session?.email ?? "" } })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.artists ?? [];
+        setAgentAssignedCount(list.length);
+      })
+      .catch(() => setAgentAssignedCount(0));
+  }, [agentView, session?.email]);
+  const assignedLabel =
+    agentAssignedCount === null
+      ? "—"
+      : agentAssignedCount === 0
+      ? "none assigned"
+      : `${agentAssignedCount} artist${agentAssignedCount === 1 ? "" : "s"}`;
+  const visibleStats = agentView
+    ? [
+        { label: "Assigned Artists", value: String(agentAssignedCount ?? "—"), delta: assignedLabel, icon: Users },
+        { label: "Active Roster", value: String(agentAssignedCount ?? "—"), delta: "assigned to you", icon: TrendingUp },
+        { label: "Active Campaigns", value: "—", delta: "your campaigns", icon: Megaphone },
+        { label: "Venues Contacted", value: "—", delta: "your campaigns", icon: MapPinned },
+        { label: "Positive Replies", value: "—", delta: "your campaigns", icon: CheckCircle },
+        { label: "Bookings Won", value: "—", delta: "your artists", icon: Inbox },
+      ]
+    : stats;
+  const visibleDrafts = agentView ? [] : drafts;
+  const visiblePipeline = agentView ? [] : pipeline;
+  const visibleActivity = agentView ? [] : activity;
+
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">Checking access...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen text-foreground">
       <div className="border-b border-white/8 px-6 lg:px-10 py-6 flex items-center justify-between">
@@ -61,10 +110,10 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-10">
         <section>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-            {stats.map((s, i) => {
+            {visibleStats.map((s, i) => {
               const Icon = s.icon;
               return (
                 <motion.div
@@ -107,7 +156,7 @@ export default function AdminDashboardPage() {
               </Link>
             </div>
             <ul className="divide-y divide-white/8">
-              {drafts.map((d) => (
+              {visibleDrafts.map((d) => (
                 <li key={d.id} className="py-3 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium">{d.artist}</div>
@@ -131,10 +180,12 @@ export default function AdminDashboardPage() {
               Quick Actions
             </h2>
             <div className="flex flex-col gap-2">
-              <Link href="/admin/artists?new=1" className="px-4 py-3 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors flex items-center justify-between">
-                <span>Add new artist</span>
-                <ArrowRight size={12} />
-              </Link>
+              {!agentView && (
+                <Link href="/admin/artists?new=1" className="px-4 py-3 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors flex items-center justify-between">
+                  <span>Add new artist</span>
+                  <ArrowRight size={12} />
+                </Link>
+              )}
               <Link href="/admin/venues?import=1" className="px-4 py-3 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors flex items-center justify-between">
                 <span>Import venues CSV</span>
                 <ArrowRight size={12} />
@@ -175,7 +226,7 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pipeline.map((row) => (
+                  {visiblePipeline.map((row) => (
                     <tr key={`${row.artist}-${row.venue}`} className="border-b border-white/4 last:border-0">
                       <td className="py-3 text-zinc-200">{row.artist}</td>
                       <td className="py-3 text-zinc-400">{row.venue}</td>
@@ -198,7 +249,7 @@ export default function AdminDashboardPage() {
               Recent Activity
             </h2>
             <ul className="space-y-3">
-              {activity.map((a, i) => (
+              {visibleActivity.map((a, i) => (
                 <li key={i} className="text-sm">
                   <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
                     {a.time}

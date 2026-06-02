@@ -1,11 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export function Footer() {
   const pathname = usePathname();
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+
   if (pathname?.startsWith("/admin")) return null;
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || subscribing) return;
+    setSubscribing(true);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.ok) {
+        setSubscribed(true);
+        setEmail("");
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   return (
     <footer className="border-t border-border/50 bg-background">
@@ -14,11 +41,17 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 border border-foreground/30 flex items-center justify-center">
-                <span className="font-serif text-sm font-semibold tracking-wide">H</span>
-              </div>
+              <span className="relative w-10 h-10 inline-block shrink-0">
+                <Image
+                  src="/HighLifeLogo.png"
+                  alt="HighLife Live"
+                  fill
+                  sizes="40px"
+                  className="object-contain"
+                />
+              </span>
               <span className="font-display text-lg tracking-[0.2em] uppercase font-medium">
-                HighLife Records
+                HighLife Live
               </span>
             </div>
             <p className="text-silver text-sm leading-relaxed max-w-md">
@@ -28,10 +61,10 @@ export function Footer() {
             </p>
             <div className="mt-6">
               <a
-                href="mailto:bookings@highliferecords.com"
+                href="mailto:info@highlifelive.com"
                 className="text-sm text-silver hover:text-foreground transition-colors"
               >
-                bookings@highliferecords.com
+                info@highlifelive.com
               </a>
             </div>
           </div>
@@ -44,11 +77,10 @@ export function Footer() {
             <div className="flex flex-col gap-3">
               {[
                 { href: "/findanagent", label: "Auditions" },
-                { href: "/roster", label: "Artist Roster" },
+                { href: "/roster", label: "Entertainment Roster" },
                 { href: "/events", label: "Events" },
                 { href: "/book", label: "Book an Artist" },
-                { href: "/shop", label: "Merch Shop" },
-                { href: "/login", label: "Promoter Login" },
+                { href: "/login", label: "Partner Login" },
               ].map((link) => (
                 <Link
                   key={link.href}
@@ -58,6 +90,14 @@ export function Footer() {
                   {link.label}
                 </Link>
               ))}
+              <a
+                href="https://highlifedmv.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-silver hover:text-foreground transition-colors"
+              >
+                Music & Podcast Studio
+              </a>
             </div>
           </div>
 
@@ -70,45 +110,44 @@ export function Footer() {
               Get first access to events, artist drops, and booking
               availability.
             </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const input = form.querySelector("input") as HTMLInputElement;
-                if (input) input.value = "";
-              }}
-              className="flex"
-            >
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-soft-gray border border-border text-sm px-4 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors"
-                aria-label="Email address for newsletter"
-                required
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-foreground text-background text-sm font-medium tracking-wide uppercase hover:bg-foreground/90 transition-colors"
-              >
-                Join
-              </button>
-            </form>
-            <div className="flex gap-4 mt-6">
-              {["Instagram", "Twitter", "Spotify"].map((platform) => (
-                <span
-                  key={platform}
-                  className="text-xs text-muted hover:text-silver cursor-pointer transition-colors uppercase tracking-wide"
+            {subscribed ? (
+              <p className="text-sm text-emerald-400">You are subscribed.</p>
+            ) : (
+              <form onSubmit={handleSubscribe} className="flex">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 bg-soft-gray border border-border text-sm px-4 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors"
+                  aria-label="Email address for newsletter"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={subscribing}
+                  className="px-4 py-2.5 bg-foreground text-background text-sm font-medium tracking-wide uppercase hover:bg-foreground/90 transition-colors disabled:opacity-50"
                 >
-                  {platform}
-                </span>
-              ))}
+                  {subscribing ? "..." : "Join"}
+                </button>
+              </form>
+            )}
+            <div className="flex gap-4 mt-6">
+              <a
+                href="https://www.instagram.com/highlifeliveent/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted hover:text-silver cursor-pointer transition-colors uppercase tracking-wide"
+              >
+                Instagram
+              </a>
             </div>
           </div>
         </div>
 
         <div className="mt-16 pt-8 border-t border-border/30 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted">
-            &copy; {new Date().getFullYear()} HighLife Records. All rights reserved.
+            &copy; {new Date().getFullYear()} HighLife Live. All rights reserved.
           </p>
           <p className="text-xs text-muted">
             Curated talent. Premium experiences. Artist-first booking.

@@ -5,22 +5,52 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Lock, ArrowRight } from "lucide-react";
-import { adminLogin } from "@/lib/admin-auth";
+import { adminLogin, setAdminSession } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const ok = adminLogin(email, password);
-    if (!ok) {
-      setError("Invalid credentials");
+    setError("");
+    setLoading(true);
+
+    // 1. Static owner/agent list (jaco@, liam@, agent@)
+    const staticHit = adminLogin(email, password);
+    if (staticHit) {
+      router.push("/admin");
       return;
     }
-    router.push("/admin");
+
+    // 2. DB-backed AgentLogin fallback
+    try {
+      const res = await fetch("/api/admin/agent-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setAdminSession({
+          email: data.email,
+          displayName: data.displayName,
+          role: "agent",
+          agentLoginId: data.agentLoginId,
+          loggedInAt: new Date().toISOString(),
+        });
+        router.push("/admin");
+        return;
+      }
+    } catch {
+      // network error — fall through to invalid credentials
+    }
+
+    setError("Invalid credentials");
+    setLoading(false);
   };
 
   return (
@@ -31,7 +61,7 @@ export default function AdminLoginPage() {
           className="flex items-center gap-3 mb-10 justify-center"
         >
           <span className="relative w-12 h-12 inline-block">
-            <Image src="/logo.png" alt="" fill sizes="48px" className="object-contain" />
+            <Image src="/HighLifeLogo.png" alt="" fill sizes="48px" className="object-contain" />
           </span>
           <span className="font-display text-xl tracking-[0.2em] uppercase">
             HighLife Live
@@ -95,10 +125,11 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              className="group w-full inline-flex items-center justify-center gap-2 px-7 py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full"
+              disabled={loading}
+              className="group w-full inline-flex items-center justify-center gap-2 px-7 py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enter Console
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? "Signing in..." : "Enter Console"}
+              {!loading && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 

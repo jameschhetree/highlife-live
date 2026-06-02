@@ -4,12 +4,18 @@
 
 import { prisma } from "@/lib/db";
 import { dbArtistToAdmin, adminArtistToDbInput } from "@/lib/admin-db-mappers";
+import {
+  canAccessAdminArtistApiEmail,
+  canManageArtistsEmail,
+  canViewArtistEmail,
+  getAdminEmailFromRequest,
+} from "@/lib/admin-permissions";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!prisma) {
@@ -23,6 +29,10 @@ export async function GET(
   if (!row) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+  const adminEmail = getAdminEmailFromRequest(request);
+  if (!canAccessAdminArtistApiEmail(adminEmail) || !canViewArtistEmail(adminEmail, row)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   return Response.json(dbArtistToAdmin(row));
 }
 
@@ -32,6 +42,9 @@ export async function PATCH(
 ) {
   if (!prisma) {
     return Response.json({ error: "Database not connected" }, { status: 503 });
+  }
+  if (!canManageArtistsEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
   const body = await request.json();
@@ -46,11 +59,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!prisma) {
     return Response.json({ error: "Database not connected" }, { status: 503 });
+  }
+  if (!canManageArtistsEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
   await prisma.artist.delete({ where: { id } });

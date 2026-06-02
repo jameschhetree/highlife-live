@@ -20,7 +20,7 @@ export default function AdminLayout({
     <AdminGate>
       <div className="min-h-screen flex bg-[#05060a]">
         <AdminSidebar />
-        <main className="flex-1 min-w-0">{children}</main>
+        <main className="flex-1 min-w-0 pt-14 lg:pt-0">{children}</main>
       </div>
     </AdminGate>
   );

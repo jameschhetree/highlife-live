@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, RefreshCw, Mic, ExternalLink } from "lucide-react";
+import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -29,18 +31,24 @@ const STATUS_COLOR: Record<string, { bg: string; text: string; border: string }>
 };
 
 export default function AuditionsPage() {
+  const router = useRouter();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
   const [rows, setRows] = useState<Audition[]>([]);
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const fetchRows = async () => {
+    if (!session || !canViewAuditions(session)) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (status !== "All") params.set("status", status);
       if (search.trim()) params.set("q", search.trim());
-      const res = await fetch(`/api/admin/auditions?${params}`);
+      const res = await fetch(`/api/admin/auditions?${params}`, {
+        headers: { "x-admin-email": session.email },
+      });
       const data = await res.json();
       setRows(Array.isArray(data) ? data : []);
     } finally {
@@ -49,14 +57,32 @@ export default function AuditionsPage() {
   };
 
   useEffect(() => {
-    fetchRows();
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+    const current = getAdminSession();
+    if (!current || !canViewAuditions(current)) {
+      router.replace("/admin");
+      return;
+    }
+    setSession(current);
+    setAccessChecked(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (accessChecked) fetchRows();
+  }, [accessChecked, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newCount = rows.filter((r) => r.status === "New").length;
 
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">Checking access...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Auditions Pipeline
         </p>
@@ -132,12 +158,12 @@ export default function AuditionsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                    <th className="text-left font-normal px-4 py-3">Act</th>
-                    <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Classification</th>
-                    <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Contact</th>
-                    <th className="text-left font-normal px-4 py-3">Files</th>
-                    <th className="text-left font-normal px-4 py-3">Status</th>
-                    <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Submitted</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Act</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden md:table-cell">Classification</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Contact</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Files</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Status</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Submitted</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,7 +182,7 @@ export default function AuditionsPage() {
                         transition={{ duration: 0.25, delay: i * 0.02 }}
                         className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2.5 sm:px-4 py-3">
                           <Link
                             href={`/admin/auditions/${row.id}`}
                             className="flex flex-col group"
@@ -167,24 +193,24 @@ export default function AuditionsPage() {
                             <span className="text-[10px] text-zinc-500 mt-0.5">{row.fullName}</span>
                           </Link>
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell text-zinc-400 text-[11px]">
+                        <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell text-zinc-400 text-[11px]">
                           {row.classification}
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
+                        <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell">
                           <span className="text-zinc-300 text-[11px] block">{row.email}</span>
                           <span className="text-zinc-500 text-[10px]">{row.phone}</span>
                         </td>
                         <td className="px-4 py-3 text-zinc-300 text-[11px]">
                           {uploadCount > 0 ? `${uploadCount} file${uploadCount === 1 ? "" : "s"}` : "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2.5 sm:px-4 py-3">
                           <span
                             className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2.5 py-1 border ${sc.bg} ${sc.text} ${sc.border}`}
                           >
                             {row.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
+                        <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
                           {new Date(row.submittedAt).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",

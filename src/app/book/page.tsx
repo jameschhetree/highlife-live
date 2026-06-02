@@ -15,12 +15,12 @@ interface BookingForm {
   venueName: string;
   venueAddress: string;
   eventDate: string;
-  proposedOffer: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
   eventDescription: string;
   messageToAgent: string;
+  bookingOffer: string;
 }
 
 function emptyForm(preselected: string): BookingForm {
@@ -29,12 +29,12 @@ function emptyForm(preselected: string): BookingForm {
     venueName: "",
     venueAddress: "",
     eventDate: "",
-    proposedOffer: "",
     contactName: "",
     contactEmail: "",
     contactPhone: "",
     eventDescription: "",
     messageToAgent: "",
+    bookingOffer: "",
   };
 }
 
@@ -45,6 +45,7 @@ function BookingFormContent() {
 
   const [authed, setAuthed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [inquiryNumber, setInquiryNumber] = useState("");
   const [form, setForm] = useState<BookingForm>(emptyForm(preselected));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -68,7 +69,6 @@ function BookingFormContent() {
     if (!form.venueName.trim()) errs.venueName = "Required";
     if (!form.venueAddress.trim()) errs.venueAddress = "Required";
     if (!form.eventDate.trim()) errs.eventDate = "Required";
-    if (!form.proposedOffer.trim()) errs.proposedOffer = "Required";
     if (!form.contactName.trim()) errs.contactName = "Required";
     if (!form.contactEmail.trim()) errs.contactEmail = "Required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail))
@@ -92,34 +92,33 @@ function BookingFormContent() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/bookings", {
+      const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           artistSlug: form.artistSlug,
           artistName,
           venueName: form.venueName,
           venueAddress: form.venueAddress,
           eventDate: form.eventDate,
-          proposedOffer: form.proposedOffer,
           contactName: form.contactName,
           contactEmail: form.contactEmail,
           contactPhone: form.contactPhone,
           eventDescription: form.eventDescription,
           messageToAgent: form.messageToAgent,
-          source: authed ? "authenticated" : "public",
+          bookingOffer: form.bookingOffer.trim() || undefined,
+          // Server derives venueLoginId from the signed venue session cookie if present.
+          // We declare intent here; server downgrades to public if no valid session.
+          source: authed ? "venue_partner" : "public",
         }),
       });
 
       if (!res.ok) throw new Error("Failed to submit");
 
       const data = await res.json();
-
-      if (authed) {
-        router.push(`/booking-confirmation?id=${data.id}`);
-      } else {
-        setSubmitted(true);
-      }
+      setInquiryNumber(data.inquiryNumber || "");
+      setSubmitted(true);
     } catch {
       setErrors({ artistSlug: "Something went wrong. Please try again." });
     } finally {
@@ -140,13 +139,21 @@ function BookingFormContent() {
             <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-400/30 to-emerald-600/10 border border-emerald-400/30 flex items-center justify-center">
               <CheckCircle size={26} strokeWidth={1.5} className="text-emerald-300" />
             </div>
-            <h1 className="font-display uppercase text-4xl sm:text-5xl tracking-tight leading-[0.95] mb-6">
+            <h1 className="font-display uppercase text-4xl sm:text-5xl tracking-tight leading-[0.95] mb-4">
               Inquiry <span className="text-gradient-hero">received.</span>
             </h1>
-            <p className="text-silver leading-relaxed mb-10">
+            {inquiryNumber && (
+              <p className="text-lg text-zinc-300 mb-4 font-mono">{inquiryNumber}</p>
+            )}
+            <p className="text-silver leading-relaxed mb-4">
               Thank you for your inquiry. Our team will review your request and
               reach out if the opportunity is a good fit for the artist and event.
             </p>
+            {!authed && (
+              <p className="text-sm text-zinc-400 mb-8">
+                A confirmation email has been sent to your address with your inquiry number.
+              </p>
+            )}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/roster"
@@ -179,12 +186,12 @@ function BookingFormContent() {
             </h1>
             <p className="text-silver max-w-xl mx-auto leading-relaxed">
               Submit a booking inquiry for any artist on the HighLife roster. Open
-              to venues, promoters, and talent buyers — our team responds to fits
+              to venues, promoters, and talent buyers -- our team responds to fits
               that align with the artist and event.
             </p>
             {authed && (
               <p className="mt-3 text-[11px] tracking-[0.2em] uppercase text-emerald-400/80">
-                Signed in · Inquiry will be tracked in your portal
+                Signed in -- Inquiry will be tracked in your portal
               </p>
             )}
           </div>
@@ -195,6 +202,11 @@ function BookingFormContent() {
           className="glass-card rounded-3xl p-6 sm:p-9 lg:p-11 space-y-7"
           noValidate
         >
+          {/* Honeypot */}
+          <div style={{ position: "absolute", left: "-9999px" }} aria-hidden="true">
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+          </div>
+
           <Field label="Artist" required error={errors.artistSlug} id="field-artistSlug">
             <select
               value={form.artistSlug}
@@ -211,10 +223,10 @@ function BookingFormContent() {
                 paddingRight: "2.5rem",
               }}
             >
-              <option value="">Select an artist…</option>
+              <option value="">Select an artist...</option>
               {artists.map((a) => (
                 <option key={a.slug} value={a.slug}>
-                  {a.name} · {a.genre}
+                  {a.name} -- {a.genre}
                 </option>
               ))}
             </select>
@@ -225,7 +237,7 @@ function BookingFormContent() {
               type="text"
               value={form.venueName}
               onChange={(e) => update("venueName", e.target.value)}
-              placeholder="The Anthem, Brooklyn Steel, Echostage…"
+              placeholder="The Anthem, Brooklyn Steel, Echostage..."
               required
               className={`w-full bg-black/40 border ${
                 errors.venueName ? "border-rose-500/60" : "border-white/10"
@@ -233,7 +245,7 @@ function BookingFormContent() {
             />
           </Field>
 
-          <Field label="Venue Address" required error={errors.venueAddress} id="field-venueAddress">
+          <Field label={authed ? "Venue Address" : "Address"} required error={errors.venueAddress} id="field-venueAddress">
             <AddressAutocomplete
               value={form.venueAddress}
               onChange={(v) => update("venueAddress", v)}
@@ -255,27 +267,6 @@ function BookingFormContent() {
               />
             </Field>
 
-            <Field
-              label="Proposed Offer"
-              required
-              error={errors.proposedOffer}
-              id="field-proposedOffer"
-              hint="Free-form (USD, terms, splits)"
-            >
-              <input
-                type="text"
-                value={form.proposedOffer}
-                onChange={(e) => update("proposedOffer", e.target.value)}
-                placeholder="$15K guaranteed + 80/20 split after $25K"
-                required
-                className={`w-full bg-black/40 border ${
-                  errors.proposedOffer ? "border-rose-500/60" : "border-white/10"
-                } rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors`}
-              />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field label="Contact Name" required error={errors.contactName} id="field-contactName">
               <input
                 type="text"
@@ -288,7 +279,9 @@ function BookingFormContent() {
                 } rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors`}
               />
             </Field>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field label="Contact Email" required error={errors.contactEmail} id="field-contactEmail">
               <input
                 type="email"
@@ -301,20 +294,20 @@ function BookingFormContent() {
                 } rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors`}
               />
             </Field>
-          </div>
 
-          <Field label="Contact Phone" required error={errors.contactPhone} id="field-contactPhone">
-            <input
-              type="tel"
-              value={form.contactPhone}
-              onChange={(e) => update("contactPhone", e.target.value)}
-              placeholder="+1 (202) 555-0100"
-              required
-              className={`w-full bg-black/40 border ${
-                errors.contactPhone ? "border-rose-500/60" : "border-white/10"
-              } rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors`}
-            />
-          </Field>
+            <Field label="Contact Phone" required error={errors.contactPhone} id="field-contactPhone">
+              <input
+                type="tel"
+                value={form.contactPhone}
+                onChange={(e) => update("contactPhone", e.target.value)}
+                placeholder="+1 (202) 555-0100"
+                required
+                className={`w-full bg-black/40 border ${
+                  errors.contactPhone ? "border-rose-500/60" : "border-white/10"
+                } rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors`}
+              />
+            </Field>
+          </div>
 
           <Field
             label="Event Description"
@@ -324,9 +317,23 @@ function BookingFormContent() {
             <textarea
               value={form.eventDescription}
               onChange={(e) => update("eventDescription", e.target.value)}
-              placeholder="A 1,200-cap headline set, doors 8pm, two openers from our local rotation…"
+              placeholder="A 1,200-cap headline set, doors 8pm, two openers from our local rotation..."
               rows={4}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors resize-y"
+            />
+          </Field>
+
+          <Field
+            label="Booking Offer"
+            id="field-bookingOffer"
+            hint="Optional. If you want to lead with an opening number."
+          >
+            <input
+              type="text"
+              value={form.bookingOffer}
+              onChange={(e) => update("bookingOffer", e.target.value)}
+              placeholder="$12,000"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors"
             />
           </Field>
 
@@ -338,7 +345,7 @@ function BookingFormContent() {
             <textarea
               value={form.messageToAgent}
               onChange={(e) => update("messageToAgent", e.target.value)}
-              placeholder="We've worked with HighLife on the Anthem residency. Looking to lock a Q3 date."
+              placeholder="We have worked with HighLife on the Anthem residency. Looking to lock a Q3 date."
               rows={3}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors resize-y"
             />
@@ -360,14 +367,17 @@ function BookingFormContent() {
           </div>
         </form>
 
+        {/* Helpful notice for public inquiries -- replaces the old 31-day disclaimer */}
         {!authed && (
-          <p className="text-center text-xs text-zinc-500 mt-6">
-            Venue or promoter with an existing relationship?{" "}
-            <Link href="/login" className="text-zinc-300 hover:text-foreground underline-offset-4 hover:underline">
-              Sign in to your portal
-            </Link>{" "}
-            to track this inquiry.
-          </p>
+          <div className="mt-6 glass-card rounded-2xl p-5 text-center">
+            <p className="text-sm text-zinc-300 leading-relaxed">
+              All public inquiries are reviewed by our team. If you are a venue or promoter,{" "}
+              <Link href="/login" className="text-pink-300 hover:text-pink-200 underline underline-offset-4">
+                request a partner login
+              </Link>{" "}
+              for priority tracking and direct access to your inquiry status.
+            </p>
+          </div>
         )}
       </div>
     </div>

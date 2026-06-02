@@ -175,14 +175,14 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Analytics
         </p>
         <h1 className="font-display uppercase text-3xl tracking-tight">Reports</h1>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-8">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map((s, i) => {
