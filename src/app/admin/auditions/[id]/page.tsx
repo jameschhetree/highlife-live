@@ -103,7 +103,7 @@ export default function AuditionDetailPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link
           href="/admin/auditions"
           className="inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors mb-3"
@@ -147,7 +147,7 @@ export default function AuditionDetailPage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 grid lg:grid-cols-3 gap-5">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 grid lg:grid-cols-3 gap-5">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -87,7 +87,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link href="/admin/venues" className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground mb-3 transition-colors">
           <ArrowLeft size={12} /> Back to Venues
         </Link>
@@ -115,7 +115,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-8">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }} className="flex flex-wrap gap-2">
           <button className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
             <Megaphone size={14} /> Add to Campaign

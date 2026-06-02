@@ -59,14 +59,14 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Configuration
         </p>
         <h1 className="font-display uppercase text-3xl tracking-tight">Settings</h1>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-8 max-w-4xl">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8 max-w-4xl">
         {/* Company Profile */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}

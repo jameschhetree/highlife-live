@@ -235,7 +235,7 @@ export default function VenueLoginsPage() {
   return (
     <div className="min-h-screen text-foreground">
       {/* Header */}
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Venue Partner Management
         </p>
@@ -314,16 +314,16 @@ export default function VenueLoginsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                        <th className="text-left font-normal px-4 py-3">Type</th>
-                        <th className="text-left font-normal px-4 py-3">Organization</th>
-                        <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Contact</th>
-                        <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Role</th>
-                        <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Login Email</th>
-                        <th className="text-left font-normal px-4 py-3 hidden xl:table-cell">Phone</th>
-                        <th className="text-left font-normal px-4 py-3 hidden xl:table-cell">Genre</th>
-                        <th className="text-left font-normal px-4 py-3">Status</th>
-                        <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Submitted</th>
-                        <th className="text-left font-normal px-4 py-3">Actions</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Type</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Organization</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden md:table-cell">Contact</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Role</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Login Email</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden xl:table-cell">Phone</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden xl:table-cell">Genre</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Status</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Submitted</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -338,7 +338,7 @@ export default function VenueLoginsPage() {
                             transition={{ duration: 0.25, delay: i * 0.02 }}
                             className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors"
                           >
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               <span className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2 py-0.5 border ${
                                 req.accountType === "Venue"
                                   ? "text-sky-300 border-sky-400/30 bg-sky-400/10"
@@ -347,29 +347,29 @@ export default function VenueLoginsPage() {
                                 {req.accountType}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               <span className="text-zinc-200 font-medium text-[12px]">{req.organizationName}</span>
                               {req.address && (
                                 <span className="block text-[10px] text-zinc-500 mt-0.5">{req.address}</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 hidden md:table-cell">
+                            <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
                               <span className="text-zinc-300 text-[11px] block">{req.contactName}</span>
                               <span className="text-zinc-500 text-[10px]">{req.workEmail}</span>
                             </td>
-                            <td className="px-4 py-3 hidden lg:table-cell text-zinc-400 text-[11px]">{req.role}</td>
-                            <td className="px-4 py-3 hidden lg:table-cell text-zinc-300 text-[11px]">{req.requestedLoginEmail}</td>
-                            <td className="px-4 py-3 hidden xl:table-cell text-zinc-400 text-[10px]">{phones || "---"}</td>
-                            <td className="px-4 py-3 hidden xl:table-cell text-zinc-400 text-[11px]">{req.preferredGenre || "---"}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-400 text-[11px]">{req.role}</td>
+                            <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-300 text-[11px]">{req.requestedLoginEmail}</td>
+                            <td className="px-2.5 sm:px-4 py-3 hidden xl:table-cell text-zinc-400 text-[10px]">{phones || "---"}</td>
+                            <td className="px-2.5 sm:px-4 py-3 hidden xl:table-cell text-zinc-400 text-[11px]">{req.preferredGenre || "---"}</td>
+                            <td className="px-2.5 sm:px-4 py-3">
                               <span className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2.5 py-1 border ${sc.bg} ${sc.text} ${sc.border}`}>
                                 {req.status}
                               </span>
                             </td>
-                            <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
+                            <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
                               {new Date(req.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               <div className="flex items-center gap-1.5">
                                 {req.status === "New" && (
                                   <>
@@ -466,12 +466,12 @@ export default function VenueLoginsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                        <th className="text-left font-normal px-4 py-3">Email</th>
-                        <th className="text-left font-normal px-4 py-3">Display Name</th>
-                        <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Organization</th>
-                        <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Type</th>
-                        <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Created</th>
-                        <th className="text-left font-normal px-4 py-3">Actions</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Email</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Display Name</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden md:table-cell">Organization</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden md:table-cell">Type</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Created</th>
+                        <th className="text-left font-normal px-2.5 sm:px-4 py-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -485,7 +485,7 @@ export default function VenueLoginsPage() {
                             transition={{ duration: 0.25, delay: i * 0.02 }}
                             className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors"
                           >
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               {isEditing ? (
                                 <input
                                   value={editForm.email}
@@ -493,10 +493,10 @@ export default function VenueLoginsPage() {
                                   className="bg-black/40 border border-white/20 rounded px-2 py-1 text-[12px] text-foreground w-full"
                                 />
                               ) : (
-                                <span className="text-zinc-200 text-[12px]">{login.email}</span>
+                                <span className="text-zinc-200 text-[12px] break-all">{login.email}</span>
                               )}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               {isEditing ? (
                                 <input
                                   value={editForm.displayName}
@@ -504,10 +504,10 @@ export default function VenueLoginsPage() {
                                   className="bg-black/40 border border-white/20 rounded px-2 py-1 text-[12px] text-foreground w-full"
                                 />
                               ) : (
-                                <span className="text-zinc-300 text-[12px]">{login.displayName}</span>
+                                <span className="text-zinc-300 text-[12px] break-all">{login.displayName}</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 hidden md:table-cell">
+                            <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
                               {isEditing ? (
                                 <input
                                   value={editForm.organizationName}
@@ -518,7 +518,7 @@ export default function VenueLoginsPage() {
                                 <span className="text-zinc-400 text-[11px]">{login.organizationName || "---"}</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 hidden md:table-cell">
+                            <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
                               <span className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2 py-0.5 border ${
                                 login.accountType === "Venue"
                                   ? "text-sky-300 border-sky-400/30 bg-sky-400/10"
@@ -527,10 +527,10 @@ export default function VenueLoginsPage() {
                                 {login.accountType}
                               </span>
                             </td>
-                            <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
+                            <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
                               {new Date(login.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3">
                               <div className="flex items-center gap-1.5">
                                 {isEditing ? (
                                   <>

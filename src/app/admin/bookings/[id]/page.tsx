@@ -170,7 +170,7 @@ export default function BookingDetailPage({
   return (
     <div className="min-h-screen text-foreground">
       {/* Header */}
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link
           href="/admin/bookings"
           className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground transition-colors mb-3"
@@ -201,7 +201,7 @@ export default function BookingDetailPage({
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 max-w-5xl">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 max-w-5xl">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left column -- details */}
           <div className="lg:col-span-2 space-y-6">

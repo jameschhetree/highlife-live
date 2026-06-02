@@ -117,7 +117,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link href="/admin/artists" className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground mb-3 transition-colors">
           <ArrowLeft size={12} /> Back to Artists
         </Link>
@@ -155,7 +155,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-8">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}

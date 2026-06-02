@@ -66,7 +66,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link href="/admin/campaigns" className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground mb-3 transition-colors">
           <ArrowLeft size={12} /> Back to Campaigns
         </Link>
@@ -101,7 +101,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-8">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
         {/* Approval Flow */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
           <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Approval Flow</h2>

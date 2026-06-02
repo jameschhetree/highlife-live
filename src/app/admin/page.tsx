@@ -100,7 +100,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="px-6 lg:px-10 py-8 space-y-10">
+      <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-10">
         <section>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             {visibleStats.map((s, i) => {

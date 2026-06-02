@@ -82,7 +82,7 @@ export default function AuditionsPage() {
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Auditions Pipeline
         </p>
@@ -158,12 +158,12 @@ export default function AuditionsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                    <th className="text-left font-normal px-4 py-3">Act</th>
-                    <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Classification</th>
-                    <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Contact</th>
-                    <th className="text-left font-normal px-4 py-3">Files</th>
-                    <th className="text-left font-normal px-4 py-3">Status</th>
-                    <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Submitted</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Act</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden md:table-cell">Classification</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Contact</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Files</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3">Status</th>
+                    <th className="text-left font-normal px-2.5 sm:px-4 py-3 hidden lg:table-cell">Submitted</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,7 +182,7 @@ export default function AuditionsPage() {
                         transition={{ duration: 0.25, delay: i * 0.02 }}
                         className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2.5 sm:px-4 py-3">
                           <Link
                             href={`/admin/auditions/${row.id}`}
                             className="flex flex-col group"
@@ -193,24 +193,24 @@ export default function AuditionsPage() {
                             <span className="text-[10px] text-zinc-500 mt-0.5">{row.fullName}</span>
                           </Link>
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell text-zinc-400 text-[11px]">
+                        <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell text-zinc-400 text-[11px]">
                           {row.classification}
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
+                        <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell">
                           <span className="text-zinc-300 text-[11px] block">{row.email}</span>
                           <span className="text-zinc-500 text-[10px]">{row.phone}</span>
                         </td>
                         <td className="px-4 py-3 text-zinc-300 text-[11px]">
                           {uploadCount > 0 ? `${uploadCount} file${uploadCount === 1 ? "" : "s"}` : "—"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2.5 sm:px-4 py-3">
                           <span
                             className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2.5 py-1 border ${sc.bg} ${sc.text} ${sc.border}`}
                           >
                             {row.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
+                        <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
                           {new Date(row.submittedAt).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",

@@ -85,7 +85,7 @@ export default function AdminBookingsPage() {
   return (
     <div className="min-h-screen text-foreground">
       {/* Header */}
-      <div className="border-b border-white/8 px-6 lg:px-10 py-6">
+      <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
           HighLife Live · Booking Pipeline
         </p>
