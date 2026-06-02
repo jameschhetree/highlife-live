@@ -227,7 +227,7 @@ export default function FindAnAgentPage() {
               Application <span className="text-gradient-hero">received.</span>
             </h1>
             <p className="text-silver leading-relaxed mb-8">
-              We received your Find An Agent application and saved it successfully.
+              We received your audition and saved it successfully.
               A confirmation email is on the way.
             </p>
             <p className="text-[11px] tracking-[0.18em] uppercase text-zinc-500 mb-10">
@@ -258,14 +258,13 @@ export default function FindAnAgentPage() {
       <div className="max-w-3xl mx-auto px-5 sm:px-6 lg:px-8">
         <ScrollReveal>
           <div className="text-center mb-10">
-            <span className="chip mb-5 inline-flex">Find An Agent</span>
+            <span className="chip mb-5 inline-flex">Auditions</span>
             <h1 className="font-display uppercase text-5xl sm:text-6xl tracking-tight leading-[0.92] mb-5">
-              External Artist{" "}
-              <span className="text-gradient-hero">applications.</span>
+              <span className="text-gradient-hero">Auditions.</span>
             </h1>
             <p className="text-silver max-w-xl mx-auto leading-relaxed">
               Submit your profile for review by the HighLife Live booking team.
-              This is for external artist requests and talent representation interest.
+              For external artists seeking representation or a slot on the roster.
             </p>
           </div>
         </ScrollReveal>

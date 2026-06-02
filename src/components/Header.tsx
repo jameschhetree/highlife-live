@@ -87,7 +87,7 @@ export function Header() {
                 pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
               }`}
             >
-              Find An Agent
+              Auditions
             </Link>
             {navLinks.map((link) => (
               <Link
@@ -168,7 +168,7 @@ export function Header() {
                 onClick={() => setMobileOpen(false)}
                 className="text-xl font-display tracking-[0.15em] uppercase text-silver"
               >
-                Find An Agent
+                Auditions
               </Link>
               {navLinks.map((link, i) => (
                 <motion.div
