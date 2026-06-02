@@ -132,7 +132,7 @@ export default function SettingsPage() {
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 flex items-center gap-2">
               <Users size={14} className="text-pink-300" /> Team Members
             </h2>
-            <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
+            <button className="px-3.5 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
               Invite Member
             </button>
           </div>
@@ -276,7 +276,7 @@ export default function SettingsPage() {
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 flex items-center gap-2">
               <AlertTriangle size={14} className="text-pink-300" /> Suppression List
             </h2>
-            <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
+            <button className="px-3.5 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
               Add Entry
             </button>
           </div>

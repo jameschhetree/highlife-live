@@ -162,19 +162,19 @@ export default function ResearchPage() {
                 <div className="flex items-center gap-2 pt-3 border-t border-white/6">
                   <button
                     onClick={() => handleAction(contact.id, "Verified")}
-                    className="px-3 py-1.5 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/5 text-[10px] tracking-[0.18em] uppercase text-emerald-300 hover:text-emerald-200 transition-colors inline-flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/5 text-[10px] tracking-[0.18em] uppercase text-emerald-300 hover:text-emerald-200 transition-colors inline-flex items-center gap-1.5"
                   >
                     <CheckCircle size={10} /> Verify
                   </button>
                   <button
                     onClick={() => handleAction(contact.id, "Duplicate")}
-                    className="px-3 py-1.5 rounded-lg border border-zinc-500/20 hover:border-zinc-500/40 bg-zinc-500/5 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-zinc-300 transition-colors inline-flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-lg border border-zinc-500/20 hover:border-zinc-500/40 bg-zinc-500/5 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-zinc-300 transition-colors inline-flex items-center gap-1.5"
                   >
                     <Copy size={10} /> Duplicate
                   </button>
                   <button
                     onClick={() => handleAction(contact.id, "Do Not Contact")}
-                    className="px-3 py-1.5 rounded-lg border border-red-500/20 hover:border-red-500/40 bg-red-500/5 text-[10px] tracking-[0.18em] uppercase text-red-400 hover:text-red-300 transition-colors inline-flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-lg border border-red-500/20 hover:border-red-500/40 bg-red-500/5 text-[10px] tracking-[0.18em] uppercase text-red-400 hover:text-red-300 transition-colors inline-flex items-center gap-1.5"
                   >
                     <XCircle size={10} /> Do Not Contact
                   </button>

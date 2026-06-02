@@ -203,10 +203,10 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
+                          <button className="px-3.5 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
                             Edit
                           </button>
-                          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
+                          <button className="px-3.5 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground transition-colors">
                             Regenerate AI Draft
                           </button>
                         </div>

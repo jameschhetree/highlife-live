@@ -436,13 +436,13 @@ export default function VenueLoginsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleUndoRemove(rid)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] tracking-[0.18em] uppercase border border-amber-500/40 text-amber-200 hover:text-amber-100 hover:border-amber-500/60 transition-colors"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] tracking-[0.18em] uppercase border border-amber-500/40 text-amber-200 hover:text-amber-100 hover:border-amber-500/60 transition-colors"
                         >
                           <Undo2 size={11} /> Undo
                         </button>
                         <button
                           onClick={() => confirmRemove(rid)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] tracking-[0.18em] uppercase border border-rose-500/40 text-rose-300 hover:text-rose-200 hover:border-rose-500/60 transition-colors"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] tracking-[0.18em] uppercase border border-rose-500/40 text-rose-300 hover:text-rose-200 hover:border-rose-500/60 transition-colors"
                         >
                           <Trash2 size={11} /> Confirm
                         </button>
