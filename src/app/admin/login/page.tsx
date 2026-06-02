@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
                   setEmail(e.target.value);
                   setError("");
                 }}
-                placeholder="you@highlifedmv.com"
+                placeholder=""
                 autoComplete="email"
                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors"
                 required

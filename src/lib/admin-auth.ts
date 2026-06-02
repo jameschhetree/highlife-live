@@ -11,6 +11,7 @@ interface AdminUser {
 const ADMIN_USERS: ReadonlyArray<AdminUser> = [
   { email: "jaco@highlifedmv.com", password: "Jaco.iv1", displayName: "Jaco" },
   { email: "liam@highlifedmv.com", password: "DokMurda1", displayName: "Liam" },
+  { email: "agent@highlifedmv.com", password: "agentLogin1", displayName: "Agent" },
 ];
 
 export interface AdminSession {
