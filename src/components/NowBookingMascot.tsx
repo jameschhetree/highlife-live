@@ -3,53 +3,59 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-/**
- * Interactive mic mascot above "Now Booking 2026 & 2027".
- *
- * State machine:
- *  - "pacing"  → default CSS bunny pace above the pill. Mic is clickable.
- *  - "flying"  → after click. Wings appear, mic flees the cursor. NOT clickable.
- *                Accumulates chase time when cursor stays close + fresh.
- *  - "homing"  → after 7s of accumulated chase. Mic stops fleeing and homes
- *                deterministically toward the box that slides in from off-screen
- *                left.
- *  - "boxed"   → mic has arc-jumped into the box. Box sits on screen until the
- *                user clicks it.
- *  - "coupon"  → click box → box exits + coupon popup appears. Popup stays
- *                open until user dismisses (no auto-close). Mic returns to
- *                pacing on dismiss.
- */
-
-// Official coupon code from James (HL Live, 2026-06-02). Preserves exact spelling.
+// Official coupon code from James (HL Live, 2026-06-02).
 const COUPON_CODE = "HLLbeta1.1-4jeremy";
 
 type Mode = "pacing" | "flying" | "homing" | "boxed" | "coupon";
 
 export function NowBookingMascot() {
   const [mode, setMode] = useState<Mode>("pacing");
-  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [boxPos, setBoxPos] = useState<{ x: number; y: number }>({ x: -80, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const lastMouseRef = useRef<{ x: number; y: number; t: number }>({ x: -1000, y: -1000, t: 0 });
-  const chaseAccumMs = useRef(0);
 
-  // Box target: lands ~120px from left edge, roughly hero-vertical center
+  // Positions live in refs to avoid useEffect re-runs on every frame.
+  // We mirror them into state only when needed for render.
+  const posRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const boxRef = useRef<{ x: number; y: number }>({ x: -90, y: 280 });
+  const [, forceRender] = useState(0);
+  const tickRender = useRef(0);
+
+  // Bump render at most ~60fps (each rAF). Cheaper than triggering setState
+  // for unrelated values.
+  const scheduleRender = () => {
+    tickRender.current = (tickRender.current + 1) % 1000000;
+    forceRender(tickRender.current);
+  };
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastMouseRef = useRef<{ x: number; y: number; t: number }>({
+    x: -10000,
+    y: -10000,
+    t: 0,
+  });
+  const chaseAccumMs = useRef(0);
+  const arcStateRef = useRef<{ start: { x: number; y: number }; t: number } | null>(null);
+  const phaseRef = useRef<"box-sliding" | "mic-arcing">("box-sliding");
+
   const boxTarget = useCallback(() => {
-    if (typeof window === "undefined") return { x: 120, y: 280 };
-    return { x: 120, y: Math.min(320, window.innerHeight * 0.35) };
+    if (typeof window === "undefined") return { x: 140, y: 300 };
+    return {
+      x: Math.max(120, window.innerWidth * 0.12),
+      y: Math.min(340, window.innerHeight * 0.36),
+    };
   }, []);
 
-  // Click the mic in pacing mode to launch into flying
   const enterFlying = useCallback(() => {
     const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) setPos({ x: rect.left + rect.width / 2, y: rect.top - 30 });
-    setMode("flying");
+    if (rect) {
+      posRef.current = { x: rect.left + rect.width / 2, y: rect.top - 30 };
+    }
     chaseAccumMs.current = 0;
+    setMode("flying");
   }, []);
 
-  // Mouse tracking — needed for flee + chase detection
+  // Mouse tracking is always on while in any flight mode (so the flee logic
+  // can read it without needing a useEffect re-mount).
   useEffect(() => {
-    if (mode !== "flying") return;
+    if (mode === "pacing" || mode === "coupon") return;
     const onMove = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY, t: performance.now() };
     };
@@ -57,128 +63,125 @@ export function NowBookingMascot() {
     return () => window.removeEventListener("mousemove", onMove);
   }, [mode]);
 
-  // Flight loop (flee + chase tracking) — runs only in flying mode
+  // Single animation loop that handles flying / homing — runs while mode is
+  // either of those, and only re-mounts on mode boundary changes (NOT on every
+  // pos change). This is what was broken before: the arc kept resetting to 0
+  // because the effect re-ran on every setState.
   useEffect(() => {
-    if (mode !== "flying") return;
+    if (mode !== "flying" && mode !== "homing") return;
 
     let rafId = 0;
     let lastT = performance.now();
 
-    const tick = (now: number) => {
-      const dt = Math.min(now - lastT, 80);
-      lastT = now;
-
-      const { x: mx, y: my, t: mouseT } = lastMouseRef.current;
-      const dx = pos.x - mx;
-      const dy = pos.y - my;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // Flee from cursor within 240px
-      if (dist < 240 && dist > 0.1) {
-        const fleeSpeed = (240 - dist) * 0.06;
-        const nx = pos.x + (dx / dist) * fleeSpeed;
-        const ny = pos.y + (dy / dist) * fleeSpeed;
-        const vw = window.innerWidth, vh = window.innerHeight;
-        setPos({
-          x: Math.max(40, Math.min(vw - 40, nx)),
-          y: Math.max(40, Math.min(vh - 40, ny)),
-        });
-      } else {
-        // Drift back toward top center when cursor idle
-        const mouseIdleMs = now - mouseT;
-        if (mouseIdleMs > 600) {
-          const tx = window.innerWidth / 2;
-          const ty = 100;
-          setPos({
-            x: pos.x + (tx - pos.x) * 0.02,
-            y: pos.y + (ty - pos.y) * 0.02,
-          });
-        }
-      }
-
-      // Chase detection
-      const mouseFresh = now - mouseT < 500;
-      if (mouseFresh && dist < 300) {
-        chaseAccumMs.current += dt;
-        if (chaseAccumMs.current > 7000) {
-          // Trigger homing — box slides in, mic flies toward it
-          const tgt = boxTarget();
-          setBoxPos({ x: -90, y: tgt.y }); // off-screen left
-          setMode("homing");
-          return;
-        }
-      } else {
-        chaseAccumMs.current = Math.max(0, chaseAccumMs.current - dt * 0.5);
-      }
-
-      rafId = requestAnimationFrame(tick);
-    };
-
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [mode, pos, boxTarget]);
-
-  // Homing loop — box slides in from left, mic arcs toward box's open top
-  useEffect(() => {
-    if (mode !== "homing") return;
-
-    let rafId = 0;
-    let lastT = performance.now();
-    const startPos = { ...pos };
-    const tgt = boxTarget();
-    let phase: "box-sliding" | "mic-arcing" = "box-sliding";
-    let arcT = 0; // 0..1 for the mic arc into the box
+    // Reset homing state on entry into homing mode
+    if (mode === "homing") {
+      arcStateRef.current = { start: { ...posRef.current }, t: 0 };
+      const tgt = boxTarget();
+      boxRef.current = { x: -90, y: tgt.y };
+      phaseRef.current = "box-sliding";
+    }
 
     const tick = (now: number) => {
-      const dt = Math.min(now - lastT, 80);
+      const dt = Math.min(now - lastT, 60);
       lastT = now;
 
-      if (phase === "box-sliding") {
-        // Box slides from -90 to tgt.x at ~250px/s
-        setBoxPos((b) => {
-          const next = b.x + dt * 0.25;
-          if (next >= tgt.x) {
-            phase = "mic-arcing";
-            return { x: tgt.x, y: tgt.y };
+      if (mode === "flying") {
+        const { x: mx, y: my, t: mouseT } = lastMouseRef.current;
+        const px = posRef.current.x;
+        const py = posRef.current.y;
+        const dx = px - mx;
+        const dy = py - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Smooth flee: stronger when close, decays smoothly to 0 at 250px.
+        // Frame-rate-normalized via dt.
+        if (dist < 250 && dist > 0.1) {
+          const intensity = Math.pow(1 - dist / 250, 1.4); // 0..1, steep when close
+          const speed = intensity * 18; // px per 16ms ≈ 1 frame
+          const stepPx = speed * (dt / 16);
+          const nx = px + (dx / dist) * stepPx;
+          const ny = py + (dy / dist) * stepPx;
+          const vw = window.innerWidth, vh = window.innerHeight;
+          // Soft clamp with a margin — also nudges back toward center when at edge
+          let nextX = Math.max(48, Math.min(vw - 48, nx));
+          let nextY = Math.max(48, Math.min(vh - 48, ny));
+          // If we hit an edge, add slight perpendicular nudge so it doesn't pin
+          if (nextX === 48 || nextX === vw - 48) nextY += (Math.random() - 0.5) * 3;
+          if (nextY === 48 || nextY === vh - 48) nextX += (Math.random() - 0.5) * 3;
+          posRef.current = { x: nextX, y: nextY };
+        } else {
+          // Cursor far / idle → drift back toward top-center smoothly
+          const mouseIdleMs = now - mouseT;
+          if (mouseIdleMs > 600) {
+            const tx = window.innerWidth / 2;
+            const ty = 110;
+            posRef.current = {
+              x: px + (tx - px) * 0.025,
+              y: py + (ty - py) * 0.025,
+            };
           }
-          return { x: next, y: tgt.y };
-        });
-      } else {
-        // Mic arcs into box top — bezier-ish path with rise then drop into box opening
-        arcT = Math.min(1, arcT + dt / 1200); // 1.2s to land
-        // Cubic ease-in for drop, with apex above the box
-        const startX = startPos.x;
-        const startY = startPos.y;
-        const endX = tgt.x;
-        const endY = tgt.y - 8; // slight overshoot up into the box opening
-        const apexX = (startX + endX) / 2;
-        const apexY = Math.min(startY, tgt.y) - 80; // arc apex above both
-        // Quadratic bezier
-        const u = arcT;
-        const oneMinusU = 1 - u;
-        const x = oneMinusU * oneMinusU * startX + 2 * oneMinusU * u * apexX + u * u * endX;
-        const y = oneMinusU * oneMinusU * startY + 2 * oneMinusU * u * apexY + u * u * endY;
-        setPos({ x, y });
-        if (arcT >= 1) {
-          setMode("boxed");
-          return;
+        }
+
+        // Chase detection: cursor present + within 300px
+        const mouseFresh = now - mouseT < 500;
+        if (mouseFresh && dist < 300) {
+          chaseAccumMs.current += dt;
+          if (chaseAccumMs.current > 7000) {
+            setMode("homing");
+            return; // mode change triggers re-mount
+          }
+        } else {
+          chaseAccumMs.current = Math.max(0, chaseAccumMs.current - dt * 0.5);
+        }
+      } else if (mode === "homing") {
+        const tgt = boxTarget();
+        if (phaseRef.current === "box-sliding") {
+          // Box slides from -90 to tgt.x at ~280px/s
+          const newX = boxRef.current.x + dt * 0.28;
+          if (newX >= tgt.x) {
+            boxRef.current = { x: tgt.x, y: tgt.y };
+            phaseRef.current = "mic-arcing";
+            // Capture mic start position now that box is in place
+            arcStateRef.current = { start: { ...posRef.current }, t: 0 };
+          } else {
+            boxRef.current = { x: newX, y: tgt.y };
+          }
+        } else if (phaseRef.current === "mic-arcing" && arcStateRef.current) {
+          arcStateRef.current.t = Math.min(1, arcStateRef.current.t + dt / 1300);
+          const u = arcStateRef.current.t;
+          const startX = arcStateRef.current.start.x;
+          const startY = arcStateRef.current.start.y;
+          const endX = tgt.x;
+          const endY = tgt.y - 6; // settle just inside the box top
+          const apexX = (startX + endX) / 2;
+          const apexY = Math.min(startY, tgt.y) - 90;
+          const oneMinusU = 1 - u;
+          posRef.current = {
+            x: oneMinusU * oneMinusU * startX + 2 * oneMinusU * u * apexX + u * u * endX,
+            y: oneMinusU * oneMinusU * startY + 2 * oneMinusU * u * apexY + u * u * endY,
+          };
+          if (arcStateRef.current.t >= 1) {
+            setMode("boxed");
+            return;
+          }
         }
       }
+
+      scheduleRender();
       rafId = requestAnimationFrame(tick);
     };
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [mode, pos, boxTarget]); // intentional minimal dep set
+  }, [mode, boxTarget]); // intentionally NOT depending on pos/box refs
 
-  const openCoupon = () => {
-    setMode("coupon");
-  };
+  const openCoupon = () => setMode("coupon");
 
   const closeCoupon = () => {
     setMode("pacing");
-    setBoxPos({ x: -80, y: 0 });
+    boxRef.current = { x: -90, y: 0 };
     chaseAccumMs.current = 0;
+    arcStateRef.current = null;
   };
 
   const [copied, setCopied] = useState(false);
@@ -188,14 +191,14 @@ export function NowBookingMascot() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      // silently ignore
+      // ignore
     }
   };
 
   const showFloatingMic = mode === "flying" || mode === "homing";
   const inFlight = mode === "flying" || mode === "homing" || mode === "boxed";
+  const showBox = mode === "homing" || mode === "boxed";
 
-  // Mic SVG — same body in all modes; wings appear in flight states
   const mic = (
     <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
       {inFlight && (
@@ -218,7 +221,6 @@ export function NowBookingMascot() {
 
   return (
     <div ref={containerRef} className="relative inline-block mb-7">
-      {/* Pacing-mode mic in flow above the pill (only mode where mic is clickable) */}
       {mode === "pacing" && (
         <button
           type="button"
@@ -231,28 +233,26 @@ export function NowBookingMascot() {
         </button>
       )}
 
-      {/* Flying / homing mic — fixed-position overlay, NOT clickable */}
       {showFloatingMic && (
         <div
           aria-hidden
           style={{
             position: "fixed",
-            left: `${pos.x}px`,
-            top: `${pos.y}px`,
+            left: `${posRef.current.x}px`,
+            top: `${posRef.current.y}px`,
             width: 40,
             height: 40,
             transform: "translate(-50%, -50%)",
             zIndex: 60,
             pointerEvents: "none",
-            transition: "left 0.06s linear, top 0.06s linear",
+            willChange: "left, top",
           }}
         >
           {mic}
         </div>
       )}
 
-      {/* Cardboard box — slides in from left, then sits until clicked */}
-      {(mode === "homing" || mode === "boxed") && (
+      {showBox && (
         <button
           type="button"
           aria-label="Open the box"
@@ -260,18 +260,21 @@ export function NowBookingMascot() {
           disabled={mode !== "boxed"}
           style={{
             position: "fixed",
-            left: `${boxPos.x}px`,
-            top: `${boxPos.y}px`,
+            left: `${boxRef.current.x}px`,
+            top: `${boxRef.current.y}px`,
             transform: "translate(-50%, -50%)",
             zIndex: 55,
-            fontSize: 56,
+            fontSize: 60,
             lineHeight: 1,
             background: "transparent",
             border: "none",
             padding: 8,
             cursor: mode === "boxed" ? "pointer" : "default",
-            filter: mode === "boxed" ? "drop-shadow(0 6px 18px rgba(236,72,153,0.4))" : "drop-shadow(0 4px 10px rgba(0,0,0,0.4))",
-            transition: "filter 200ms ease, transform 200ms ease",
+            filter: mode === "boxed"
+              ? "drop-shadow(0 6px 18px rgba(236,72,153,0.45))"
+              : "drop-shadow(0 4px 10px rgba(0,0,0,0.4))",
+            transition: "filter 200ms ease",
+            willChange: "left, top",
           }}
           className={mode === "boxed" ? "mascot-box-wiggle hover:scale-110" : ""}
         >
@@ -279,7 +282,6 @@ export function NowBookingMascot() {
         </button>
       )}
 
-      {/* Pill — links to /book in all modes */}
       <Link
         href="/book"
         className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 hover:border-pink-400/40 backdrop-blur transition-colors group"
@@ -290,7 +292,6 @@ export function NowBookingMascot() {
         </span>
       </Link>
 
-      {/* Coupon popup — no auto-close, dismiss via X button only */}
       {mode === "coupon" && (
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center px-4 bg-black/55 backdrop-blur-sm animate-fade-in"
@@ -318,12 +319,10 @@ export function NowBookingMascot() {
               Use this code on your booking inquiry — it bumps your request to
               the top of the review queue.
             </p>
-
             <div className="bg-black/50 border border-pink-500/30 rounded-2xl px-4 py-3 mb-5">
               <p className="text-[9px] tracking-[0.25em] uppercase text-zinc-500 mb-1">Coupon code</p>
               <p className="font-mono text-xl tracking-[0.18em] text-foreground select-all">{COUPON_CODE}</p>
             </div>
-
             <div className="flex gap-2">
               <button
                 type="button"
