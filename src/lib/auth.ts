@@ -2,27 +2,27 @@
 
 const AUTH_KEY = "highlife_auth";
 
-interface VenuePartner {
-  email: string;
-  password: string;
-  name: string;
-}
-
-const VENUE_PARTNERS: ReadonlyArray<VenuePartner> = [
-  { email: "testvenue3307@gmail.com", password: "testingVenues3307", name: "Venue Partner" },
-];
-
-export function login(emailOrUsername: string, password: string): boolean {
+export async function login(emailOrUsername: string, password: string): Promise<boolean> {
   const email = emailOrUsername.trim().toLowerCase();
-  const match = VENUE_PARTNERS.find((u) => u.email === email && u.password === password);
-  if (!match) return false;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(
-      AUTH_KEY,
-      JSON.stringify({ email: match.email, name: match.name })
-    );
+  try {
+    const res = await fetch("/api/venue-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.ok) return false;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        AUTH_KEY,
+        JSON.stringify({ email: data.email, name: data.displayName })
+      );
+    }
+    return true;
+  } catch {
+    return false;
   }
-  return true;
 }
 
 export function logout(): void {

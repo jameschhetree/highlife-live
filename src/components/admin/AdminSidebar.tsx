@@ -17,13 +17,15 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  KeyRound,
 } from "lucide-react";
-import { adminLogout, canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { adminLogout, canViewAuditions, canManageVenueLogins, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Bookings", icon: Inbox },
   { href: "/admin/auditions", label: "Auditions", icon: Mic },
+  { href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound },
   { href: "/admin/artists", label: "Artists", icon: Users },
   { href: "/admin/venues", label: "Venues", icon: MapPinned },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
@@ -48,7 +50,11 @@ export function AdminSidebar() {
     router.push("/admin/login");
   };
 
-  const visibleNav = nav.filter((item) => item.href !== "/admin/auditions" || canViewAuditions(session));
+  const visibleNav = nav.filter((item) => {
+    if (item.href === "/admin/auditions") return canViewAuditions(session);
+    if (item.href === "/admin/venue-logins") return canManageVenueLogins(session);
+    return true;
+  });
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-white/8 bg-[#07080c] sticky top-0 h-screen">
@@ -57,7 +63,7 @@ export function AdminSidebar() {
         className="flex items-center gap-3 px-5 py-5 border-b border-white/8"
       >
         <span className="relative w-9 h-9 inline-block shrink-0">
-          <Image src="/logo.png" alt="" fill sizes="36px" className="object-contain" />
+          <Image src="/HighLifeLogo.png" alt="" fill sizes="36px" className="object-contain" />
         </span>
         <div className="leading-tight">
           <div className="font-display text-sm tracking-[0.18em] uppercase">

@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
           className="flex items-center gap-3 mb-10 justify-center"
         >
           <span className="relative w-12 h-12 inline-block">
-            <Image src="/logo.png" alt="" fill sizes="48px" className="object-contain" />
+            <Image src="/HighLifeLogo.png" alt="" fill sizes="48px" className="object-contain" />
           </span>
           <span className="font-display text-xl tracking-[0.2em] uppercase">
             HighLife Live

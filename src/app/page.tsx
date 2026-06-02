@@ -124,18 +124,31 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Logo ticker pinned to bottom */}
+        {/* Logo ticker pinned to bottom -- duplicated content for seamless loop */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/5 bg-black/40 backdrop-blur py-5 overflow-hidden">
           <div className="ticker-track">
+            {/* First set */}
             {Array.from({ length: 14 }).map((_, i) => (
-              <span key={i} className="relative w-12 h-12 inline-block opacity-90">
+              <span key={`a-${i}`} className="relative w-12 h-12 inline-block opacity-90 shrink-0">
                 <Image
-                  src="/logo.png"
+                  src="/HighLifeLogo.png"
                   alt=""
                   fill
                   sizes="48px"
                   className="object-contain"
                   priority={i < 2}
+                />
+              </span>
+            ))}
+            {/* Duplicate set for seamless infinite scroll */}
+            {Array.from({ length: 14 }).map((_, i) => (
+              <span key={`b-${i}`} className="relative w-12 h-12 inline-block opacity-90 shrink-0">
+                <Image
+                  src="/HighLifeLogo.png"
+                  alt=""
+                  fill
+                  sizes="48px"
+                  className="object-contain"
                 />
               </span>
             ))}

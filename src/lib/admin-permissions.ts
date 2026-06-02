@@ -29,6 +29,10 @@ export function canViewAuditionsEmail(email: string | null | undefined): boolean
   return isOwnerAdminEmail(email);
 }
 
+export function canManageVenueLoginsEmail(email: string | null | undefined): boolean {
+  return isOwnerAdminEmail(email);
+}
+
 export function canManageArtistsEmail(email: string | null | undefined): boolean {
   return isOwnerAdminEmail(email);
 }

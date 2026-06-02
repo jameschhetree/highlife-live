@@ -306,6 +306,45 @@ model ImportBatch {
   createdAt     DateTime @default(now())
 }
 
+// ── Partner Login Requests ──────────────────────────────────
+
+model PartnerLoginRequest {
+  id                String   @id @default(cuid())
+  accountType       String   // "Venue" | "Promoter"
+  organizationName  String   // Venue Name or Promotion Name
+  address           String   @default("")
+  role              String   // Owner, Talent Buyer, Promoter, Venue Manager, Event Coordinator, Other
+  contactName       String
+  workPhone         String   @default("")
+  mobilePhone       String   @default("")
+  workEmail         String
+  requestedLoginEmail String
+  howHeard          String   @default("")
+  preferredGenre    String   @default("")
+  extraNotes        String   @default("") @db.Text
+  status            String   @default("New") // New, Approved, Rejected, Converted, Archived
+  submittedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status, submittedAt])
+}
+
+// ── Active Venue Logins ────────────────────────────────────
+
+model VenueLogin {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String   // bcrypt or similar hash
+  displayName      String
+  organizationName String   @default("")
+  accountType      String   @default("Venue") // "Venue" | "Promoter"
+  isActive         Boolean  @default(true)
+  sourceRequestId  String?  // optional link to PartnerLoginRequest.id
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 // ── Audit Log ───────────────────────────────────────────────
 
 model AuditLog {

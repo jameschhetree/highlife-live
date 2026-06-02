@@ -53,7 +53,7 @@ export function Header() {
             <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
               <span className="relative w-10 h-10 inline-block shrink-0">
                 <Image
-                  src="/logo.png"
+                  src="/HighLifeLogo.png"
                   alt=""
                   fill
                   priority

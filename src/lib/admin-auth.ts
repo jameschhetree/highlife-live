@@ -2,6 +2,7 @@
 
 import {
   canManageArtistsEmail,
+  canManageVenueLoginsEmail,
   canViewArtistEmail,
   canViewAuditionsEmail,
   filterArtistsForEmail,
@@ -82,6 +83,10 @@ export function canViewAuditions(session: AdminSession | null = getAdminSession(
 
 export function canManageArtists(session: AdminSession | null = getAdminSession()): boolean {
   return canManageArtistsEmail(session?.email);
+}
+
+export function canManageVenueLogins(session: AdminSession | null = getAdminSession()): boolean {
+  return canManageVenueLoginsEmail(session?.email);
 }
 
 export function canViewArtist(

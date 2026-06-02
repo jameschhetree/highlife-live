@@ -9,6 +9,7 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 // Fallback to .env
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
@@ -19,6 +20,18 @@ import {
   demoEpks,
   demoResearchQueue,
 } from "../src/lib/admin-data";
+
+// Inline scrypt hash matching src/lib/password.ts
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = await new Promise<Buffer>((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(derivedKey);
+    });
+  });
+  return `${salt}:${hash.toString("hex")}`;
+}
 
 const url = process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL || process.env.POSTGRES_URL;
 if (!url) {
@@ -237,6 +250,23 @@ async function main() {
     });
   }
   console.log("  Research contacts seeded.");
+
+  // ── Venue Logins (test account) ─────────────────────────
+  console.log("Seeding test venue login...");
+  const testPasswordHash = await hashPassword("testingVenues3307");
+  await prisma.venueLogin.upsert({
+    where: { email: "testvenue3307@gmail.com" },
+    update: {},
+    create: {
+      email: "testvenue3307@gmail.com",
+      passwordHash: testPasswordHash,
+      displayName: "Venue Partner",
+      organizationName: "Test Venue",
+      accountType: "Venue",
+      isActive: true,
+    },
+  });
+  console.log("  Test venue login seeded.");
 
   console.log("\nSeed complete.");
 }
