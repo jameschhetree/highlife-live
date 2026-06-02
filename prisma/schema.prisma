@@ -364,6 +364,7 @@ model Inquiry {
   messageToAgent   String   @default("") @db.Text
   status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
   adminNotes       String?  @db.Text
+  bookingOffer     String?  // optional opening offer (e.g. "$12,000"). Stripped from agent-facing responses.
   submittedAt      DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

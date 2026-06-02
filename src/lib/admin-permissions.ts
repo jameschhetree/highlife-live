@@ -12,6 +12,7 @@ export const MONEY_FIELDS = [
   "budget",
   "fee",
   "bookingFeeRange",
+  "bookingOffer",
 ] as const;
 
 export type ArtistAccessRecord = {

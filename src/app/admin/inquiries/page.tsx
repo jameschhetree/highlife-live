@@ -21,10 +21,13 @@ interface InquiryRow {
   source: string;
   artistName: string;
   venueName: string;
+  venueLoginId: string | null;
+  venueLoginLabel: string | null;
   contactName: string;
   contactEmail: string;
   eventDate: string;
   status: string;
+  bookingOffer?: string | null;
   submittedAt: string;
 }
 
@@ -190,6 +193,7 @@ export default function AdminInquiriesPage() {
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium hidden md:table-cell">Venue</th>
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium hidden lg:table-cell">Contact</th>
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium hidden lg:table-cell">Event Date</th>
+                  <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium hidden xl:table-cell">Offer</th>
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium">Status</th>
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium">Source</th>
                   <th className="text-left text-[9px] tracking-[0.18em] uppercase text-zinc-600 pb-3 px-2.5 sm:px-4 font-medium hidden lg:table-cell">Submitted</th>
@@ -216,6 +220,7 @@ export default function AdminInquiriesPage() {
                         <div className="text-[11px] text-zinc-500">{inq.contactEmail}</div>
                       </td>
                       <td className="py-3 px-2.5 sm:px-4 text-zinc-300 hidden lg:table-cell">{inq.eventDate || "-"}</td>
+                      <td className="py-3 px-2.5 sm:px-4 text-zinc-300 hidden xl:table-cell">{inq.bookingOffer || "-"}</td>
                       <td className="py-3 px-2.5 sm:px-4">
                         <span className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.18em] uppercase font-semibold border rounded-full px-2.5 py-0.5 ${statusColor[inq.status] || "text-zinc-400"}`}>
                           <StatusIcon size={10} />
@@ -223,9 +228,16 @@ export default function AdminInquiriesPage() {
                         </span>
                       </td>
                       <td className="py-3 px-2.5 sm:px-4">
-                        <span className={`text-[9px] tracking-[0.18em] uppercase border rounded-full px-2 py-0.5 ${sourceColor[inq.source] || sourceColor.public}`}>
-                          {sourceLabel[inq.source] || inq.source}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-block w-fit text-[9px] tracking-[0.18em] uppercase border rounded-full px-2 py-0.5 ${sourceColor[inq.source] || sourceColor.public}`}>
+                            {sourceLabel[inq.source] || inq.source}
+                          </span>
+                          {inq.venueLoginLabel && (
+                            <span className="text-[10px] text-zinc-400 truncate max-w-[180px]" title={inq.venueLoginLabel}>
+                              {inq.venueLoginLabel}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-2.5 sm:px-4 text-zinc-500 text-xs hidden lg:table-cell">
                         {new Date(inq.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

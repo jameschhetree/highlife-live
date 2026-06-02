@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       contactPhone: body.contactPhone,
       eventDescription: body.eventDescription || "",
       messageToAgent: body.messageToAgent || "",
+      bookingOffer: body.bookingOffer ? String(body.bookingOffer).slice(0, 100) : null,
       status: "New",
     },
   });

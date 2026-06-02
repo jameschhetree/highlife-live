@@ -56,9 +56,27 @@ export async function GET(request: NextRequest) {
     orderBy: { submittedAt: "desc" },
   });
 
+  // Join venue org name onto partner-source rows so the admin table can show
+  // "Acme Hall" instead of a raw cuid for the venue identity column.
+  const partnerVenueIds = Array.from(new Set(rows.filter((r) => r.venueLoginId).map((r) => r.venueLoginId!)));
+  let venueMap: Record<string, { organizationName: string | null; email: string }> = {};
+  if (partnerVenueIds.length > 0) {
+    const venues = await prisma.venueLogin.findMany({
+      where: { id: { in: partnerVenueIds } },
+      select: { id: true, organizationName: true, email: true },
+    });
+    venueMap = Object.fromEntries(venues.map((v) => [v.id, { organizationName: v.organizationName, email: v.email }]));
+  }
+  const enriched = rows.map((r) => ({
+    ...r,
+    venueLoginLabel: r.venueLoginId
+      ? venueMap[r.venueLoginId]?.organizationName || venueMap[r.venueLoginId]?.email || r.venueLoginId
+      : null,
+  }));
+
   if (isAgentAdminEmail(email)) {
-    return Response.json(stripMoneyFieldsArray(rows as Record<string, unknown>[]));
+    return Response.json(stripMoneyFieldsArray(enriched as Record<string, unknown>[]));
   }
 
-  return Response.json(rows);
+  return Response.json(enriched);
 }

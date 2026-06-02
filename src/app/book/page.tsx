@@ -20,6 +20,7 @@ interface BookingForm {
   contactPhone: string;
   eventDescription: string;
   messageToAgent: string;
+  bookingOffer: string;
 }
 
 function emptyForm(preselected: string): BookingForm {
@@ -33,6 +34,7 @@ function emptyForm(preselected: string): BookingForm {
     contactPhone: "",
     eventDescription: "",
     messageToAgent: "",
+    bookingOffer: "",
   };
 }
 
@@ -105,6 +107,7 @@ function BookingFormContent() {
           contactPhone: form.contactPhone,
           eventDescription: form.eventDescription,
           messageToAgent: form.messageToAgent,
+          bookingOffer: form.bookingOffer.trim() || undefined,
           // Server derives venueLoginId from the signed venue session cookie if present.
           // We declare intent here; server downgrades to public if no valid session.
           source: authed ? "venue_partner" : "public",
@@ -317,6 +320,20 @@ function BookingFormContent() {
               placeholder="A 1,200-cap headline set, doors 8pm, two openers from our local rotation..."
               rows={4}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors resize-y"
+            />
+          </Field>
+
+          <Field
+            label="Booking Offer"
+            id="field-bookingOffer"
+            hint="Optional. If you want to lead with an opening number."
+          >
+            <input
+              type="text"
+              value={form.bookingOffer}
+              onChange={(e) => update("bookingOffer", e.target.value)}
+              placeholder="$12,000"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors"
             />
           </Field>
 
