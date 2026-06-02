@@ -199,6 +199,18 @@ export function NowBookingMascot() {
   const inFlight = mode === "flying" || mode === "homing" || mode === "boxed";
   const showBox = mode === "homing" || mode === "boxed";
 
+  // Box visually transitions from "open flaps" (during homing + first beat of boxed)
+  // to "closed flaps + ribbon" (rest of boxed mode). Trigger via timed class.
+  const [boxClosed, setBoxClosed] = useState(false);
+  useEffect(() => {
+    if (mode === "boxed") {
+      // 250ms delay so the mic visually settles inside before flaps close
+      const t = setTimeout(() => setBoxClosed(true), 250);
+      return () => clearTimeout(t);
+    }
+    setBoxClosed(false);
+  }, [mode]);
+
   const mic = (
     <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
       {inFlight && (
@@ -255,7 +267,7 @@ export function NowBookingMascot() {
       {showBox && (
         <button
           type="button"
-          aria-label="Open the box"
+          aria-label={mode === "boxed" ? "Open the box to reveal your coupon" : "Box arriving"}
           onClick={mode === "boxed" ? openCoupon : undefined}
           disabled={mode !== "boxed"}
           style={{
@@ -264,21 +276,98 @@ export function NowBookingMascot() {
             top: `${boxRef.current.y}px`,
             transform: "translate(-50%, -50%)",
             zIndex: 55,
-            fontSize: 60,
-            lineHeight: 1,
+            width: 110,
+            height: 110,
             background: "transparent",
             border: "none",
-            padding: 8,
+            padding: 0,
             cursor: mode === "boxed" ? "pointer" : "default",
             filter: mode === "boxed"
-              ? "drop-shadow(0 6px 18px rgba(236,72,153,0.45))"
+              ? "drop-shadow(0 8px 22px rgba(236,72,153,0.5))"
               : "drop-shadow(0 4px 10px rgba(0,0,0,0.4))",
-            transition: "filter 200ms ease",
+            transition: "filter 220ms ease",
             willChange: "left, top",
           }}
-          className={mode === "boxed" ? "mascot-box-wiggle hover:scale-110" : ""}
+          className={mode === "boxed" ? "mascot-box-wiggle hover:scale-105" : ""}
         >
-          <span role="img" aria-label="package">📦</span>
+          {/* Cardboard box SVG — flaps angle outward when "open", flat with ribbon when "closed" */}
+          <svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" aria-hidden style={{ pointerEvents: "none" }}>
+            <defs>
+              <linearGradient id="cardboard" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#d4a574" />
+                <stop offset="55%" stopColor="#b88758" />
+                <stop offset="100%" stopColor="#8a6240" />
+              </linearGradient>
+              <linearGradient id="cardboard-dark" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#9c7350" />
+                <stop offset="100%" stopColor="#6b4830" />
+              </linearGradient>
+              <linearGradient id="ribbon" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#fb7299" />
+                <stop offset="50%" stopColor="#ec4899" />
+                <stop offset="100%" stopColor="#be1d6d" />
+              </linearGradient>
+            </defs>
+
+            {/* Box body (4-sided) */}
+            <path d="M 24 52 L 76 52 L 78 90 L 22 90 Z" fill="url(#cardboard)" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+            {/* Center seam tape */}
+            <rect x="48" y="52" width="4" height="38" fill="rgba(0,0,0,0.18)" />
+
+            {/* Left flap — open angled out by default, rotates flat when closed */}
+            <g
+              className={boxClosed ? "box-flap box-flap-l-closed" : "box-flap box-flap-l-open"}
+              style={{ transformOrigin: "50px 52px" }}
+            >
+              <path d="M 24 52 L 50 52 L 50 36 L 12 30 Z" fill="url(#cardboard-dark)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
+            </g>
+            {/* Right flap */}
+            <g
+              className={boxClosed ? "box-flap box-flap-r-closed" : "box-flap box-flap-r-open"}
+              style={{ transformOrigin: "50px 52px" }}
+            >
+              <path d="M 76 52 L 50 52 L 50 36 L 88 30 Z" fill="url(#cardboard-dark)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
+            </g>
+
+            {/* Ribbon — appears only when closed */}
+            {boxClosed && (
+              <>
+                {/* Horizontal strap across body */}
+                <rect x="22" y="60" width="56" height="6" fill="url(#ribbon)" />
+                {/* Vertical strap (front) */}
+                <rect x="46" y="52" width="8" height="38" fill="url(#ribbon)" />
+                {/* Bow on top — two leaves + center knot */}
+                <ellipse cx="42" cy="48" rx="9" ry="6" fill="url(#ribbon)" transform="rotate(-18 42 48)" />
+                <ellipse cx="58" cy="48" rx="9" ry="6" fill="url(#ribbon)" transform="rotate(18 58 48)" />
+                <circle cx="50" cy="50" r="3.5" fill="#be1d6d" />
+                {/* Bow streamers */}
+                <path d="M 46 56 L 42 66" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M 54 56 L 58 66" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
+              </>
+            )}
+          </svg>
+
+          {/* "Tap to open" hint — only when boxed + flaps closed */}
+          {mode === "boxed" && boxClosed && (
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "calc(100% + 4px)",
+                transform: "translateX(-50%)",
+                fontSize: 9,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.7)",
+                whiteSpace: "nowrap",
+                fontWeight: 600,
+                pointerEvents: "none",
+              }}
+            >
+              Tap to open
+            </span>
+          )}
         </button>
       )}
 

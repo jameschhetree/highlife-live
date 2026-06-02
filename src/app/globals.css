@@ -184,17 +184,35 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Cardboard box gentle wiggle while waiting for click */
+/* Cardboard box gentle wiggle while waiting for click (closed-state) */
 .mascot-box-wiggle {
-  animation: mascot-box-wiggle 1.6s ease-in-out infinite;
-  transform-origin: 50% 100%;
+  animation: mascot-box-wiggle 1.8s ease-in-out infinite;
 }
 @keyframes mascot-box-wiggle {
-  0%, 100% { transform: translate(-50%, -50%) rotate(-2deg); }
-  50%      { transform: translate(-50%, -50%) rotate(2deg); }
+  0%, 100% { transform: translate(-50%, -50%) rotate(-1.5deg); }
+  50%      { transform: translate(-50%, -50%) rotate(1.5deg); }
 }
+
+/* Box flaps — angled outward when open, rotate flat when closed */
+.box-flap {
+  transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.box-flap-l-open {
+  transform: rotate(-18deg);
+}
+.box-flap-l-closed {
+  transform: rotate(0deg);
+}
+.box-flap-r-open {
+  transform: rotate(18deg);
+}
+.box-flap-r-closed {
+  transform: rotate(0deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .mascot-box-wiggle { animation: none; }
+  .mascot-box-wiggle,
+  .box-flap { animation: none; transition: none; }
 }
 
 /* Glass card surface */
