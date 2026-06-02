@@ -21,7 +21,7 @@ import Link from "next/link";
  */
 
 // Official coupon code from James (HL Live, 2026-06-02). Preserves exact spelling.
-const COUPON_CODE = "HLLbeta1.1-4jeremey";
+const COUPON_CODE = "HLLbeta1.1-4jeremy";
 
 type Mode = "pacing" | "flying" | "homing" | "boxed" | "coupon";
 
