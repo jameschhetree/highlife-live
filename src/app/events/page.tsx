@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Ticket, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Ticket } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 // Events data -- demo/filler events removed per cleanup scope.
@@ -46,14 +46,25 @@ const statusColors = {
   "Sold Out": "text-zinc-400 bg-zinc-400/10 border-zinc-400/30",
 };
 
+// Per-city visual theme — each city gets its own banner gradient + accent.
+// Falls back to a neutral theme for unknown cities.
+const cityThemes: Record<string, { gradient: string; accent: string; tag: string }> = {
+  "Atlanta, GA":     { gradient: "from-[#1a0d1f] via-[#2a0b2e] to-[#0f1115]", accent: "via-pink-500/55", tag: "ATL" },
+  "Washington, DC":  { gradient: "from-[#0a1a2e] via-[#0b1730] to-[#0f1115]", accent: "via-sky-400/55",  tag: "DC" },
+  "Baltimore, MD":   { gradient: "from-[#1a1207] via-[#2a1808] to-[#0f1115]", accent: "via-amber-400/55", tag: "BAL" },
+};
+const defaultTheme = { gradient: "from-[#0f1115] to-[#131620]", accent: "via-violet-500/45", tag: "" };
+
 // Unique cities + artists for filtering
 const allCities = ["All", ...Array.from(new Set(events.map((e) => e.city)))];
 const allArtists = ["All", ...Array.from(new Set(events.flatMap((e) => e.featuredArtists)))];
 
+type SortKey = "date" | "city" | "artist";
+
 export default function EventsPage() {
   const [cityFilter, setCityFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
-  const [sortBy, setSortBy] = useState<"date" | "city">("date");
+  const [sortBy, setSortBy] = useState<SortKey>("date");
 
   const filtered = events
     .filter((e) => {
@@ -63,6 +74,7 @@ export default function EventsPage() {
     })
     .sort((a, b) => {
       if (sortBy === "city") return a.city.localeCompare(b.city);
+      if (sortBy === "artist") return (a.featuredArtists[0] ?? "").localeCompare(b.featuredArtists[0] ?? "");
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
@@ -87,11 +99,11 @@ export default function EventsPage() {
             </div>
           </ScrollReveal>
 
-          {/* Filters */}
+          {/* Filters — each chip group flex-wraps so nothing overflows on mobile */}
           <ScrollReveal delay={0.1}>
-            <div className="flex flex-wrap gap-3 mb-10 items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500">City:</span>
+            <div className="space-y-3 mb-10">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 shrink-0">City:</span>
                 {allCities.map((c) => (
                   <button
                     key={c}
@@ -106,8 +118,8 @@ export default function EventsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500">Artist:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 shrink-0">Artist:</span>
                 {allArtists.map((a) => (
                   <button
                     key={a}
@@ -122,15 +134,21 @@ export default function EventsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500">Sort:</span>
-                <button
-                  onClick={() => setSortBy(sortBy === "date" ? "city" : "date")}
-                  className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 text-zinc-400 hover:border-white/25 flex items-center gap-1"
-                >
-                  {sortBy === "date" ? "By Date" : "By City"}
-                  <ChevronDown size={10} />
-                </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 shrink-0">Sort:</span>
+                {(["date", "artist", "city"] as SortKey[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setSortBy(key)}
+                    className={`text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border transition-colors ${
+                      sortBy === key
+                        ? "bg-foreground text-background border-foreground"
+                        : "text-zinc-400 border-white/10 hover:border-white/25"
+                    }`}
+                  >
+                    By {key.charAt(0).toUpperCase() + key.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
           </ScrollReveal>
@@ -145,62 +163,86 @@ export default function EventsPage() {
               </ScrollReveal>
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
-                  {upcoming.map((event, i) => (
-                    <motion.div
-                      key={event.id}
-                      layout
-                      initial={{ opacity: 0, y: 24 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
-                      transition={{ duration: 0.5, delay: i * 0.06, ease: [0.32, 0.72, 0, 1] }}
-                      className="group relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-r from-[#0f1115] to-[#131620] hover:border-white/15 transition-all duration-500"
-                    >
-                      {/* Top accent line */}
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-500/40 to-transparent" />
+                  {upcoming.map((event, i) => {
+                    const theme = cityThemes[event.city] ?? defaultTheme;
+                    // Parse date for the calendar plinth (e.g. "June 21, 2026" → "JUN" / "21")
+                    const parsed = new Date(event.date);
+                    const monthLabel = isNaN(parsed.getTime())
+                      ? event.date.split(" ")[0]?.slice(0, 3).toUpperCase()
+                      : parsed.toLocaleString("en-US", { month: "short" }).toUpperCase();
+                    const dayLabel = isNaN(parsed.getTime())
+                      ? ""
+                      : String(parsed.getDate());
+                    return (
+                      <motion.div
+                        key={event.id}
+                        layout
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.5, delay: i * 0.06, ease: [0.32, 0.72, 0, 1] }}
+                        className={`group relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-br ${theme.gradient} hover:border-white/15 transition-all duration-500`}
+                      >
+                        {/* Top accent line — per-city color */}
+                        <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.accent} to-transparent`} />
+                        {/* Left edge banner stripe — bold per-city color */}
+                        <div className={`absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-transparent ${theme.accent} to-transparent`} />
 
-                      <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full border ${statusColors[event.ticketStatus]}`}>
-                              {event.ticketStatus}
-                            </span>
+                        <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                          {/* Date plinth — calendar-tear style */}
+                          <div className="shrink-0 flex flex-col items-center justify-center px-5 py-3 rounded-xl bg-black/40 border border-white/8 min-w-[78px]">
+                            <span className="text-[10px] tracking-[0.22em] uppercase text-zinc-400 leading-none mb-1">{monthLabel}</span>
+                            <span className="font-display text-3xl text-foreground leading-none">{dayLabel}</span>
                           </div>
-                          <h3 className="font-display uppercase text-2xl sm:text-3xl tracking-tight mb-3 text-gradient-hero">
-                            {event.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-4 text-sm text-silver">
-                            <span className="flex items-center gap-1.5">
-                              <Calendar size={13} strokeWidth={1.5} />
-                              {event.date}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <MapPin size={13} strokeWidth={1.5} />
-                              {event.city} · {event.venue}
-                            </span>
-                          </div>
-                          {event.featuredArtists.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {event.featuredArtists.map((artist) => (
-                                <span
-                                  key={artist}
-                                  className="text-[10px] tracking-[0.15em] uppercase px-3 py-1 rounded-full bg-white/5 border border-white/8 text-zinc-300"
-                                >
-                                  {artist}
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              {theme.tag && (
+                                <span className="text-[9px] tracking-[0.22em] uppercase text-zinc-500 font-semibold">
+                                  {theme.tag}
                                 </span>
-                              ))}
+                              )}
+                              <span className={`text-[10px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-full border ${statusColors[event.ticketStatus]}`}>
+                                {event.ticketStatus}
+                              </span>
                             </div>
+                            <h3 className="font-display uppercase text-2xl sm:text-3xl tracking-tight mb-2 text-gradient-hero">
+                              {event.title}
+                            </h3>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-silver">
+                              <span className="flex items-center gap-1.5">
+                                <MapPin size={13} strokeWidth={1.5} />
+                                {event.venue} · {event.city}
+                              </span>
+                              <span className="flex items-center gap-1.5 text-zinc-500">
+                                <Calendar size={13} strokeWidth={1.5} />
+                                {event.date}
+                              </span>
+                            </div>
+                            {event.featuredArtists.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {event.featuredArtists.map((artist) => (
+                                  <span
+                                    key={artist}
+                                    className="text-[10px] tracking-[0.15em] uppercase px-3 py-1 rounded-full bg-white/5 border border-white/8 text-zinc-300"
+                                  >
+                                    {artist}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {event.ticketStatus !== "Sold Out" && (
+                            <button className="shrink-0 self-stretch sm:self-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold">
+                              <Ticket size={14} />
+                              Buy Tickets
+                            </button>
                           )}
                         </div>
-
-                        {event.ticketStatus !== "Sold Out" && (
-                          <button className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold">
-                            <Ticket size={14} />
-                            Buy Tickets
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             </div>
