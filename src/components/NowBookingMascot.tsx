@@ -36,9 +36,9 @@ export function NowBookingMascot() {
   const phaseRef = useRef<"box-sliding" | "mic-arcing">("box-sliding");
 
   const boxTarget = useCallback(() => {
-    if (typeof window === "undefined") return { x: 140, y: 300 };
+    if (typeof window === "undefined") return { x: 90, y: 300 };
     return {
-      x: Math.max(120, window.innerWidth * 0.12),
+      x: Math.max(80, window.innerWidth * 0.07), // further left so it doesn't overlap hero content
       y: Math.min(340, window.innerHeight * 0.36),
     };
   }, []);
@@ -93,34 +93,46 @@ export function NowBookingMascot() {
         const dy = py - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Smooth flee: stronger when close, decays smoothly to 0 at 250px.
-        // Frame-rate-normalized via dt.
-        if (dist < 250 && dist > 0.1) {
-          const intensity = Math.pow(1 - dist / 250, 1.4); // 0..1, steep when close
-          const speed = intensity * 18; // px per 16ms ≈ 1 frame
-          const stepPx = speed * (dt / 16);
-          const nx = px + (dx / dist) * stepPx;
-          const ny = py + (dy / dist) * stepPx;
-          const vw = window.innerWidth, vh = window.innerHeight;
-          // Soft clamp with a margin — also nudges back toward center when at edge
-          let nextX = Math.max(48, Math.min(vw - 48, nx));
-          let nextY = Math.max(48, Math.min(vh - 48, ny));
-          // If we hit an edge, add slight perpendicular nudge so it doesn't pin
-          if (nextX === 48 || nextX === vw - 48) nextY += (Math.random() - 0.5) * 3;
-          if (nextY === 48 || nextY === vh - 48) nextX += (Math.random() - 0.5) * 3;
-          posRef.current = { x: nextX, y: nextY };
+        // Rule: never within MIN_DIST of cursor. Velocity-blended flee +
+        // a perpendicular pseudo-random oscillation so the path looks alive,
+        // not radial. Frame-rate-normalized via dt.
+        const MIN_DIST = 250;
+        let nextX = px;
+        let nextY = py;
+        if (dist < MIN_DIST && dist > 0.1) {
+          // Radial flee component, eased so push is stronger when very close
+          const intensity = Math.pow(1 - dist / MIN_DIST, 1.5);
+          const fleeSpeed = intensity * 22; // px per 16ms baseline
+          const fleeStep = fleeSpeed * (dt / 16);
+          const ux = dx / dist;
+          const uy = dy / dist;
+          // Perpendicular pseudo-random oscillation — sine of accumulated time
+          // with a random phase, scaled by current intensity so the wobble
+          // disappears when the cursor is far
+          const wobble = Math.sin(now * 0.006 + posRef.current.x * 0.013) * intensity * 6;
+          const perpX = -uy;
+          const perpY = ux;
+          nextX = px + ux * fleeStep + perpX * wobble * (dt / 16);
+          nextY = py + uy * fleeStep + perpY * wobble * (dt / 16);
         } else {
-          // Cursor far / idle → drift back toward top-center smoothly
+          // Cursor far / idle → drift back toward top-center smoothly,
+          // still with a tiny wandering wobble so it's never perfectly still
           const mouseIdleMs = now - mouseT;
-          if (mouseIdleMs > 600) {
-            const tx = window.innerWidth / 2;
-            const ty = 110;
-            posRef.current = {
-              x: px + (tx - px) * 0.025,
-              y: py + (ty - py) * 0.025,
-            };
-          }
+          const tx = window.innerWidth / 2;
+          const ty = 110;
+          const driftLerp = mouseIdleMs > 600 ? 0.025 : 0.005;
+          const wanderX = Math.sin(now * 0.0011) * 0.4;
+          const wanderY = Math.cos(now * 0.0013) * 0.3;
+          nextX = px + (tx - px) * driftLerp + wanderX;
+          nextY = py + (ty - py) * driftLerp + wanderY;
         }
+        const vw = window.innerWidth, vh = window.innerHeight;
+        // Soft clamp + edge perpendicular nudge to prevent corner-pinning
+        nextX = Math.max(48, Math.min(vw - 48, nextX));
+        nextY = Math.max(48, Math.min(vh - 48, nextY));
+        if (nextX === 48 || nextX === vw - 48) nextY += (Math.random() - 0.5) * 4;
+        if (nextY === 48 || nextY === vh - 48) nextX += (Math.random() - 0.5) * 4;
+        posRef.current = { x: nextX, y: nextY };
 
         // Chase detection: cursor present + within 300px
         const mouseFresh = now - mouseT < 500;
@@ -128,7 +140,7 @@ export function NowBookingMascot() {
           chaseAccumMs.current += dt;
           if (chaseAccumMs.current > 7000) {
             setMode("homing");
-            return; // mode change triggers re-mount
+            return;
           }
         } else {
           chaseAccumMs.current = Math.max(0, chaseAccumMs.current - dt * 0.5);
@@ -147,19 +159,23 @@ export function NowBookingMascot() {
             boxRef.current = { x: newX, y: tgt.y };
           }
         } else if (phaseRef.current === "mic-arcing" && arcStateRef.current) {
-          arcStateRef.current.t = Math.min(1, arcStateRef.current.t + dt / 1300);
+          arcStateRef.current.t = Math.min(1, arcStateRef.current.t + dt / 1500);
           const u = arcStateRef.current.t;
           const startX = arcStateRef.current.start.x;
           const startY = arcStateRef.current.start.y;
           const endX = tgt.x;
-          const endY = tgt.y - 6; // settle just inside the box top
+          const endY = tgt.y - 6;
           const apexX = (startX + endX) / 2;
           const apexY = Math.min(startY, tgt.y) - 90;
           const oneMinusU = 1 - u;
-          posRef.current = {
-            x: oneMinusU * oneMinusU * startX + 2 * oneMinusU * u * apexX + u * u * endX,
-            y: oneMinusU * oneMinusU * startY + 2 * oneMinusU * u * apexY + u * u * endY,
-          };
+          // Base bezier
+          const baseX = oneMinusU * oneMinusU * startX + 2 * oneMinusU * u * apexX + u * u * endX;
+          const baseY = oneMinusU * oneMinusU * startY + 2 * oneMinusU * u * apexY + u * u * endY;
+          // Small wobble that fades to 0 as it lands (so it docks cleanly)
+          const wobbleAmp = (1 - u) * 4;
+          const wobX = Math.sin(now * 0.012) * wobbleAmp;
+          const wobY = Math.cos(now * 0.014) * wobbleAmp * 0.6;
+          posRef.current = { x: baseX + wobX, y: baseY + wobY };
           if (arcStateRef.current.t >= 1) {
             setMode("boxed");
             return;
@@ -425,22 +441,23 @@ export function NowBookingMascot() {
               <p className="text-[9px] tracking-[0.25em] uppercase text-zinc-500 mb-1">Ticket coupon code</p>
               <p className="font-mono text-xl tracking-[0.18em] text-foreground select-all">{COUPON_CODE}</p>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={copyCode}
-                className="flex-1 py-2.5 rounded-full border border-white/15 hover:border-white/30 bg-white/5 hover:bg-white/10 text-xs tracking-[0.18em] uppercase text-zinc-200 transition-colors"
-              >
-                {copied ? "Copied" : "Copy Code"}
-              </button>
-              <Link
-                href="/events"
-                onClick={closeCoupon}
-                className="flex-1 py-2.5 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold inline-flex items-center justify-center"
-              >
-                See Events
-              </Link>
-            </div>
+            <Link
+              href="/events"
+              onClick={async (e) => {
+                // Copy code to clipboard before navigating
+                try {
+                  await navigator.clipboard.writeText(COUPON_CODE);
+                  setCopied(true);
+                } catch { /* ignore */ }
+                closeCoupon();
+              }}
+              className="w-full py-3 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold inline-flex items-center justify-center gap-2"
+            >
+              {copied ? "Copied · " : ""}Buy Tickets →
+            </Link>
+            <p className="mt-3 text-[10px] text-zinc-500 tracking-[0.18em] uppercase">
+              Code copied to clipboard when you tap
+            </p>
           </div>
         </div>
       )}
