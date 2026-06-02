@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
-// Events data -- demo/filler events removed per cleanup scope.
-// These are real HighLife Live showcase-format events.
-const events = [
+type EventItem = {
+  id: string;
+  title: string;
+  date: string;
+  city: string;
+  venue: string;
+  featuredArtists: string[];
+  ticketStatus: "Available" | "Limited" | "Sold Out";
+  ticketUrl?: string | null;
+  isPast: boolean;
+};
+
+// Fallback seed events shown when the DB has nothing published yet.
+// Owners can replace these by adding rows through /admin/events.
+const seedEvents: EventItem[] = [
   {
     id: "evt-1",
     title: "HighLife Sessions ATL",
@@ -38,7 +50,7 @@ const events = [
     ticketStatus: "Available" as const,
     isPast: false,
   },
-] as { id: string; title: string; date: string; city: string; venue: string; featuredArtists: string[]; ticketStatus: "Available" | "Limited" | "Sold Out"; isPast: boolean }[];
+];
 
 const statusColors = {
   Available: "text-emerald-300 bg-emerald-400/10 border-emerald-400/30",
@@ -55,16 +67,27 @@ const cityThemes: Record<string, { gradient: string; accent: string; tag: string
 };
 const defaultTheme = { gradient: "from-[#0f1115] to-[#131620]", accent: "via-violet-500/45", tag: "" };
 
-// Unique cities + artists for filtering
-const allCities = ["All", ...Array.from(new Set(events.map((e) => e.city)))];
-const allArtists = ["All", ...Array.from(new Set(events.flatMap((e) => e.featuredArtists)))];
-
 type SortKey = "date" | "city" | "artist";
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<EventItem[]>(seedEvents);
   const [cityFilter, setCityFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
   const [sortBy, setSortBy] = useState<SortKey>("date");
+
+  // Pull DB-backed events on mount; if any published rows exist, they REPLACE
+  // the seed list. If the DB is empty or unreachable, seed stays.
+  useEffect(() => {
+    fetch("/api/events")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setEvents(data);
+      })
+      .catch(() => { /* keep seed */ });
+  }, []);
+
+  const allCities = ["All", ...Array.from(new Set(events.map((e) => e.city)))];
+  const allArtists = ["All", ...Array.from(new Set(events.flatMap((e) => e.featuredArtists)))];
 
   const filtered = events
     .filter((e) => {
@@ -234,10 +257,26 @@ export default function EventsPage() {
                           </div>
 
                           {event.ticketStatus !== "Sold Out" && (
-                            <button className="shrink-0 self-stretch sm:self-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold">
-                              <Ticket size={14} />
-                              Buy Tickets
-                            </button>
+                            event.ticketUrl ? (
+                              <a
+                                href={event.ticketUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 self-stretch sm:self-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold"
+                              >
+                                <Ticket size={14} />
+                                Buy Tickets
+                              </a>
+                            ) : (
+                              <button
+                                disabled
+                                className="shrink-0 self-stretch sm:self-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-xs tracking-[0.18em] uppercase font-bold cursor-not-allowed"
+                                title="Tickets coming soon"
+                              >
+                                <Ticket size={14} />
+                                Tickets Soon
+                              </button>
+                            )
                           )}
                         </div>
                       </motion.div>

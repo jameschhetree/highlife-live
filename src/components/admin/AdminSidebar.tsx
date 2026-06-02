@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronRight,
   Gauge,
+  CalendarRange,
 } from "lucide-react";
 import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
@@ -47,7 +48,6 @@ const nav: NavItem[] = [
   { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
   { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
   { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
-  { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "all" },
   {
     kind: "group",
     key: "owner-hub",
@@ -56,10 +56,12 @@ const nav: NavItem[] = [
     gate: "owner",
     children: [
       { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
+      { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "owner" },
       { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
       { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
       { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
       { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },
+      { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "owner" },
     ],
   },
 ];
@@ -110,7 +112,7 @@ export function AdminSidebar() {
     .filter((item) => item.kind !== "group" || item.children.length > 0);
 
   // Owner Hub group expands automatically when a child route is active
-  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/auditions", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins"];
+  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/events", "/admin/auditions", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins", "/admin/settings"];
   const ownerHubActive = ownerHubChildHrefs.some((h) => pathname?.startsWith(h));
   const [ownerHubOpen, setOwnerHubOpen] = useState(false);
   useEffect(() => {

@@ -40,35 +40,39 @@ export default function HomePage() {
             transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
-            {/* Status pill — vinyl mascot bounces left-right above it */}
+            {/* Status pill — mic mascot floats in an arc above it; pill links to /book */}
             <div className="relative inline-block mb-7">
               <span
                 aria-hidden
-                className="mascot-vinyl absolute left-1/2 -ml-3.5 -top-9 w-7 h-7 pointer-events-none"
+                className="mascot-mic w-8 h-8 pointer-events-none"
               >
-                <svg viewBox="0 0 32 32" className="mascot-vinyl-disc w-full h-full">
-                  <defs>
-                    <radialGradient id="vinylG" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#1a1a1a" />
-                      <stop offset="58%" stopColor="#0a0a0a" />
-                      <stop offset="100%" stopColor="#000" />
-                    </radialGradient>
-                  </defs>
-                  <circle cx="16" cy="16" r="15" fill="url(#vinylG)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
-                  <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.4" />
-                  <circle cx="16" cy="16" r="8" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.4" />
-                  <circle cx="16" cy="16" r="4.5" fill="#ec4899" />
-                  <circle cx="16" cy="16" r="1.2" fill="#0a0a0a" />
-                  {/* highlight glint */}
-                  <path d="M 6 11 Q 12 7 22 9" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" fill="none" strokeLinecap="round" />
+                <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
+                  {/* Mic head */}
+                  <rect x="11" y="3" width="10" height="16" rx="5" fill="#1f1f25" stroke="rgba(255,255,255,0.22)" strokeWidth="0.8" />
+                  {/* Grille lines */}
+                  <line x1="12" y1="7" x2="20" y2="7" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
+                  <line x1="12" y1="10" x2="20" y2="10" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
+                  <line x1="12" y1="13" x2="20" y2="13" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
+                  <line x1="12" y1="16" x2="20" y2="16" stroke="rgba(255,255,255,0.14)" strokeWidth="0.6" />
+                  {/* Stand arc */}
+                  <path d="M 8 18 Q 8 24 16 24 Q 24 24 24 18" stroke="#ec4899" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                  {/* Stem */}
+                  <line x1="16" y1="24" x2="16" y2="29" stroke="rgba(255,255,255,0.6)" strokeWidth="1.4" strokeLinecap="round" />
+                  {/* Base */}
+                  <line x1="13" y1="29.5" x2="19" y2="29.5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.4" strokeLinecap="round" />
+                  {/* Highlight glint */}
+                  <circle cx="13.5" cy="6" r="0.8" fill="rgba(255,255,255,0.5)" />
                 </svg>
               </span>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 backdrop-blur">
+              <Link
+                href="/book"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 hover:border-pink-400/40 backdrop-blur transition-colors group"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 font-medium">
-                  Now Booking 2026
+                <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 group-hover:text-foreground font-medium transition-colors">
+                  Now Booking 2026 &amp; 2027
                 </span>
-              </div>
+              </Link>
             </div>
 
             <motion.h1

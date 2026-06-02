@@ -419,6 +419,27 @@ model AuditionAssignment {
 
 // ── Email Subscribers (Workstream 8) ───────────────────────
 
+// ── Public Events (owner-managed) ─────────────────────────
+
+model Event {
+  id              String   @id @default(cuid())
+  title           String
+  date            String   // human-readable date string (e.g. "August 2, 2026")
+  startAt         DateTime? // optional ISO date for sorting/filtering
+  city            String
+  venue           String
+  featuredArtists String[] // free-form artist names
+  ticketStatus    String   @default("Available") // Available | Limited | Sold Out
+  ticketUrl       String?
+  isPast          Boolean  @default(false)
+  published       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([published, startAt])
+  @@index([isPast])
+}
+
 model EmailSubscriber {
   id           String   @id @default(cuid())
   email        String   @unique

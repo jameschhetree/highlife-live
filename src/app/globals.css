@@ -129,33 +129,30 @@ body {
   transform: translateY(-1px);
 }
 
-/* Vinyl mascot — bounces left/right above "Now Booking 2026" pill on home.
-   Outer wrapper walks horizontally with a slight bobble + direction flip; inner
-   disc spins independently. Pattern inspired by tday.com's pixel-cal walker,
-   adapted to our dark-glass aesthetic. */
-.mascot-vinyl {
-  animation: mascot-walk 5.6s ease-in-out infinite;
-  transform-origin: center bottom;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+/* Mic mascot — floats in a sine-wave arc above "Now Booking 2026 & 2027" pill.
+   Outer wrapper traces a smooth horizontal path + sine-wave vertical bob; inner
+   element gently sways like a pendulum. No flipping (mic has a clear up/down
+   orientation), just a continuous figure that drifts side-to-side over the pill. */
+.mascot-mic {
+  position: absolute;
+  display: block;
+  animation: mascot-float 7s ease-in-out infinite, mascot-sway 3.2s ease-in-out infinite;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45));
 }
-.mascot-vinyl-disc {
-  animation: mascot-spin 2.4s linear infinite;
+@keyframes mascot-float {
+  0%   { left: calc(50% - 80px); top: -52px; }
+  25%  { left: calc(50% - 40px); top: -60px; }
+  50%  { left: calc(50% + 64px); top: -52px; }
+  75%  { left: calc(50% + 24px); top: -60px; }
+  100% { left: calc(50% - 80px); top: -52px; }
 }
-@keyframes mascot-walk {
-  0%   { transform: translate(-64px, 0) scaleX(1) scaleY(1); }
-  24%  { transform: translate(-32px, -2px) scaleX(1) scaleY(1.04); }
-  48%  { transform: translate(60px, 0) scaleX(1) scaleY(1); }
-  52%  { transform: translate(60px, 0) scaleX(-1) scaleY(1); }
-  76%  { transform: translate(28px, -2px) scaleX(-1) scaleY(1.04); }
-  98%  { transform: translate(-64px, 0) scaleX(-1) scaleY(1); }
-  100% { transform: translate(-64px, 0) scaleX(1) scaleY(1); }
-}
-@keyframes mascot-spin {
-  to { transform: rotate(360deg); }
+@keyframes mascot-sway {
+  0%, 100% { transform: rotate(-6deg); }
+  50%      { transform: rotate(6deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mascot-vinyl,
-  .mascot-vinyl-disc { animation: none; }
+  .mascot-mic { animation: none; }
 }
 
 /* Glass card surface */
