@@ -129,28 +129,34 @@ body {
   transform: translateY(-1px);
 }
 
-/* Mic mascot — floats in a sine-wave arc above "Now Booking 2026 & 2027" pill.
-   Outer wrapper traces a smooth horizontal path + sine-wave vertical bob; inner
-   element gently sways like a pendulum. No flipping (mic has a clear up/down
-   orientation), just a continuous figure that drifts side-to-side over the pill. */
+/* Mic mascot — paces back and forth along a flat baseline above
+   "Now Booking 2026 & 2027" with gentle bunny hops. The pace animation
+   alternates direction (left → right → left); the hop is a small repeating
+   bounce on top. ease-in-out on the pace creates natural pause/slow-down
+   at each end. No rotation — mic stays upright. */
 .mascot-mic {
   position: absolute;
   display: block;
-  animation: mascot-float 7s ease-in-out infinite, mascot-sway 3.2s ease-in-out infinite;
+  left: 50%;
+  top: -52px;
+  margin-left: -16px; /* center the 32px sprite on the pill axis */
   transform-origin: 50% 100%;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45));
+  animation:
+    mascot-pace 4.5s ease-in-out infinite alternate,
+    mascot-bunny 0.65s ease-in-out infinite;
 }
-@keyframes mascot-float {
-  0%   { left: calc(50% - 80px); top: -52px; }
-  25%  { left: calc(50% - 40px); top: -60px; }
-  50%  { left: calc(50% + 64px); top: -52px; }
-  75%  { left: calc(50% + 24px); top: -60px; }
-  100% { left: calc(50% - 80px); top: -52px; }
+
+@keyframes mascot-pace {
+  0%   { margin-left: -84px; }
+  100% { margin-left: 52px; }
 }
-@keyframes mascot-sway {
-  0%, 100% { transform: rotate(-6deg); }
-  50%      { transform: rotate(6deg); }
+
+@keyframes mascot-bunny {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .mascot-mic { animation: none; }
 }
