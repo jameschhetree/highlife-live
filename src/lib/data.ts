@@ -115,7 +115,7 @@ export const artists: Artist[] = [
     bio: "Mali Wave brings West African rhythms to East Coast stages. Born in Lagos, raised in Baltimore, Mali fuses traditional afrobeats structures with modern production and a live performance style that gets every body in the room moving. A true cultural bridge in the live music space.",
     shortDesc: "Baltimore-based afrobeats artist bridging Lagos energy with East Coast stages.",
     performanceTypes: ["Headline Set", "Cultural Festival", "Private Event", "Brand Campaign"],
-    pastEvents: ["Afro Nation Warmup", "Baltimore Artscape", "HighLife Records Night"],
+    pastEvents: ["Afro Nation Warmup", "Baltimore Artscape", "HighLife Live Night"],
     travelAvailability: "Domestic + West Africa",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
   },
@@ -160,7 +160,7 @@ export const artists: Artist[] = [
     bio: "Vanta Rose is Atlanta's darkest secret, an artist whose sound exists at the intersection of trap, goth, and cinematic production. Every performance feels like stepping into a film. Known for theatrical staging, moody lighting demands, and sets that leave audiences in silence before eruption.",
     shortDesc: "Atlanta rap with cinematic production and theatrical live staging.",
     performanceTypes: ["Headline Set", "Showcase", "Festival", "Art Event"],
-    pastEvents: ["HighLife Records Night ATL", "Underground Atlanta Series", "Art Basel Side Show"],
+    pastEvents: ["HighLife Live Night ATL", "Underground Atlanta Series", "Art Basel Side Show"],
     travelAvailability: "Domestic",
     image: "https://images.unsplash.com/photo-1492288991661-058aa541ff43?w=800&q=80",
   },
@@ -189,7 +189,7 @@ export const events: Event[] = [
   },
   {
     id: "evt-3",
-    title: "HighLife Records Night",
+    title: "HighLife Live Night",
     date: "August 2, 2026",
     city: "Baltimore, MD",
     venue: "Ottobar",
@@ -232,7 +232,7 @@ export const events: Event[] = [
 export const products: Product[] = [
   {
     id: "prod-1",
-    name: "HighLife Records Black Tee",
+    name: "HighLife Live Black Tee",
     price: 45,
     image: "black-tee",
     sizes: ["S", "M", "L", "XL", "XXL"],
@@ -240,7 +240,7 @@ export const products: Product[] = [
   },
   {
     id: "prod-2",
-    name: "HighLife Records White Tee",
+    name: "HighLife Live White Tee",
     price: 45,
     image: "white-tee",
     sizes: ["S", "M", "L", "XL", "XXL"],
@@ -248,7 +248,7 @@ export const products: Product[] = [
   },
   {
     id: "prod-3",
-    name: "HighLife Records Hoodie",
+    name: "HighLife Live Hoodie",
     price: 95,
     image: "hoodie",
     sizes: ["S", "M", "L", "XL", "XXL"],

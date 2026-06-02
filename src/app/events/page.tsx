@@ -24,7 +24,7 @@ export default function EventsPage() {
             </h1>
             <p className="text-silver max-w-xl leading-relaxed">
               Premium live showcases, intimate sessions, and private industry
-              events powered by HighLife Records.
+              events powered by HighLife Live.
             </p>
           </div>
         </ScrollReveal>
@@ -66,7 +66,7 @@ export default function EventsPage() {
             </h2>
             <p className="text-silver text-sm max-w-lg mx-auto mb-8 leading-relaxed">
               Planning a showcase, brand activation, or private event? Let
-              HighLife Records curate the talent for your room.
+              HighLife Live curate the talent for your room.
             </p>
             <Link
               href="/book"

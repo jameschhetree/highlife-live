@@ -26,9 +26,9 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
-  title: "HighLife Records | Talent Booking for Venues & Promoters",
+  title: "HighLife Live | Talent Booking for Venues & Promoters",
   description:
-    "HighLife Records connects venues, promoters, and talent buyers with a curated roster of artists. Inquiry-based bookings, live event culture, premium experiences.",
+    "HighLife Live connects venues, promoters, and talent buyers with a curated roster of artists. Inquiry-based bookings, live event culture, premium experiences.",
 };
 
 export default function RootLayout({

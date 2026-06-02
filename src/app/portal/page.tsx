@@ -161,7 +161,7 @@ export default function PortalPage() {
             <MessageSquare size={18} className="text-pink-300 mt-0.5 flex-shrink-0" />
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-medium">HighLife Records Team</span>
+                <span className="text-sm font-medium">HighLife Live Team</span>
                 <span className="text-[10px] text-zinc-500">2 hours ago</span>
               </div>
               <p className="text-sm text-zinc-300 leading-relaxed">
@@ -314,7 +314,7 @@ export default function PortalPage() {
               <span className="text-gradient-hero">show?</span>
             </h2>
             <p className="text-sm text-zinc-400 mb-8 max-w-md mx-auto">
-              Submit a new inquiry and the HighLife Records team will respond to
+              Submit a new inquiry and the HighLife Live team will respond to
               fits that align with the artist and event.
             </p>
             <Link

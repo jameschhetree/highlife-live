@@ -35,9 +35,9 @@ export default function HomePage() {
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+            initial={{ opacity: 0, y: 18, filter: "blur(3px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 1, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
             {/* Status pill */}
@@ -92,16 +92,16 @@ export default function HomePage() {
             >
               <Link
                 href="/roster"
-                className="group flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 hover:bg-black/55 hover:border-white/20 px-5 py-4 text-xs tracking-[0.18em] uppercase font-semibold transition-all duration-300"
+                className="group flex items-center justify-center gap-2 rounded-2xl btn-gradient px-5 py-4 text-xs tracking-[0.18em] uppercase font-bold"
               >
-                <span>Browse the Roster</span>
+                <span>Roster</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                href="/book"
-                className="group flex items-center justify-center gap-2 rounded-2xl btn-gradient px-5 py-4 text-xs tracking-[0.18em] uppercase font-bold"
+                href="/login"
+                className="group flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/40 hover:bg-black/55 hover:border-white/20 px-5 py-4 text-xs tracking-[0.18em] uppercase font-semibold transition-all duration-300"
               >
-                <span>Book Talent</span>
+                <span>Request Venue Login</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
@@ -166,7 +166,7 @@ export default function HomePage() {
                 <span className="text-gradient-hero">moves rooms.</span>
               </h2>
               <p className="text-silver leading-relaxed text-base mb-6">
-                HighLife Records is the booking and artist development arm of the
+                HighLife Live is the booking and artist development arm of the
                 HighLife ecosystem — connecting venues, promoters, brands, and
                 private clients with talent built for unforgettable rooms.
               </p>
@@ -239,7 +239,7 @@ export default function HomePage() {
               </h2>
               <p className="text-silver leading-relaxed mb-10">
                 Log in to browse bookable artists, track inquiries, and manage
-                booking conversations with the HighLife Records team.
+                booking conversations with the HighLife Live team.
               </p>
               <Link
                 href="/login"

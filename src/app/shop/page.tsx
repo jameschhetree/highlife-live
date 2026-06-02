@@ -64,7 +64,7 @@ export default function ShopPage() {
                 Shop
               </h1>
               <p className="text-silver max-w-xl leading-relaxed">
-                Official HighLife Records merchandise. Premium materials,
+                Official HighLife Live merchandise. Premium materials,
                 limited runs, culture-forward design.
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function ShopPage() {
                       <span className="font-serif text-3xl text-white/30">H</span>
                     </div>
                     <span className="text-[9px] tracking-[0.3em] uppercase text-white/40">
-                      HighLife Records
+                      HighLife Live
                     </span>
                   </div>
                   {product.image === "white-tee" && (

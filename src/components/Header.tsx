@@ -5,22 +5,18 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag } from "lucide-react";
-import { getCartCount } from "@/lib/cart";
+import { Menu, X } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
 
 const navLinks = [
   { href: "/roster", label: "Roster" },
   { href: "/events", label: "Events" },
   { href: "/book", label: "Book" },
-  { href: "/shop", label: "Shop" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -28,19 +24,12 @@ export function Header() {
   if (pathname?.startsWith("/admin")) return null;
 
   useEffect(() => {
-    setCartCount(getCartCount());
     setAuthed(isAuthenticated());
-
-    const onCartUpdate = () => setCartCount(getCartCount());
-    window.addEventListener("cart-updated", onCartUpdate);
-    window.addEventListener("storage", onCartUpdate);
 
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("cart-updated", onCartUpdate);
-      window.removeEventListener("storage", onCartUpdate);
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
@@ -60,35 +49,36 @@ export function Header() {
       >
         <nav className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3.5 lg:px-8">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Records Home">
-            <span className="relative w-10 h-10 inline-block shrink-0">
-              <Image
-                src="/logo.png"
-                alt=""
-                fill
-                priority
-                sizes="40px"
-                className="object-contain"
-              />
-            </span>
-            <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
-              HighLife Records
-            </span>
-            <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
-              HighLife
-            </span>
-          </Link>
+          <div className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
+              <span className="relative w-10 h-10 inline-block shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt=""
+                  fill
+                  priority
+                  sizes="40px"
+                  className="object-contain"
+                />
+              </span>
+              <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
+                HighLife Live
+              </span>
+              <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
+                HighLife
+              </span>
+            </Link>
+            <Link
+              href="/admin"
+              aria-label="Admin login"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-[10px] font-bold leading-none text-white/55 transition-colors hover:border-white/30 hover:text-white/85"
+            >
+              A
+            </Link>
+          </div>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
-            <Link
-              href="/findanagent"
-              className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
-                pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
-              }`}
-            >
-              Auditions
-            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -102,35 +92,23 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/findanagent"
+              className={`text-xs tracking-[0.18em] uppercase transition-colors duration-300 underline-offset-4 hover:underline ${
+                pathname === "/findanagent" ? "text-foreground" : "text-silver hover:text-foreground"
+              }`}
+            >
+              Auditions
+            </Link>
           </div>
 
           {/* Right Side */}
           <div className="flex items-center gap-3 sm:gap-4">
             <Link
-              href="/shop"
-              className="relative p-2 text-silver hover:text-foreground transition-colors"
-              aria-label={`Shopping bag, ${cartCount} items`}
-            >
-              <ShoppingBag size={18} strokeWidth={1.5} />
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-foreground text-background text-[10px] font-medium flex items-center justify-center rounded-full">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-
-            <Link
               href={authed ? "/portal" : "/login"}
               className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
             >
               {authed ? "Portal" : "Partner Login"}
-            </Link>
-
-            <Link
-              href="/admin"
-              className="hidden sm:block text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
-            >
-              Admin Login
             </Link>
 
             <Link
@@ -163,13 +141,6 @@ export function Header() {
             className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl flex flex-col items-center justify-center lg:hidden"
           >
             <nav className="flex flex-col items-center gap-8">
-              <Link
-                href="/findanagent"
-                onClick={() => setMobileOpen(false)}
-                className="text-xl font-display tracking-[0.15em] uppercase text-silver"
-              >
-                Auditions
-              </Link>
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -188,6 +159,13 @@ export function Header() {
                   </Link>
                 </motion.div>
               ))}
+              <Link
+                href="/findanagent"
+                onClick={() => setMobileOpen(false)}
+                className="text-xl font-display tracking-[0.15em] uppercase text-silver"
+              >
+                Auditions
+              </Link>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

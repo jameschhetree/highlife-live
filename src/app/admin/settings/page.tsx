@@ -18,10 +18,10 @@ import { clearAllData, resetDemoData } from "@/lib/admin-store";
 import { triggerStoreUpdate } from "@/hooks/useAdminStore";
 
 const teamMembers = [
-  { name: "James Carter", email: "james@highliferecords.com", role: "Owner/Admin", status: "Active" },
-  { name: "Maria Lopez", email: "maria@highliferecords.com", role: "Booker", status: "Active" },
-  { name: "Devon Clark", email: "devon@highliferecords.com", role: "Researcher", status: "Active" },
-  { name: "Sarah Kim", email: "sarah@highliferecords.com", role: "Viewer", status: "Invited" },
+  { name: "James Carter", email: "james@highlifedmv.com", role: "Owner/Admin", status: "Active" },
+  { name: "Maria Lopez", email: "maria@highlifedmv.com", role: "Booker", status: "Active" },
+  { name: "Devon Clark", email: "devon@highlifedmv.com", role: "Researcher", status: "Active" },
+  { name: "Sarah Kim", email: "sarah@highlifedmv.com", role: "Viewer", status: "Invited" },
 ];
 
 const roles = [
@@ -82,7 +82,7 @@ export default function SettingsPage() {
               <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1">Company Name</label>
               <input
                 type="text"
-                defaultValue="HighLife Records"
+                defaultValue="HighLife Live"
                 className="w-full px-3 py-2 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground focus:outline-none focus:border-pink-500/40"
               />
             </div>
@@ -90,7 +90,7 @@ export default function SettingsPage() {
               <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1">Booking Contact Email</label>
               <input
                 type="email"
-                defaultValue="booking@highliferecords.com"
+                defaultValue="booking@highlifedmv.com"
                 className="w-full px-3 py-2 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground focus:outline-none focus:border-pink-500/40"
               />
             </div>
@@ -111,7 +111,7 @@ export default function SettingsPage() {
               <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1">Website</label>
               <input
                 type="text"
-                defaultValue="highliferecords.com"
+                defaultValue="highlifedmv.com"
                 className="w-full px-3 py-2 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground focus:outline-none focus:border-pink-500/40"
               />
             </div>

@@ -18,7 +18,7 @@ export function Footer() {
                 <span className="font-serif text-sm font-semibold tracking-wide">H</span>
               </div>
               <span className="font-display text-lg tracking-[0.2em] uppercase font-medium">
-                HighLife Records
+                HighLife Live
               </span>
             </div>
             <p className="text-silver text-sm leading-relaxed max-w-md">
@@ -28,10 +28,10 @@ export function Footer() {
             </p>
             <div className="mt-6">
               <a
-                href="mailto:bookings@highliferecords.com"
+                href="mailto:bookings@highlifedmv.com"
                 className="text-sm text-silver hover:text-foreground transition-colors"
               >
-                bookings@highliferecords.com
+                bookings@highlifedmv.com
               </a>
             </div>
           </div>
@@ -47,7 +47,6 @@ export function Footer() {
                 { href: "/roster", label: "Artist Roster" },
                 { href: "/events", label: "Events" },
                 { href: "/book", label: "Book an Artist" },
-                { href: "/shop", label: "Merch Shop" },
                 { href: "/login", label: "Promoter Login" },
               ].map((link) => (
                 <Link
@@ -108,7 +107,7 @@ export function Footer() {
 
         <div className="mt-16 pt-8 border-t border-border/30 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted">
-            &copy; {new Date().getFullYear()} HighLife Records. All rights reserved.
+            &copy; {new Date().getFullYear()} HighLife Live. All rights reserved.
           </p>
           <p className="text-xs text-muted">
             Curated talent. Premium experiences. Artist-first booking.
