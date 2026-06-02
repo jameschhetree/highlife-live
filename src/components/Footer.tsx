@@ -43,6 +43,7 @@ export function Footer() {
             </h4>
             <div className="flex flex-col gap-3">
               {[
+                { href: "/findanagent", label: "Find An Agent" },
                 { href: "/roster", label: "Artist Roster" },
                 { href: "/events", label: "Events" },
                 { href: "/book", label: "Book an Artist" },
