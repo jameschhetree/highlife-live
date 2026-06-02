@@ -39,19 +39,26 @@ body {
   color: #fff;
 }
 
-/* Scrollbar */
+/* Scrollbar — gliding spectrum */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #050608;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ec4899, #a855f7);
+  background: linear-gradient(180deg, #fde047, #fb923c, #ec4899, #a855f7, #38bdf8, #fde047);
+  background-size: 100% 300%;
   border-radius: 3px;
+  animation: scrollbar-glide 9s linear infinite;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #fde047, #ec4899);
+  filter: brightness(1.15) saturate(1.2);
+}
+@keyframes scrollbar-glide {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% -300%; }
 }
 
 /* Focus states */
@@ -60,13 +67,31 @@ body {
   outline-offset: 2px;
 }
 
-/* Hero gradient text — yellow → pink → purple */
+/* Hero gradient text — gliding spectrum, loops the full yellow→orange→pink→purple→cyan→yellow ring */
 .text-gradient-hero {
-  background: linear-gradient(90deg, #fde047 0%, #fb923c 28%, #ec4899 60%, #a855f7 100%);
+  background: linear-gradient(
+    90deg,
+    #fde047 0%,
+    #fb923c 16%,
+    #ec4899 33%,
+    #a855f7 50%,
+    #38bdf8 66%,
+    #34d399 83%,
+    #fde047 100%
+  );
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+  animation: text-gradient-glide 10s linear infinite;
+}
+@keyframes text-gradient-glide {
+  to { background-position: -250% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .text-gradient-hero { animation: none; }
+  ::-webkit-scrollbar-thumb { animation: none; }
 }
 
 .text-gradient-soft {
