@@ -2,16 +2,31 @@
 
 const ADMIN_KEY = "highlife_admin";
 
+interface AdminUser {
+  email: string;
+  password: string;
+  displayName: string;
+}
+
+const ADMIN_USERS: ReadonlyArray<AdminUser> = [
+  { email: "jaco@highlifedmv.com", password: "Jaco.iv1", displayName: "Jaco" },
+  { email: "liam@highlifedmv.com", password: "DokMurda1", displayName: "Liam" },
+];
+
 export interface AdminSession {
-  username: string;
+  email: string;
+  displayName: string;
   role: "admin";
   loggedInAt: string;
 }
 
-export function adminLogin(username: string, password: string): AdminSession | null {
-  if (username !== "admin" || password !== "admin") return null;
+export function adminLogin(emailOrUsername: string, password: string): AdminSession | null {
+  const email = emailOrUsername.trim().toLowerCase();
+  const match = ADMIN_USERS.find((u) => u.email === email && u.password === password);
+  if (!match) return null;
   const session: AdminSession = {
-    username: "admin",
+    email: match.email,
+    displayName: match.displayName,
     role: "admin",
     loggedInAt: new Date().toISOString(),
   };

@@ -25,7 +25,7 @@ export default function LoginPage() {
     if (login(email, password)) {
       router.push("/portal");
     } else {
-      setError("Invalid credentials. Try demo@demo.com / demo");
+      setError("Invalid credentials.");
       setLoading(false);
     }
   };
@@ -65,7 +65,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-soft-gray border border-border text-sm px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors"
-              placeholder="demo@demo.com"
+              placeholder="you@venue.com"
               required
               autoComplete="email"
             />
@@ -119,13 +119,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 p-4 bg-card border border-border/30 text-center">
-          <p className="text-xs text-muted">
-            Demo credentials:{" "}
-            <span className="text-silver">demo@demo.com</span> /{" "}
-            <span className="text-silver">demo</span>
-          </p>
-        </div>
       </motion.div>
     </div>
   );
