@@ -147,14 +147,14 @@ async function sendConfirmationEmail(application: {
   await resend.emails.send({
     from: "HighLife Live <bookings@highlifedmv.com>",
     to: [application.email],
-    subject: "We received your Find An Agent application",
+    subject: "We received your HighLife Live audition",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f4f4f5;">
         <h1 style="font-size:20px;margin:0 0 12px;">Application Received</h1>
         <p style="line-height:1.6;color:#d4d4d8;">
           Hi ${application.fullName},
           <br /><br />
-          Thanks for submitting your Find An Agent application for <strong>${application.actStageName}</strong>.
+          Thanks for submitting your audition for <strong>${application.actStageName}</strong>.
           Our team received it successfully and will review it.
         </p>
         <p style="margin-top:18px;font-size:12px;color:#a1a1aa;">
@@ -202,7 +202,7 @@ async function sendInternalAlert(application: {
   await resend.emails.send({
     from: "HighLife Live <bookings@highlifedmv.com>",
     to: ["liam@highlifedmv.com"],
-    subject: `New Find An Agent application: ${application.actStageName}`,
+    subject: `New audition: ${application.actStageName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f4f4f5;">
         <h1 style="font-size:20px;margin:0 0 12px;">New External Artist Request</h1>
