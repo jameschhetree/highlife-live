@@ -20,8 +20,8 @@ import Link from "next/link";
  *                pacing on dismiss.
  */
 
-// PLACEHOLDER — swap with James's official code when he sends it.
-const COUPON_CODE = "HLLIVE-EARLY";
+// Official coupon code from James (HL Live, 2026-06-02). Preserves exact spelling.
+const COUPON_CODE = "HLLbeta1.1-4jeremey";
 
 type Mode = "pacing" | "flying" | "homing" | "boxed" | "coupon";
 
