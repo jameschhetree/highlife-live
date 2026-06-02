@@ -13,6 +13,9 @@ import {
   Edit3,
   Check,
   X,
+  Key,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { canManageVenueLogins, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
@@ -74,8 +77,15 @@ export default function VenueLoginsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ displayName: "", organizationName: "", email: "" });
 
+  // Password reset
+  const [resetId, setResetId] = useState<string | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
   // Create login modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreatePw, setShowCreatePw] = useState(false);
   const [createFrom, setCreateFrom] = useState<PartnerRequest | null>(null);
   const [createForm, setCreateForm] = useState({ email: "", password: "", displayName: "", organizationName: "", accountType: "Venue" });
   const [createLoading, setCreateLoading] = useState(false);
@@ -219,6 +229,23 @@ export default function VenueLoginsPage() {
   };
 
   const cancelEdit = () => setEditingId(null);
+
+  const handlePasswordReset = async () => {
+    if (!session || !resetId || !resetPassword.trim()) return;
+    setResetLoading(true);
+    try {
+      await fetch(`/api/admin/venue-logins/${resetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ password: resetPassword.trim() }),
+      });
+      setResetId(null);
+      setResetPassword("");
+      setShowResetPw(false);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const newCount = requests.filter((r) => r.status === "New").length;
   const isLoading = tab === "requests" ? requestsLoading : loginsLoading;
@@ -559,6 +586,13 @@ export default function VenueLoginsPage() {
                                       <Edit3 size={12} />
                                     </button>
                                     <button
+                                      onClick={() => { setResetId(login.id); setResetPassword(""); setShowResetPw(false); }}
+                                      className="p-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 text-amber-300 hover:text-amber-200 transition-colors"
+                                      title="Reset Password"
+                                    >
+                                      <Key size={12} />
+                                    </button>
+                                    <button
                                       onClick={() => handleRemoveLogin(login.id)}
                                       className="p-1.5 rounded-lg border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
                                       title="Remove"
@@ -580,6 +614,61 @@ export default function VenueLoginsPage() {
           </>
         )}
       </div>
+
+      {/* Password Reset Modal */}
+      <AnimatePresence>
+        {resetId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-5"
+            onClick={() => setResetId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="glass-card rounded-2xl p-6 sm:p-8 w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display uppercase text-xl tracking-tight mb-4">Reset Password</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-1.5">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showResetPw ? "text" : "password"}
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60"
+                      placeholder="Enter new password"
+                    />
+                    <button type="button" onClick={() => setShowResetPw(!showResetPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+                      {showResetPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setResetId(null)}
+                    className="flex-1 py-2.5 rounded-full border border-white/10 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground hover:border-white/25 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePasswordReset}
+                    disabled={resetLoading || !resetPassword.trim()}
+                    className="flex-1 py-2.5 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold disabled:opacity-50"
+                  >
+                    {resetLoading ? "Resetting..." : "Reset"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Create Login Modal */}
       <AnimatePresence>
@@ -618,13 +707,18 @@ export default function VenueLoginsPage() {
                 </div>
                 <div>
                   <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-1.5">Password</label>
-                  <input
-                    type="text"
-                    value={createForm.password}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60"
-                    placeholder="Set initial password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCreatePw ? "text" : "password"}
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60"
+                      placeholder="Set initial password"
+                    />
+                    <button type="button" onClick={() => setShowCreatePw(!showCreatePw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+                      {showCreatePw ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-1.5">Display Name</label>

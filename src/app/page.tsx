@@ -173,7 +173,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <ScrollReveal>
-              <span className="chip mb-6 inline-flex">About the Label</span>
+              <span className="chip mb-6 inline-flex">About the Agency</span>
               <h2 className="font-display uppercase text-5xl md:text-6xl tracking-tight mb-8 leading-[0.95]">
                 Talent that{" "}
                 <span className="text-gradient-hero">moves rooms.</span>

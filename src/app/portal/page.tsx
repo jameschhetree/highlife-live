@@ -7,9 +7,7 @@ import { motion } from "framer-motion";
 import {
   Clock,
   CheckCircle,
-  Search,
   ArrowRight,
-  Star,
   MessageSquare,
   LogOut,
   Plus,
@@ -19,16 +17,15 @@ import {
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { isAuthenticated, logout, getUser } from "@/lib/auth";
-import { artists } from "@/lib/data";
 
-interface BookingRecord {
+interface InquiryRecord {
   id: string;
+  inquiryNumber: string;
   artistSlug: string;
   artistName: string;
   venueName: string;
   venueAddress: string;
   eventDate: string;
-  proposedOffer: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
@@ -76,14 +73,12 @@ const defaultStatus = {
   bg: "bg-zinc-400/10 border-zinc-400/20",
 };
 
-const savedSlugs = ["tone-brady", "nyla-vale"];
-
 export default function PortalPage() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [userBookings, setUserBookings] = useState<BookingRecord[]>([]);
-  const [userName, setUserName] = useState("Promoter");
+  const [userInquiries, setUserInquiries] = useState<InquiryRecord[]>([]);
+  const [userName, setUserName] = useState("Partner");
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -94,17 +89,18 @@ export default function PortalPage() {
     const user = getUser();
     if (user?.name) setUserName(user.name);
 
-    // Fetch bookings from API -- try by contactEmail, fall back to all recent
+    // Fetch inquiries for this venue partner
     const email = user?.email;
-    const url = email
-      ? `/api/bookings?contactEmail=${encodeURIComponent(email)}`
-      : "/api/bookings";
-
-    fetch(url)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setUserBookings(data))
-      .catch(() => setUserBookings([]))
-      .finally(() => setChecking(false));
+    if (email) {
+      // Try the new inquiry system -- fetch by contactEmail
+      fetch(`/api/inquiries?venueLoginId=${encodeURIComponent(email)}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setUserInquiries(Array.isArray(data) ? data : []))
+        .catch(() => setUserInquiries([]))
+        .finally(() => setChecking(false));
+    } else {
+      setChecking(false);
+    }
   }, [router]);
 
   const handleLogout = () => {
@@ -122,11 +118,6 @@ export default function PortalPage() {
     );
   }
 
-  const saved = artists.filter((a) => savedSlugs.includes(a.slug));
-  const recommended = artists
-    .filter((a) => !savedSlugs.includes(a.slug) && a.available)
-    .slice(0, 3);
-
   return (
     <div className="min-h-screen bg-radial-atmosphere pt-28 pb-24">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
@@ -143,7 +134,7 @@ export default function PortalPage() {
               <span className="text-gradient-hero">{userName}.</span>
             </h1>
             <p className="text-sm text-zinc-400">
-              Manage your inquiries, track requests, and discover new talent.
+              Manage your inquiries, track requests, and browse the entertainment roster.
             </p>
           </motion.div>
           <button
@@ -155,19 +146,17 @@ export default function PortalPage() {
           </button>
         </div>
 
-        {/* Message */}
+        {/* Welcome message */}
         <ScrollReveal>
           <div className="glass-card rounded-2xl p-5 mb-10 flex items-start gap-4">
             <MessageSquare size={18} className="text-pink-300 mt-0.5 flex-shrink-0" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium">HighLife Live Team</span>
-                <span className="text-[10px] text-zinc-500">2 hours ago</span>
               </div>
               <p className="text-sm text-zinc-300 leading-relaxed">
-                Welcome back. Your recent inquiries are visible below — we will
-                follow up on any opportunity that aligns with the artist and
-                event. Check out recommended artists for your upcoming dates.
+                Welcome back. Your submitted inquiries are visible below. Submit
+                a new inquiry to book talent for your venue or event.
               </p>
             </div>
           </div>
@@ -179,7 +168,7 @@ export default function PortalPage() {
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
               Your Inquiries
             </h2>
-            {userBookings.length === 0 ? (
+            {userInquiries.length === 0 ? (
               <div className="glass-card rounded-2xl p-8 text-center">
                 <p className="text-sm text-zinc-400 mb-5">
                   You have not submitted any inquiries yet.
@@ -194,35 +183,35 @@ export default function PortalPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userBookings.map((b) => {
-                  const config = statusConfig[b.status] || defaultStatus;
+                {userInquiries.map((inq) => {
+                  const config = statusConfig[inq.status] || defaultStatus;
                   const Icon = config.icon;
                   return (
                     <motion.div
-                      key={b.id}
+                      key={inq.id}
                       whileHover={{ y: -2 }}
                       className={`glass-card rounded-2xl p-5 border ${config.bg}`}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-                          #{b.id.slice(-8).toUpperCase()}
+                        <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 font-mono">
+                          {inq.inquiryNumber}
                         </span>
                         <Icon size={14} className={config.color} />
                       </div>
-                      <h3 className="text-sm font-medium mb-1">{b.artistName}</h3>
+                      <h3 className="text-sm font-medium mb-1">{inq.artistName}</h3>
                       <p className="text-xs text-zinc-500 mb-3">
-                        {b.venueName} ·{" "}
-                        {new Date(b.eventDate || b.submittedAt).toLocaleDateString()}
+                        {inq.venueName} ·{" "}
+                        {inq.eventDate || new Date(inq.submittedAt).toLocaleDateString()}
                       </p>
-                      {b.eventDescription && (
+                      {inq.eventDescription && (
                         <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                          {b.eventDescription}
+                          {inq.eventDescription}
                         </p>
                       )}
                       <span
                         className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}
                       >
-                        {b.status}
+                        {inq.status}
                       </span>
                     </motion.div>
                   );
@@ -232,82 +221,8 @@ export default function PortalPage() {
           </div>
         </ScrollReveal>
 
-        {/* Two column */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-12">
-          <ScrollReveal delay={0.2}>
-            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
-              Saved Artists
-            </h2>
-            <div className="space-y-3">
-              {saved.map((artist) => (
-                <Link
-                  key={artist.slug}
-                  href={`/artists/${artist.slug}`}
-                  className="flex items-center justify-between p-4 glass-card rounded-2xl hover:border-white/18 transition-all group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl bg-cover bg-center img-bw flex-shrink-0"
-                      style={{ backgroundImage: `url(${artist.image})` }}
-                      role="img"
-                      aria-label={artist.name}
-                    />
-                    <div>
-                      <h4 className="text-sm font-medium">{artist.name}</h4>
-                      <p className="text-xs text-zinc-500">
-                        {artist.genre} · {artist.city}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Star size={12} className="text-amber-300" fill="currentColor" />
-                    <ArrowRight
-                      size={14}
-                      className="text-zinc-500 group-hover:text-foreground transition-colors"
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.25}>
-            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
-              Recommended for You
-            </h2>
-            <div className="space-y-3">
-              {recommended.map((artist) => (
-                <Link
-                  key={artist.slug}
-                  href={`/artists/${artist.slug}`}
-                  className="flex items-center justify-between p-4 glass-card rounded-2xl hover:border-white/18 transition-all group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl bg-cover bg-center img-bw flex-shrink-0"
-                      style={{ backgroundImage: `url(${artist.image})` }}
-                      role="img"
-                      aria-label={artist.name}
-                    />
-                    <div>
-                      <h4 className="text-sm font-medium">{artist.name}</h4>
-                      <p className="text-xs text-zinc-500">
-                        {artist.genre} · {artist.city}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight
-                    size={14}
-                    className="text-zinc-500 group-hover:text-foreground transition-colors"
-                  />
-                </Link>
-              ))}
-            </div>
-          </ScrollReveal>
-        </div>
-
         {/* New booking CTA */}
-        <ScrollReveal delay={0.3}>
+        <ScrollReveal delay={0.2}>
           <div className="glass-card rounded-3xl p-8 md:p-12 text-center">
             <h2 className="font-display uppercase text-4xl md:text-5xl tracking-tight mb-4 leading-[0.95]">
               Ready to book another{" "}

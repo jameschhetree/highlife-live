@@ -21,22 +21,28 @@ import {
   KeyRound,
   Menu,
   X,
+  MessageSquare,
+  UserCog,
+  Crown,
 } from "lucide-react";
-import { adminLogout, canViewAuditions, canManageVenueLogins, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 const nav = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Bookings", icon: Inbox },
-  { href: "/admin/auditions", label: "Auditions", icon: Mic },
-  { href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound },
-  { href: "/admin/artists", label: "Artists", icon: Users },
-  { href: "/admin/venues", label: "Venues", icon: MapPinned },
-  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
-  { href: "/admin/epks", label: "EPKs", icon: FileImage },
-  { href: "/admin/research", label: "Research Queue", icon: ClipboardList },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, gate: "all" },
+  { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, gate: "all" },
+  { href: "/admin/bookings", label: "Bookings", icon: Inbox, gate: "all" },
+  { href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
+  { href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
+  { href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
+  { href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
+  { href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
+  { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
+  { href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
+  { href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
+  { href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
+  { href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
+  { href: "/admin/settings", label: "Settings", icon: Settings, gate: "all" },
+  { href: "/admin/owner-special", label: "Owner Hub", icon: Crown, gate: "owner" },
 ];
 
 export function AdminSidebar() {
@@ -69,8 +75,9 @@ export function AdminSidebar() {
   };
 
   const visibleNav = nav.filter((item) => {
-    if (item.href === "/admin/auditions") return canViewAuditions(session);
-    if (item.href === "/admin/venue-logins") return canManageVenueLogins(session);
+    if (item.gate === "auditions") return canViewAuditions(session);
+    if (item.gate === "venue-logins") return canManageVenueLogins(session);
+    if (item.gate === "owner") return isOwnerAdmin(session);
     return true;
   });
 
@@ -82,6 +89,7 @@ export function AdminSidebar() {
           item.href === "/admin"
             ? pathname === "/admin"
             : pathname?.startsWith(item.href);
+        const isOwnerHub = item.gate === "owner" && item.href === "/admin/owner-special";
         return (
           <li key={item.href}>
             <Link
@@ -89,8 +97,12 @@ export function AdminSidebar() {
               onClick={onItemClick}
               className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                 active
-                  ? "bg-white/8 text-foreground border-l-2 border-pink-400"
-                  : "text-zinc-400 hover:text-foreground hover:bg-white/4"
+                  ? isOwnerHub
+                    ? "bg-gradient-to-r from-pink-500/15 to-violet-500/15 text-foreground border-l-2 border-pink-400"
+                    : "bg-white/8 text-foreground border-l-2 border-pink-400"
+                  : isOwnerHub
+                    ? "text-pink-300/80 hover:text-foreground hover:bg-pink-500/8"
+                    : "text-zinc-400 hover:text-foreground hover:bg-white/4"
               }`}
             >
               <Icon size={16} strokeWidth={1.6} />

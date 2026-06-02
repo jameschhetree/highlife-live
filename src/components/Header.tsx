@@ -20,7 +20,7 @@ export function Header() {
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Admin console has its own shell — don't render the public header inside /admin
+  // Admin console has its own shell -- don't render the public header inside /admin
   if (pathname?.startsWith("/admin")) return null;
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function Header() {
 
           {/* Right Side */}
           <div className="flex items-center gap-3 sm:gap-5">
-            {/* Agent Login text-link (formerly Partner Login slot) */}
+            {/* Agent Login text-link */}
             <Link
               href="/admin/login"
               className="hidden sm:inline text-xs tracking-[0.18em] uppercase text-white/85 hover:text-white underline underline-offset-4 decoration-white/40 hover:decoration-white/80 transition-colors"
@@ -103,10 +103,10 @@ export function Header() {
               Agent Login
             </Link>
 
-            {/* Partner Login button (formerly Book Talent slot) — brighter gray, on-theme, not gradient */}
+            {/* Partner Login button -- animated glow border, not the rainbow gradient */}
             <Link
               href={authed ? "/portal" : "/login"}
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-xs tracking-[0.18em] uppercase font-semibold rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/15 hover:border-white/35 transition-colors"
+              className="hidden md:inline-flex items-center gap-2 px-5 py-2 text-xs tracking-[0.18em] uppercase font-semibold rounded-full partner-login-btn"
             >
               {authed ? "Portal" : "Partner Login"}
             </Link>
@@ -180,7 +180,7 @@ export function Header() {
                 <Link
                   href={authed ? "/portal" : "/login"}
                   onClick={() => setMobileOpen(false)}
-                  className="mt-2 px-8 py-3 text-lg tracking-wide uppercase font-semibold rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/15"
+                  className="mt-2 px-8 py-3 text-lg tracking-wide uppercase font-semibold rounded-full partner-login-btn"
                 >
                   {authed ? "Portal" : "Partner Login"}
                 </Link>

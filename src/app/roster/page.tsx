@@ -21,7 +21,7 @@ export default function RosterPage() {
           {/* Header */}
           <ScrollReveal>
             <div className="mb-14">
-              <span className="chip mb-6">Artist Roster</span>
+              <span className="chip mb-6">Entertainment Roster</span>
               <h1 className="font-display uppercase text-5xl md:text-7xl tracking-tight leading-[0.95] mb-5">
                 The <span className="text-gradient-hero">Roster</span>
               </h1>

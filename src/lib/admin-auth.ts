@@ -28,8 +28,9 @@ const ADMIN_USERS: ReadonlyArray<AdminUser> = [
 export interface AdminSession {
   email: string;
   displayName: string;
-  role: "admin";
+  role: "admin" | "agent";
   loggedInAt: string;
+  agentLoginId?: string; // populated for DB-backed agent logins
 }
 
 export function adminLogin(emailOrUsername: string, password: string): AdminSession | null {
@@ -39,13 +40,19 @@ export function adminLogin(emailOrUsername: string, password: string): AdminSess
   const session: AdminSession = {
     email: match.email,
     displayName: match.displayName,
-    role: "admin",
+    role: isOwnerAdminEmail(match.email) ? "admin" : "agent",
     loggedInAt: new Date().toISOString(),
   };
   if (typeof window !== "undefined") {
     sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
   }
   return session;
+}
+
+export function setAdminSession(session: AdminSession): void {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
+  }
 }
 
 export function adminLogout(): void {
@@ -74,7 +81,7 @@ export function isOwnerAdmin(session: AdminSession | null = getAdminSession()): 
 }
 
 export function isAgentAdmin(session: AdminSession | null = getAdminSession()): boolean {
-  return isAgentAdminEmail(session?.email);
+  return isAgentAdminEmail(session?.email) || session?.role === "agent";
 }
 
 export function canViewAuditions(session: AdminSession | null = getAdminSession()): boolean {

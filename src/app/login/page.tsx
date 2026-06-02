@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, ChevronDown, CheckCircle } from "lucide-react";
 import { login } from "@/lib/auth";
@@ -54,7 +55,6 @@ export default function LoginPage() {
     e.preventDefault();
     setRequestError("");
 
-    // Client-side validation
     if (!orgName.trim()) {
       setRequestError(accountType === "Venue" ? "Venue name is required." : "Promotion name is required.");
       return;
@@ -121,12 +121,12 @@ export default function LoginPage() {
   };
 
   const inputClass =
-    "w-full bg-soft-gray border border-border text-sm px-4 py-3 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors";
+    "w-full bg-black/40 border border-white/10 rounded-xl text-sm px-4 py-3 text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors";
   const labelClass =
-    "text-xs tracking-[0.15em] uppercase text-muted block mb-2";
+    "text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-2";
 
   return (
-    <div className="pt-28 pb-24 min-h-screen">
+    <div className="pt-28 pb-24 min-h-screen bg-radial-atmosphere">
       <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-start">
         {/* Left side -- Login form */}
         <motion.div
@@ -136,11 +136,17 @@ export default function LoginPage() {
           className="w-full max-w-md mx-auto lg:mx-0"
         >
           <div className="text-center lg:text-left mb-10">
-            <div className="w-12 h-12 border border-border mx-auto lg:mx-0 mb-6 flex items-center justify-center">
-              <span className="font-serif text-lg font-semibold">H</span>
-            </div>
-            <h1 className="font-serif text-3xl md:text-4xl font-light tracking-tight mb-3">
-              Promoter Login
+            <span className="relative w-14 h-14 inline-block mb-6">
+              <Image
+                src="/HighLifeLogo.png"
+                alt="HighLife Live"
+                fill
+                sizes="56px"
+                className="object-contain"
+              />
+            </span>
+            <h1 className="font-display uppercase text-3xl md:text-4xl tracking-tight mb-3">
+              <span className="text-gradient-hero">Partner</span> Login
             </h1>
             <p className="text-sm text-silver">
               Access your booking dashboard, track inquiries, and manage artist
@@ -148,10 +154,10 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 sm:p-8 space-y-5">
             <div>
               <label htmlFor="email" className={labelClass}>
-                Email or Username
+                Email
               </label>
               <input
                 id="email"
@@ -204,7 +210,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-foreground text-background text-sm tracking-[0.15em] uppercase font-medium rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
@@ -219,7 +225,7 @@ export default function LoginPage() {
           className="w-full max-w-md mx-auto lg:mx-0"
         >
           <div className="text-center lg:text-left mb-6">
-            <h2 className="font-serif text-xl font-light tracking-tight mb-2">
+            <h2 className="font-display uppercase text-xl tracking-tight mb-2">
               New here?
             </h2>
             <p className="text-sm text-silver">
@@ -231,9 +237,9 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowRequestForm(!showRequestForm)}
-            className="w-full py-3.5 border border-border text-sm tracking-[0.15em] uppercase font-medium rounded-full hover:border-silver hover:text-foreground text-muted transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 border border-white/10 text-sm tracking-[0.18em] uppercase font-medium rounded-full hover:border-white/25 hover:text-foreground text-zinc-300 transition-all flex items-center justify-center gap-2"
           >
-            Request Venue Login
+            Request Partner Login
             <motion.span
               animate={{ rotate: showRequestForm ? 180 : 0 }}
               transition={{ duration: 0.3 }}
@@ -251,7 +257,7 @@ export default function LoginPage() {
                 transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
                 className="overflow-hidden"
               >
-                <form onSubmit={handleRequestSubmit} className="space-y-4 pt-6">
+                <form onSubmit={handleRequestSubmit} className="glass-card rounded-2xl p-6 mt-4 space-y-4">
                   {/* Account Type */}
                   <div>
                     <label className={labelClass}>Account Type</label>
@@ -263,8 +269,8 @@ export default function LoginPage() {
                           onClick={() => setAccountType(t)}
                           className={`flex-1 py-2.5 text-xs tracking-[0.15em] uppercase border rounded-lg transition-colors ${
                             accountType === t
-                              ? "border-foreground text-foreground bg-foreground/5"
-                              : "border-border text-muted hover:border-silver"
+                              ? "border-pink-400/60 text-foreground bg-pink-400/5"
+                              : "border-white/10 text-zinc-400 hover:border-white/25"
                           }`}
                         >
                           {t}
@@ -273,175 +279,76 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  {/* Organization Name */}
                   <div>
                     <label className={labelClass}>
                       {accountType === "Venue" ? "Venue Name" : "Promotion Name"}
                     </label>
-                    <input
-                      type="text"
-                      value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
-                      className={inputClass}
-                      placeholder={accountType === "Venue" ? "The Grand Venue" : "Nightlife Productions"}
-                      required
-                    />
+                    <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputClass} placeholder={accountType === "Venue" ? "The Grand Venue" : "Nightlife Productions"} required />
                   </div>
 
-                  {/* Address -- required for Venue only */}
                   <div>
                     <label className={labelClass}>
                       Venue Address
-                      {accountType === "Venue" && <span className="text-red-400 ml-1">*</span>}
-                      {accountType === "Promoter" && <span className="text-zinc-500 ml-1">(optional)</span>}
+                      {accountType === "Venue" && <span className="text-pink-400 ml-1">*</span>}
+                      {accountType === "Promoter" && <span className="text-zinc-600 ml-1">(optional)</span>}
                     </label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className={inputClass}
-                      placeholder="123 Main St, Washington, DC 20001"
-                      required={accountType === "Venue"}
-                    />
+                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} placeholder="123 Main St, Washington, DC 20001" required={accountType === "Venue"} />
                   </div>
 
-                  {/* Role */}
                   <div>
                     <label className={labelClass}>Role</label>
-                    <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      className={`${inputClass} appearance-none`}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select your role
-                      </option>
-                      {ROLES.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
+                    <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputClass} appearance-none`} required>
+                      <option value="" disabled>Select your role</option>
+                      {ROLES.map((r) => (<option key={r} value={r}>{r}</option>))}
                     </select>
                   </div>
 
-                  {/* Contact Name */}
                   <div>
                     <label className={labelClass}>Your Name</label>
-                    <input
-                      type="text"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      className={inputClass}
-                      placeholder="John Smith"
-                      required
-                    />
+                    <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} className={inputClass} placeholder="John Smith" required />
                   </div>
 
-                  {/* Phone numbers */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={labelClass}>Work Phone</label>
-                      <input
-                        type="tel"
-                        value={workPhone}
-                        onChange={(e) => setWorkPhone(e.target.value)}
-                        className={inputClass}
-                        placeholder="(202) 555-0100"
-                      />
+                      <input type="tel" value={workPhone} onChange={(e) => setWorkPhone(e.target.value)} className={inputClass} placeholder="(202) 555-0100" />
                     </div>
                     <div>
                       <label className={labelClass}>Mobile Phone</label>
-                      <input
-                        type="tel"
-                        value={mobilePhone}
-                        onChange={(e) => setMobilePhone(e.target.value)}
-                        className={inputClass}
-                        placeholder="(202) 555-0101"
-                      />
+                      <input type="tel" value={mobilePhone} onChange={(e) => setMobilePhone(e.target.value)} className={inputClass} placeholder="(202) 555-0101" />
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted -mt-2">At least one phone number is required.</p>
+                  <p className="text-[10px] text-zinc-500 -mt-2">At least one phone number is required.</p>
 
-                  {/* Emails */}
                   <div>
                     <label className={labelClass}>Work Email</label>
-                    <input
-                      type="email"
-                      value={workEmail}
-                      onChange={(e) => setWorkEmail(e.target.value)}
-                      className={inputClass}
-                      placeholder="john@venue.com"
-                      required
-                    />
+                    <input type="email" value={workEmail} onChange={(e) => setWorkEmail(e.target.value)} className={inputClass} placeholder="john@venue.com" required />
                   </div>
                   <div>
                     <label className={labelClass}>Requested Login Email</label>
-                    <input
-                      type="email"
-                      value={requestedLoginEmail}
-                      onChange={(e) => setRequestedLoginEmail(e.target.value)}
-                      className={inputClass}
-                      placeholder="login@venue.com"
-                      required
-                    />
-                  </div>
-
-                  {/* Optional fields */}
-                  <div>
-                    <label className={labelClass}>
-                      How did you hear about us? <span className="text-zinc-500">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={howHeard}
-                      onChange={(e) => setHowHeard(e.target.value)}
-                      className={inputClass}
-                      placeholder="Referral, social media, event..."
-                    />
+                    <input type="email" value={requestedLoginEmail} onChange={(e) => setRequestedLoginEmail(e.target.value)} className={inputClass} placeholder="login@venue.com" required />
                   </div>
 
                   <div>
-                    <label className={labelClass}>
-                      Preferred Genre / Act <span className="text-zinc-500">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={preferredGenre}
-                      onChange={(e) => setPreferredGenre(e.target.value)}
-                      className={inputClass}
-                      placeholder="R&B, Hip-Hop, Jazz..."
-                    />
+                    <label className={labelClass}>How did you hear about us? <span className="text-zinc-600">(optional)</span></label>
+                    <input type="text" value={howHeard} onChange={(e) => setHowHeard(e.target.value)} className={inputClass} placeholder="Referral, social media, event..." />
                   </div>
 
                   <div>
-                    <label className={labelClass}>
-                      Extra Notes <span className="text-zinc-500">(optional)</span>
-                    </label>
-                    <textarea
-                      value={extraNotes}
-                      onChange={(e) => setExtraNotes(e.target.value)}
-                      className={`${inputClass} resize-none`}
-                      rows={3}
-                      placeholder="Anything else you want us to know..."
-                    />
+                    <label className={labelClass}>Preferred Genre / Act <span className="text-zinc-600">(optional)</span></label>
+                    <input type="text" value={preferredGenre} onChange={(e) => setPreferredGenre(e.target.value)} className={inputClass} placeholder="R&B, Hip-Hop, Jazz..." />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Extra Notes <span className="text-zinc-600">(optional)</span></label>
+                    <textarea value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} className={`${inputClass} resize-none`} rows={3} placeholder="Anything else you want us to know..." />
                   </div>
 
                   {requestError && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-400 text-sm"
-                    >
-                      {requestError}
-                    </motion.p>
+                    <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-sm">{requestError}</motion.p>
                   )}
 
-                  <button
-                    type="submit"
-                    disabled={requestLoading}
-                    className="w-full py-3.5 bg-foreground text-background text-sm tracking-[0.15em] uppercase font-medium rounded-full hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <button type="submit" disabled={requestLoading} className="w-full py-3.5 btn-gradient text-xs tracking-[0.18em] uppercase font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
                     {requestLoading ? "Submitting..." : "Submit Request"}
                   </button>
                 </form>
@@ -459,7 +366,7 @@ export default function LoginPage() {
                 className="mt-6 p-6 border border-emerald-500/30 bg-emerald-500/5 rounded-2xl text-center"
               >
                 <CheckCircle size={32} className="text-emerald-400 mx-auto mb-3" />
-                <h3 className="font-serif text-lg mb-2">Request Submitted</h3>
+                <h3 className="font-display uppercase text-lg mb-2">Request Submitted</h3>
                 <p className="text-sm text-silver">
                   Your partner login request has been received. Our team will review it
                   and reach out with setup instructions.

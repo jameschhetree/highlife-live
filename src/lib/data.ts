@@ -43,22 +43,9 @@ export interface BookingRequest {
   description: string;
 }
 
+// Demo artists (Tone Brady, Nyla Vale) removed per data cleanup scope.
+// Remaining artists are the active roster placeholders.
 export const artists: Artist[] = [
-  {
-    slug: "tone-brady",
-    name: "Tone Brady",
-    genre: "Hip-Hop",
-    category: "Hip-Hop",
-    city: "Atlanta",
-    priceRange: "$3,000 - $8,000",
-    available: true,
-    bio: "Tone Brady brings raw Atlanta energy to every stage. With roots in the underground scene and a sound that bridges trap, soul, and modern hip-hop, Tone has become one of the most sought-after performers in the Southeast. Known for commanding rooms of any size with a presence that turns first-time listeners into lifelong fans.",
-    shortDesc: "Atlanta's hardest-hitting live hip-hop act with a sound built for premium rooms.",
-    performanceTypes: ["Headline Set", "Festival", "Private Event", "Club Residency"],
-    pastEvents: ["HighLife Sessions ATL 2025", "Culture Room Miami", "A3C Festival"],
-    travelAvailability: "Domestic + International",
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80",
-  },
   {
     slug: "foolery",
     name: "Foolery",
@@ -73,21 +60,6 @@ export const artists: Artist[] = [
     pastEvents: ["Black Room DC 2025", "Broccoli City Warmup", "Howard Homecoming"],
     travelAvailability: "East Coast + Select International",
     image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&q=80",
-  },
-  {
-    slug: "nyla-vale",
-    name: "Nyla Vale",
-    genre: "R&B",
-    category: "R&B",
-    city: "Atlanta",
-    priceRange: "$4,000 - $10,000",
-    available: true,
-    bio: "Nyla Vale is the voice of new Atlanta R&B. With a catalog that spans intimate acoustic sessions to full-band productions, Nyla delivers performances that are both technically stunning and deeply emotional. Her live show is a masterclass in presence, vocal control, and audience connection.",
-    shortDesc: "Atlanta R&B vocalist with a voice built for rooms that demand elegance.",
-    performanceTypes: ["Headline Set", "Brand Dinner", "Private Event", "Festival"],
-    pastEvents: ["HighLife Sessions ATL 2025", "Essence Fest Lounge", "Art Basel Private"],
-    travelAvailability: "Domestic + International",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80",
   },
   {
     slug: "dj-saint-noir",
@@ -166,68 +138,9 @@ export const artists: Artist[] = [
   },
 ];
 
-export const events: Event[] = [
-  {
-    id: "evt-1",
-    title: "HighLife Sessions ATL",
-    date: "June 21, 2026",
-    city: "Atlanta, GA",
-    venue: "The Velvet Room",
-    featuredArtists: ["Tone Brady", "Nyla Vale", "Vanta Rose"],
-    ticketStatus: "Available",
-    isPast: false,
-  },
-  {
-    id: "evt-2",
-    title: "Black Room Showcase",
-    date: "July 12, 2026",
-    city: "Washington, DC",
-    venue: "The Anthem (Private Floor)",
-    featuredArtists: ["Foolery", "DJ Saint Noir"],
-    ticketStatus: "Limited",
-    isPast: false,
-  },
-  {
-    id: "evt-3",
-    title: "HighLife Live Night",
-    date: "August 2, 2026",
-    city: "Baltimore, MD",
-    venue: "Ottobar",
-    featuredArtists: ["Mali Wave", "Vanta Rose", "DJ Saint Noir"],
-    ticketStatus: "Available",
-    isPast: false,
-  },
-  {
-    id: "evt-4",
-    title: "Private Industry Mixer",
-    date: "September 14, 2026",
-    city: "New York, NY",
-    venue: "Members Only Loft, SoHo",
-    featuredArtists: ["Riko Lux", "Amara Seven"],
-    ticketStatus: "Limited",
-    isPast: false,
-  },
-  {
-    id: "evt-5",
-    title: "HighLife Sessions DC",
-    date: "March 15, 2026",
-    city: "Washington, DC",
-    venue: "9:30 Club (Backroom)",
-    featuredArtists: ["Foolery", "Tone Brady"],
-    ticketStatus: "Sold Out",
-    isPast: true,
-  },
-  {
-    id: "evt-6",
-    title: "Culture Room Miami",
-    date: "January 28, 2026",
-    city: "Miami, FL",
-    venue: "Culture Room",
-    featuredArtists: ["Tone Brady", "Amara Seven"],
-    ticketStatus: "Sold Out",
-    isPast: true,
-  },
-];
+// Demo events removed per cleanup scope.
+// Events page now uses its own inline data.
+export const events: Event[] = [];
 
 export const products: Product[] = [
   {
@@ -280,32 +193,8 @@ export const products: Product[] = [
   },
 ];
 
-export const dummyBookingRequests: BookingRequest[] = [
-  {
-    id: "HL-1021",
-    artistName: "Tone Brady",
-    eventType: "Private Event",
-    status: "Pending Review",
-    date: "July 5, 2026",
-    description: "Private rooftop event, 200 guests, full production provided.",
-  },
-  {
-    id: "HL-1022",
-    artistName: "DJ Saint Noir",
-    eventType: "Club Night",
-    status: "Availability Check",
-    date: "August 15, 2026",
-    description: "Saturday night residency slot, 11pm-2am, venue capacity 500.",
-  },
-  {
-    id: "HL-1023",
-    artistName: "Nyla Vale",
-    eventType: "Brand Dinner",
-    status: "Confirmed",
-    date: "September 2, 2026",
-    description: "Luxury brand dinner, 80 guests, acoustic set preferred.",
-  },
-];
+// Demo booking requests removed per cleanup scope.
+export const dummyBookingRequests: BookingRequest[] = [];
 
 export const categories = [
   "All",

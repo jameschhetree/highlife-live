@@ -16,7 +16,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
-import { AGENT_VISIBLE_ARTIST_NAMES } from "@/lib/admin-permissions";
 
 const stats = [
   { label: "Total Artists", value: "12", delta: "+3 this month", icon: Users },
@@ -60,15 +59,9 @@ export default function AdminDashboardPage() {
         { label: "Bookings Won", value: "1", delta: "assigned artists", icon: Inbox },
       ]
     : stats;
-  const visibleDrafts = agentView
-    ? drafts.filter((d) => AGENT_VISIBLE_ARTIST_NAMES.includes(d.artist as (typeof AGENT_VISIBLE_ARTIST_NAMES)[number]))
-    : drafts;
-  const visiblePipeline = agentView
-    ? pipeline.filter((row) => AGENT_VISIBLE_ARTIST_NAMES.includes(row.artist as (typeof AGENT_VISIBLE_ARTIST_NAMES)[number]))
-    : pipeline;
-  const visibleActivity = agentView
-    ? activity.filter((row) => AGENT_VISIBLE_ARTIST_NAMES.some((name) => row.text.includes(name)))
-    : activity;
+  const visibleDrafts = agentView ? [] : drafts;
+  const visiblePipeline = agentView ? [] : pipeline;
+  const visibleActivity = agentView ? [] : activity;
 
   useEffect(() => {
     setSession(getAdminSession());

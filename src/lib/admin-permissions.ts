@@ -1,8 +1,18 @@
 export const OWNER_ADMIN_EMAILS = ["jaco@highlifedmv.com", "liam@highlifedmv.com"] as const;
 export const AGENT_ADMIN_EMAIL = "agent@highlifedmv.com";
 
-export const AGENT_VISIBLE_ARTIST_IDS = ["art-003", "art-004"] as const;
-export const AGENT_VISIBLE_ARTIST_NAMES = ["Tone Brady", "Nyla Vale"] as const;
+// Money fields that must be stripped from agent-facing API responses
+export const MONEY_FIELDS = [
+  "proposedOffer",
+  "proposedFee",
+  "expectedFee",
+  "confirmedFee",
+  "guarantee",
+  "split",
+  "budget",
+  "fee",
+  "bookingFeeRange",
+] as const;
 
 export type ArtistAccessRecord = {
   id: string;
@@ -22,7 +32,12 @@ export function isOwnerAdminEmail(email: string | null | undefined): boolean {
 }
 
 export function isAgentAdminEmail(email: string | null | undefined): boolean {
+  // Legacy static agent email OR any dynamic agent login email
   return normalizeAdminEmail(email) === AGENT_ADMIN_EMAIL;
+}
+
+export function isAnyAdminEmail(email: string | null | undefined): boolean {
+  return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
 }
 
 export function canViewAuditionsEmail(email: string | null | undefined): boolean {
@@ -41,19 +56,36 @@ export function canAccessAdminArtistApiEmail(email: string | null | undefined): 
   return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
 }
 
-export function isAgentVisibleArtist(artist: ArtistAccessRecord): boolean {
-  return (
-    AGENT_VISIBLE_ARTIST_IDS.includes(artist.id as (typeof AGENT_VISIBLE_ARTIST_IDS)[number]) ||
-    AGENT_VISIBLE_ARTIST_NAMES.includes((artist.name ?? "") as (typeof AGENT_VISIBLE_ARTIST_NAMES)[number])
-  );
+/** Strip money fields from an object for agent-scoped responses */
+export function stripMoneyFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  const result = { ...obj };
+  for (const field of MONEY_FIELDS) {
+    if (field in result) {
+      delete result[field];
+    }
+  }
+  return result;
+}
+
+/** Strip money fields from an array of objects */
+export function stripMoneyFieldsArray<T extends Record<string, unknown>>(arr: T[]): Partial<T>[] {
+  return arr.map(stripMoneyFields);
+}
+
+// Legacy artist visibility functions (kept for backward compatibility during transition)
+// These will be replaced by DB-backed agent-to-artist assignments
+export function isAgentVisibleArtist(_artist: ArtistAccessRecord): boolean {
+  // With the new AgentArtistAssignment table, visibility is checked via DB query
+  // This function is kept for compile compat but should not be the primary check
+  return false;
 }
 
 export function canViewArtistEmail(
   email: string | null | undefined,
-  artist: ArtistAccessRecord
+  _artist: ArtistAccessRecord
 ): boolean {
   if (isOwnerAdminEmail(email)) return true;
-  if (isAgentAdminEmail(email)) return isAgentVisibleArtist(artist);
+  // Agent artist visibility is now DB-backed via AgentArtistAssignment
   return false;
 }
 
@@ -62,6 +94,6 @@ export function filterArtistsForEmail<T extends ArtistAccessRecord>(
   artists: T[]
 ): T[] {
   if (isOwnerAdminEmail(email)) return artists;
-  if (isAgentAdminEmail(email)) return artists.filter(isAgentVisibleArtist);
+  // Agent filtering is now DB-backed
   return [];
 }

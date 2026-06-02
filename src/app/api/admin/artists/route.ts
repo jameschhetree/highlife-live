@@ -4,7 +4,6 @@
 import { prisma } from "@/lib/db";
 import { dbArtistToAdmin, adminArtistToDbInput } from "@/lib/admin-db-mappers";
 import {
-  AGENT_VISIBLE_ARTIST_IDS,
   canAccessAdminArtistApiEmail,
   canManageArtistsEmail,
   getAdminEmailFromRequest,
@@ -22,10 +21,21 @@ export async function GET(request: Request) {
   if (!canAccessAdminArtistApiEmail(adminEmail)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+  // Agent visibility is now DB-backed via AgentArtistAssignment.
+  // For the legacy static agent email, show no artists (they need to be assigned via the new system).
+  let where: Record<string, unknown> | undefined;
+  if (isAgentAdminEmail(adminEmail)) {
+    // Get assigned artist IDs from DB
+    const agentLogin = await prisma.agentLogin.findFirst({
+      where: { email: adminEmail, isActive: true },
+      include: { artistAssignments: { select: { artistId: true } } },
+    });
+    const assignedIds = agentLogin?.artistAssignments.map((a) => a.artistId) ?? [];
+    where = assignedIds.length > 0 ? { id: { in: assignedIds } } : { id: "__none__" };
+  }
+
   const rows = await prisma.artist.findMany({
-    where: isAgentAdminEmail(adminEmail)
-      ? { id: { in: [...AGENT_VISIBLE_ARTIST_IDS] } }
-      : undefined,
+    where,
     include: { socialStats: true },
     orderBy: { name: "asc" },
   });
