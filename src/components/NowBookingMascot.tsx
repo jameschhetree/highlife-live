@@ -34,6 +34,14 @@ export function NowBookingMascot() {
   const chaseAccumMs = useRef(0);
   const arcStateRef = useRef<{ start: { x: number; y: number }; t: number } | null>(null);
   const phaseRef = useRef<"box-sliding" | "mic-arcing">("box-sliding");
+  // Escape state — the mic picks an escape direction and commits to it for
+  // a short window before re-evaluating, so motion looks like a panicked
+  // animal running rather than a vector pinned to the cursor.
+  const escapeRef = useRef<{ vx: number; vy: number; expiresAt: number }>({
+    vx: 0,
+    vy: 0,
+    expiresAt: 0,
+  });
 
   const boxTarget = useCallback(() => {
     if (typeof window === "undefined") return { x: 90, y: 300 };
@@ -93,45 +101,70 @@ export function NowBookingMascot() {
         const dy = py - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Rule: never within MIN_DIST of cursor. Velocity-blended flee +
-        // a perpendicular pseudo-random oscillation so the path looks alive,
-        // not radial. Frame-rate-normalized via dt.
+        // "Running from" model: when the cursor is close, the mic picks an
+        // escape direction (radial-from-cursor + random kick) and COMMITS to
+        // it for ~400-700ms before re-evaluating. This looks like a panicked
+        // animal making a run, not a vector glued to the mouse.
         const MIN_DIST = 250;
+        const vw = window.innerWidth, vh = window.innerHeight;
         let nextX = px;
         let nextY = py;
+
         if (dist < MIN_DIST && dist > 0.1) {
-          // Radial flee component, eased so push is stronger when very close
-          const intensity = Math.pow(1 - dist / MIN_DIST, 1.5);
-          const fleeSpeed = intensity * 22; // px per 16ms baseline
-          const fleeStep = fleeSpeed * (dt / 16);
-          const ux = dx / dist;
-          const uy = dy / dist;
-          // Perpendicular pseudo-random oscillation — sine of accumulated time
-          // with a random phase, scaled by current intensity so the wobble
-          // disappears when the cursor is far
-          const wobble = Math.sin(now * 0.006 + posRef.current.x * 0.013) * intensity * 6;
-          const perpX = -uy;
-          const perpY = ux;
-          nextX = px + ux * fleeStep + perpX * wobble * (dt / 16);
-          nextY = py + uy * fleeStep + perpY * wobble * (dt / 16);
+          // Need a fresh escape if expired OR cursor is dangerously close
+          const tooClose = dist < 130;
+          if (now > escapeRef.current.expiresAt || tooClose) {
+            const ux = dx / dist;
+            const uy = dy / dist;
+            // Random angular kick of ±50° off pure-radial — gives the
+            // mid-run feel of "I'm running, but not in a straight line"
+            const kickAngle = (Math.random() - 0.5) * (Math.PI / 1.8);
+            const cosK = Math.cos(kickAngle);
+            const sinK = Math.sin(kickAngle);
+            // Rotate the radial unit vector by kickAngle
+            const ekx = ux * cosK - uy * sinK;
+            const eky = ux * sinK + uy * cosK;
+            escapeRef.current = {
+              vx: ekx,
+              vy: eky,
+              expiresAt: now + 400 + Math.random() * 300,
+            };
+          }
+          // Speed scales with how close the cursor is — sprint when close
+          const intensity = Math.pow(1 - dist / MIN_DIST, 1.4);
+          const sprintSpeed = 14 + intensity * 18; // px per 16ms baseline
+          const step = sprintSpeed * (dt / 16);
+          nextX = px + escapeRef.current.vx * step;
+          nextY = py + escapeRef.current.vy * step;
         } else {
-          // Cursor far / idle → drift back toward top-center smoothly,
-          // still with a tiny wandering wobble so it's never perfectly still
+          // Cursor far/idle: drift back toward top-center with a tiny wander.
+          // No escape commitment active.
+          escapeRef.current.expiresAt = 0;
           const mouseIdleMs = now - mouseT;
           const tx = window.innerWidth / 2;
           const ty = 110;
-          const driftLerp = mouseIdleMs > 600 ? 0.025 : 0.005;
-          const wanderX = Math.sin(now * 0.0011) * 0.4;
-          const wanderY = Math.cos(now * 0.0013) * 0.3;
+          const driftLerp = mouseIdleMs > 600 ? 0.025 : 0.008;
+          const wanderX = Math.sin(now * 0.0011) * 0.5;
+          const wanderY = Math.cos(now * 0.0013) * 0.4;
           nextX = px + (tx - px) * driftLerp + wanderX;
           nextY = py + (ty - py) * driftLerp + wanderY;
         }
-        const vw = window.innerWidth, vh = window.innerHeight;
-        // Soft clamp + edge perpendicular nudge to prevent corner-pinning
-        nextX = Math.max(48, Math.min(vw - 48, nextX));
-        nextY = Math.max(48, Math.min(vh - 48, nextY));
-        if (nextX === 48 || nextX === vw - 48) nextY += (Math.random() - 0.5) * 4;
-        if (nextY === 48 || nextY === vh - 48) nextX += (Math.random() - 0.5) * 4;
+
+        // Soft clamp + corner-escape: if hitting an edge, force a fresh
+        // escape direction that points back into the viewport
+        if (nextX < 48 || nextX > vw - 48 || nextY < 48 || nextY > vh - 48) {
+          nextX = Math.max(48, Math.min(vw - 48, nextX));
+          nextY = Math.max(48, Math.min(vh - 48, nextY));
+          // Aim escape back toward center on next eval
+          const cx = vw / 2 - nextX;
+          const cy = vh / 2 - nextY;
+          const cMag = Math.hypot(cx, cy) || 1;
+          escapeRef.current = {
+            vx: cx / cMag + (Math.random() - 0.5) * 0.4,
+            vy: cy / cMag + (Math.random() - 0.5) * 0.4,
+            expiresAt: now + 350,
+          };
+        }
         posRef.current = { x: nextX, y: nextY };
 
         // Chase detection: cursor present + within 300px
