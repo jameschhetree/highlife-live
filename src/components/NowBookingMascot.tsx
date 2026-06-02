@@ -383,12 +383,19 @@ export function NowBookingMascot() {
 
       {mode === "coupon" && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center px-4 bg-black/55 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[70] flex items-center justify-center px-4 bg-black/90 animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="mascot-coupon-title"
         >
-          <div className="glass-card rounded-3xl px-7 py-7 max-w-sm w-full text-center relative">
+          <div
+            className="rounded-3xl px-7 py-7 max-w-sm w-full text-center relative"
+            style={{
+              background: "#0a0c12",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 30px 80px -20px rgba(236,72,153,0.35), 0 0 0 1px rgba(255,255,255,0.04)",
+            }}
+          >
             <button
               type="button"
               onClick={closeCoupon}
@@ -397,7 +404,7 @@ export function NowBookingMascot() {
             >
               <span aria-hidden className="text-base leading-none">×</span>
             </button>
-            <p className="text-3xl mb-3" aria-hidden>🎤</p>
+            <p className="text-3xl mb-3" aria-hidden>🎟️</p>
             <p
               id="mascot-coupon-title"
               className="font-display uppercase text-xl tracking-tight text-foreground mb-2"
@@ -405,11 +412,17 @@ export function NowBookingMascot() {
               You caught it
             </p>
             <p className="text-xs text-zinc-300 leading-relaxed mb-5">
-              Use this code on your booking inquiry — it bumps your request to
-              the top of the review queue.
+              Use this code at checkout on any upcoming HighLife Live show to
+              unlock your discount on tickets.
             </p>
-            <div className="bg-black/50 border border-pink-500/30 rounded-2xl px-4 py-3 mb-5">
-              <p className="text-[9px] tracking-[0.25em] uppercase text-zinc-500 mb-1">Coupon code</p>
+            <div
+              className="rounded-2xl px-4 py-3 mb-5"
+              style={{
+                background: "#06080d",
+                border: "1px solid rgba(236,72,153,0.4)",
+              }}
+            >
+              <p className="text-[9px] tracking-[0.25em] uppercase text-zinc-500 mb-1">Ticket coupon code</p>
               <p className="font-mono text-xl tracking-[0.18em] text-foreground select-all">{COUPON_CODE}</p>
             </div>
             <div className="flex gap-2">
@@ -421,11 +434,11 @@ export function NowBookingMascot() {
                 {copied ? "Copied" : "Copy Code"}
               </button>
               <Link
-                href="/book?from=mascot"
+                href="/events"
                 onClick={closeCoupon}
                 className="flex-1 py-2.5 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold inline-flex items-center justify-center"
               >
-                Send Inquiry
+                See Events
               </Link>
             </div>
           </div>
