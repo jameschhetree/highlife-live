@@ -129,6 +129,35 @@ body {
   transform: translateY(-1px);
 }
 
+/* Vinyl mascot — bounces left/right above "Now Booking 2026" pill on home.
+   Outer wrapper walks horizontally with a slight bobble + direction flip; inner
+   disc spins independently. Pattern inspired by tday.com's pixel-cal walker,
+   adapted to our dark-glass aesthetic. */
+.mascot-vinyl {
+  animation: mascot-walk 5.6s ease-in-out infinite;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+.mascot-vinyl-disc {
+  animation: mascot-spin 2.4s linear infinite;
+}
+@keyframes mascot-walk {
+  0%   { transform: translate(-64px, 0) scaleX(1) scaleY(1); }
+  24%  { transform: translate(-32px, -2px) scaleX(1) scaleY(1.04); }
+  48%  { transform: translate(60px, 0) scaleX(1) scaleY(1); }
+  52%  { transform: translate(60px, 0) scaleX(-1) scaleY(1); }
+  76%  { transform: translate(28px, -2px) scaleX(-1) scaleY(1.04); }
+  98%  { transform: translate(-64px, 0) scaleX(-1) scaleY(1); }
+  100% { transform: translate(-64px, 0) scaleX(1) scaleY(1); }
+}
+@keyframes mascot-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-vinyl,
+  .mascot-vinyl-disc { animation: none; }
+}
+
 /* Glass card surface */
 .glass-card {
   background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%);

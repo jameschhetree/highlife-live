@@ -40,12 +40,35 @@ export default function HomePage() {
             transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
-            {/* Status pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 backdrop-blur mb-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-              <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 font-medium">
-                Now Booking 2026
+            {/* Status pill — vinyl mascot bounces left-right above it */}
+            <div className="relative inline-block mb-7">
+              <span
+                aria-hidden
+                className="mascot-vinyl absolute left-1/2 -ml-3.5 -top-9 w-7 h-7 pointer-events-none"
+              >
+                <svg viewBox="0 0 32 32" className="mascot-vinyl-disc w-full h-full">
+                  <defs>
+                    <radialGradient id="vinylG" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#1a1a1a" />
+                      <stop offset="58%" stopColor="#0a0a0a" />
+                      <stop offset="100%" stopColor="#000" />
+                    </radialGradient>
+                  </defs>
+                  <circle cx="16" cy="16" r="15" fill="url(#vinylG)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+                  <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.4" />
+                  <circle cx="16" cy="16" r="8" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.4" />
+                  <circle cx="16" cy="16" r="4.5" fill="#ec4899" />
+                  <circle cx="16" cy="16" r="1.2" fill="#0a0a0a" />
+                  {/* highlight glint */}
+                  <path d="M 6 11 Q 12 7 22 9" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" fill="none" strokeLinecap="round" />
+                </svg>
               </span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 backdrop-blur">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 font-medium">
+                  Now Booking 2026
+                </span>
+              </div>
             </div>
 
             <motion.h1
