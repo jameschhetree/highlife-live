@@ -34,6 +34,7 @@ const nav = [
   { href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
   { href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
   { href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
+  { href: "/admin/agent-logins", label: "Agent Logins", icon: UserCog, gate: "owner" },
   { href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
   { href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
