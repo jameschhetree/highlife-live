@@ -8,7 +8,7 @@ import { CheckCircle, ArrowRight, Send } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { artists } from "@/lib/data";
-import { isAuthenticated, getUser } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/auth";
 
 interface BookingForm {
   artistSlug: string;
@@ -88,13 +88,12 @@ function BookingFormContent() {
     const artist = artists.find((a) => a.slug === form.artistSlug);
     const artistName = artist?.name ?? form.artistSlug;
 
-    const user = getUser();
-
     setSubmitting(true);
     try {
       const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           artistSlug: form.artistSlug,
           artistName,
@@ -106,8 +105,9 @@ function BookingFormContent() {
           contactPhone: form.contactPhone,
           eventDescription: form.eventDescription,
           messageToAgent: form.messageToAgent,
+          // Server derives venueLoginId from the signed venue session cookie if present.
+          // We declare intent here; server downgrades to public if no valid session.
           source: authed ? "venue_partner" : "public",
-          venueLoginId: user?.email ? undefined : undefined,
         }),
       });
 

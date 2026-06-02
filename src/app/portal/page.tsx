@@ -89,18 +89,12 @@ export default function PortalPage() {
     const user = getUser();
     if (user?.name) setUserName(user.name);
 
-    // Fetch inquiries for this venue partner
-    const email = user?.email;
-    if (email) {
-      // Try the new inquiry system -- fetch by contactEmail
-      fetch(`/api/inquiries?venueLoginId=${encodeURIComponent(email)}`)
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data) => setUserInquiries(Array.isArray(data) ? data : []))
-        .catch(() => setUserInquiries([]))
-        .finally(() => setChecking(false));
-    } else {
-      setChecking(false);
-    }
+    // Fetch this venue partner's inquiries — server derives identity from signed cookie.
+    fetch("/api/inquiries", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setUserInquiries(Array.isArray(data) ? data : []))
+      .catch(() => setUserInquiries([]))
+      .finally(() => setChecking(false));
   }, [router]);
 
   const handleLogout = () => {

@@ -1,7 +1,10 @@
-// POST /api/inquiries -- create a new inquiry (public or venue_partner)
-// GET  /api/inquiries?venueLoginId=X -- venue partner listing own inquiries
+// POST /api/inquiries -- create a new inquiry. For venue_partner submissions, the venueLoginId
+//   is derived from the signed httpOnly session cookie, NEVER trusted from the client body.
+// GET  /api/inquiries -- venue partner listing own inquiries. Returns 401 without a valid
+//   venue session cookie. Lookup is keyed off the authenticated VenueLogin.id from the cookie.
 
 import { prisma } from "@/lib/db";
+import { getVenueSessionId } from "@/lib/venue-session";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +24,12 @@ async function nextInquiryNumber(): Promise<string> {
   return `HL-${seq}`;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
 
-  const venueLoginId = request.nextUrl.searchParams.get("venueLoginId");
+  const venueLoginId = await getVenueSessionId();
   if (!venueLoginId) {
-    return Response.json({ error: "venueLoginId required" }, { status: 400 });
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const rows = await prisma.inquiry.findMany({
@@ -53,14 +56,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const source = body.source === "venue_partner" ? "venue_partner" : "public";
+  // venue_partner classification ALWAYS comes from the authenticated cookie.
+  // A client claiming source=venue_partner without a valid session is downgraded to public.
+  const sessionVenueId = await getVenueSessionId();
+  const source = body.source === "venue_partner" && sessionVenueId ? "venue_partner" : "public";
   const inquiryNumber = await nextInquiryNumber();
 
   const inquiry = await prisma.inquiry.create({
     data: {
       inquiryNumber,
       source,
-      venueLoginId: source === "venue_partner" ? (body.venueLoginId || null) : null,
+      venueLoginId: source === "venue_partner" ? sessionVenueId : null,
       artistSlug: body.artistSlug,
       artistName: body.artistName,
       venueName: body.venueName,

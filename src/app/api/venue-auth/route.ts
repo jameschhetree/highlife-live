@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
+import { setVenueSessionCookie, clearVenueSessionCookie } from "@/lib/venue-session";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -27,9 +28,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: false, error: "Invalid credentials" }, { status: 401 });
   }
 
+  // Set httpOnly signed session cookie so subsequent requests are venue-scoped server-side
+  await setVenueSessionCookie(venueLogin.id);
+
   return Response.json({
     ok: true,
+    id: venueLogin.id,
     email: venueLogin.email,
     displayName: venueLogin.displayName,
+    organizationName: venueLogin.organizationName ?? "",
+    accountType: venueLogin.accountType,
   });
+}
+
+export async function DELETE() {
+  await clearVenueSessionCookie();
+  return Response.json({ ok: true });
 }
