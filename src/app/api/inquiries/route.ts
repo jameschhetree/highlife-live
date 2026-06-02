@@ -5,6 +5,7 @@
 
 import { prisma } from "@/lib/db";
 import { getVenueSessionId } from "@/lib/venue-session";
+import { sendEmail, SENDERS } from "@/lib/email";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -110,18 +111,11 @@ async function sendOwnerNotification(inquiry: {
   source: string;
   submittedAt: Date;
 }) {
-  const rawKey = process.env.RESEND_API_KEY;
-  if (!rawKey) return;
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
-  const { Resend } = await import("resend");
-  const resend = new Resend(apiKey);
-
   const submittedDate = new Date(inquiry.submittedAt).toLocaleString("en-US", {
     timeZone: "America/New_York",
     dateStyle: "medium",
     timeStyle: "short",
   });
-
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; background: #0a0a0a; color: #e4e4e7;">
       <h1 style="font-size: 20px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #fafafa; margin: 0 0 16px 0;">
@@ -138,9 +132,8 @@ async function sendOwnerNotification(inquiry: {
       <p style="margin-top: 20px; font-size: 11px; color: #52525b;">HighLife Live &middot; Inquiry Pipeline</p>
     </div>
   `;
-
-  await resend.emails.send({
-    from: "HighLife Live <bookings@highlifedmv.com>",
+  await sendEmail({
+    from: SENDERS.ownerAlert,
     to: ["liam@highlifedmv.com", "jaco@highlifedmv.com"],
     subject: `New inquiry ${inquiry.inquiryNumber}: ${inquiry.artistName} for ${inquiry.venueName}`,
     html,
@@ -154,19 +147,6 @@ async function sendConfirmationEmail(inquiry: {
   contactName: string;
   contactEmail: string;
 }) {
-  const rawKey = process.env.RESEND_API_KEY;
-  if (!rawKey) return;
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
-  const { Resend } = await import("resend");
-  const resend = new Resend(apiKey);
-
-  // Try info@highlifelive.com first, fall back to bookings@highlifedmv.com
-  const senders = [
-    { from: "HighLife Live <info@highlifelive.com>", label: "info@highlifelive.com" },
-    { from: "HighLife Live <events@highlifedmv.com>", label: "events@highlifedmv.com" },
-    { from: "HighLife Live <bookings@highlifedmv.com>", label: "bookings@highlifedmv.com" },
-  ];
-
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; background: #0a0a0a; color: #e4e4e7;">
       <h1 style="font-size: 20px; font-weight: 700; letter-spacing: 0.05em; color: #fafafa; margin: 0 0 16px 0;">
@@ -186,22 +166,10 @@ async function sendConfirmationEmail(inquiry: {
       </p>
     </div>
   `;
-
-  for (const sender of senders) {
-    try {
-      const result = await resend.emails.send({
-        from: sender.from,
-        to: [inquiry.contactEmail],
-        subject: `Inquiry ${inquiry.inquiryNumber} received - HighLife Live`,
-        html,
-      });
-      console.log(`[Inquiry confirmation] Sent via ${sender.label}:`, JSON.stringify(result));
-      // Log which sender worked
-      console.log(`[EMAIL_SENDER_STATUS] Confirmation sent via: ${sender.label}`);
-      return;
-    } catch (err) {
-      console.warn(`[Inquiry confirmation] ${sender.label} failed:`, err);
-    }
-  }
-  console.error("[Inquiry confirmation] All senders failed");
+  await sendEmail({
+    from: SENDERS.publicConfirmation,
+    to: inquiry.contactEmail,
+    subject: `Inquiry ${inquiry.inquiryNumber} received - HighLife Live`,
+    html,
+  });
 }
