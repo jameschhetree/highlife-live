@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  canManageArtistsEmail,
+  canViewArtistEmail,
+  canViewAuditionsEmail,
+  filterArtistsForEmail,
+  isAgentAdminEmail,
+  isOwnerAdminEmail,
+  type ArtistAccessRecord,
+} from "@/lib/admin-permissions";
+
 const ADMIN_KEY = "highlife_admin";
 
 interface AdminUser {
@@ -56,4 +66,34 @@ export function getAdminSession(): AdminSession | null {
 
 export function isAdminAuthed(): boolean {
   return getAdminSession() !== null;
+}
+
+export function isOwnerAdmin(session: AdminSession | null = getAdminSession()): boolean {
+  return isOwnerAdminEmail(session?.email);
+}
+
+export function isAgentAdmin(session: AdminSession | null = getAdminSession()): boolean {
+  return isAgentAdminEmail(session?.email);
+}
+
+export function canViewAuditions(session: AdminSession | null = getAdminSession()): boolean {
+  return canViewAuditionsEmail(session?.email);
+}
+
+export function canManageArtists(session: AdminSession | null = getAdminSession()): boolean {
+  return canManageArtistsEmail(session?.email);
+}
+
+export function canViewArtist(
+  artist: ArtistAccessRecord,
+  session: AdminSession | null = getAdminSession()
+): boolean {
+  return canViewArtistEmail(session?.email, artist);
+}
+
+export function filterArtistsForSession<T extends ArtistAccessRecord>(
+  artists: T[],
+  session: AdminSession | null = getAdminSession()
+): T[] {
+  return filterArtistsForEmail(session?.email, artists);
 }

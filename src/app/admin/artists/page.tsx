@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { createArtist, updateArtist, deleteArtist } from "@/lib/admin-store";
+import {
+  canManageArtists,
+  filterArtistsForSession,
+  getAdminSession,
+  isAgentAdmin,
+  type AdminSession,
+} from "@/lib/admin-auth";
 import type { ArtistStatus, AdminArtist } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -55,14 +62,24 @@ const defaultArtist: Partial<AdminArtist> = {
 
 export default function ArtistsPage() {
   const artists = useArtists();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ArtistStatus | "All">("All");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingArtist, setEditingArtist] = useState<Partial<AdminArtist>>(defaultArtist);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminArtist | null>(null);
+  const canManage = canManageArtists(session);
+  const agentView = isAgentAdmin(session);
+  const visibleArtists = filterArtistsForSession(artists, session);
 
-  const filtered = artists.filter((a) => {
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  const filtered = visibleArtists.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
       a.primaryGenre.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,18 +89,21 @@ export default function ArtistsPage() {
   });
 
   function openNew() {
+    if (!canManage) return;
     setEditingId(null);
     setEditingArtist({ ...defaultArtist });
     setDrawerOpen(true);
   }
 
   function openEdit(artist: AdminArtist) {
+    if (!canManage) return;
     setEditingId(artist.id);
     setEditingArtist({ ...artist });
     setDrawerOpen(true);
   }
 
   function handleSave() {
+    if (!canManage) return;
     if (!editingArtist.name) return;
     if (editingId) {
       updateArtist(editingId, editingArtist);
@@ -95,10 +115,19 @@ export default function ArtistsPage() {
   }
 
   function handleDelete() {
+    if (!canManage) return;
     if (!deleteTarget) return;
     deleteArtist(deleteTarget.id);
     triggerStoreUpdate();
     setDeleteTarget(null);
+  }
+
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">Checking access...</span>
+      </div>
+    );
   }
 
   function patch(field: string, value: unknown) {
@@ -113,12 +142,14 @@ export default function ArtistsPage() {
         </p>
         <div className="flex items-center justify-between">
           <h1 className="font-display uppercase text-3xl tracking-tight">Artists</h1>
-          <button
-            onClick={openNew}
-            className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
-          >
-            <Plus size={14} /> Add Artist
-          </button>
+          {canManage && (
+            <button
+              onClick={openNew}
+              className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+            >
+              <Plus size={14} /> Add Artist
+            </button>
+          )}
         </div>
       </div>
 
@@ -155,6 +186,7 @@ export default function ArtistsPage() {
 
         <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
           {filtered.length} artist{filtered.length !== 1 ? "s" : ""}
+          {agentView ? " assigned to this account" : ""}
         </p>
 
         <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -208,20 +240,22 @@ export default function ArtistsPage() {
                   </div>
                 </Link>
 
-                <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => { e.preventDefault(); openEdit(artist); }}
-                    className="p-1.5 rounded-lg bg-black/60 border border-white/10 hover:border-white/25 text-zinc-400 hover:text-foreground transition-colors"
-                  >
-                    <Edit size={12} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.preventDefault(); setDeleteTarget(artist); }}
-                    className="p-1.5 rounded-lg bg-black/60 border border-red-500/20 hover:border-red-500/40 text-zinc-400 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.preventDefault(); openEdit(artist); }}
+                      className="p-1.5 rounded-lg bg-black/60 border border-white/10 hover:border-white/25 text-zinc-400 hover:text-foreground transition-colors"
+                    >
+                      <Edit size={12} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.preventDefault(); setDeleteTarget(artist); }}
+                      className="p-1.5 rounded-lg bg-black/60 border border-red-500/20 hover:border-red-500/40 text-zinc-400 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}

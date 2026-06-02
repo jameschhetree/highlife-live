@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trash2, ExternalLink, Mail, Phone, Music } from "lucide-react";
+import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -29,24 +30,34 @@ export default function AuditionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const [session, setSession] = useState<AdminSession | null>(null);
   const [row, setRow] = useState<Audition | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/admin/auditions/${id}`)
+    const current = getAdminSession();
+    if (!current || !canViewAuditions(current)) {
+      router.replace("/admin");
+      return;
+    }
+    setSession(current);
+
+    fetch(`/api/admin/auditions/${id}`, {
+      headers: { "x-admin-email": current.email },
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then(setRow)
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, router]);
 
   const updateStatus = async (newStatus: string) => {
-    if (!row) return;
+    if (!row || !session) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/auditions/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
@@ -59,8 +70,12 @@ export default function AuditionDetailPage() {
   };
 
   const remove = async () => {
+    if (!session) return;
     if (!confirm("Delete this audition? This cannot be undone.")) return;
-    await fetch(`/api/admin/auditions/${id}`, { method: "DELETE" });
+    await fetch(`/api/admin/auditions/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
+    });
     router.push("/admin/auditions");
   };
 

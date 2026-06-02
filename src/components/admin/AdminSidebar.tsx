@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { adminLogout } from "@/lib/admin-auth";
+import { adminLogout, canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -36,11 +37,18 @@ const nav = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [session, setSession] = useState<AdminSession | null>(null);
+
+  useEffect(() => {
+    setSession(getAdminSession());
+  }, []);
 
   const handleLogout = () => {
     adminLogout();
     router.push("/admin/login");
   };
+
+  const visibleNav = nav.filter((item) => item.href !== "/admin/auditions" || canViewAuditions(session));
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-white/8 bg-[#07080c] sticky top-0 h-screen">
@@ -63,7 +71,7 @@ export function AdminSidebar() {
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-0.5 px-2">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/admin"

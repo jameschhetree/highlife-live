@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -17,6 +17,12 @@ import {
 } from "lucide-react";
 import { useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateArtist, deleteArtist } from "@/lib/admin-store";
+import {
+  canManageArtists,
+  canViewArtist,
+  getAdminSession,
+  type AdminSession,
+} from "@/lib/admin-auth";
 import type { ArtistStatus, AdminArtist } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -50,12 +56,29 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const router = useRouter();
   const artists = useArtists();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
   const artist = artists.find((a) => a.id === id);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AdminArtist>>({});
   const [showDelete, setShowDelete] = useState(false);
+  const canManage = canManageArtists(session);
+  const canView = artist ? canViewArtist(artist, session) : false;
 
-  if (!artist) {
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">Checking access...</span>
+      </div>
+    );
+  }
+
+  if (!artist || !canView) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -67,17 +90,20 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
   }
 
   function openEdit() {
+    if (!canManage) return;
     setEditForm({ ...artist });
     setDrawerOpen(true);
   }
 
   function handleSave() {
+    if (!canManage) return;
     updateArtist(id, editForm);
     triggerStoreUpdate();
     setDrawerOpen(false);
   }
 
   function handleDelete() {
+    if (!canManage) return;
     deleteArtist(id);
     triggerStoreUpdate();
     router.push("/admin/artists");
@@ -112,15 +138,19 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={openEdit} className="p-2 rounded-lg border border-white/8 hover:bg-white/4 text-zinc-400 hover:text-foreground transition-colors">
-              <Edit size={14} />
-            </button>
+            {canManage && (
+              <button onClick={openEdit} className="p-2 rounded-lg border border-white/8 hover:bg-white/4 text-zinc-400 hover:text-foreground transition-colors">
+                <Edit size={14} />
+              </button>
+            )}
             <button className="p-2 rounded-lg border border-white/8 hover:bg-white/4 text-zinc-400 hover:text-foreground transition-colors">
               <Download size={14} />
             </button>
-            <button onClick={() => setShowDelete(true)} className="p-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors">
-              <Trash size={14} />
-            </button>
+            {canManage && (
+              <button onClick={() => setShowDelete(true)} className="p-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors">
+                <Trash size={14} />
+              </button>
+            )}
           </div>
         </div>
       </div>

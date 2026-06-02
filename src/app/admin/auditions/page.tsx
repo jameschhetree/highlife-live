@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Search, RefreshCw, Mic, ExternalLink } from "lucide-react";
+import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -29,18 +31,24 @@ const STATUS_COLOR: Record<string, { bg: string; text: string; border: string }>
 };
 
 export default function AuditionsPage() {
+  const router = useRouter();
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
   const [rows, setRows] = useState<Audition[]>([]);
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const fetchRows = async () => {
+    if (!session || !canViewAuditions(session)) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (status !== "All") params.set("status", status);
       if (search.trim()) params.set("q", search.trim());
-      const res = await fetch(`/api/admin/auditions?${params}`);
+      const res = await fetch(`/api/admin/auditions?${params}`, {
+        headers: { "x-admin-email": session.email },
+      });
       const data = await res.json();
       setRows(Array.isArray(data) ? data : []);
     } finally {
@@ -49,10 +57,28 @@ export default function AuditionsPage() {
   };
 
   useEffect(() => {
-    fetchRows();
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+    const current = getAdminSession();
+    if (!current || !canViewAuditions(current)) {
+      router.replace("/admin");
+      return;
+    }
+    setSession(current);
+    setAccessChecked(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (accessChecked) fetchRows();
+  }, [accessChecked, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newCount = rows.filter((r) => r.status === "New").length;
+
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">Checking access...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-foreground">

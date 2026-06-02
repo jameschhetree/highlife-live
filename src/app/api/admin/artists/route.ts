@@ -3,15 +3,29 @@
 
 import { prisma } from "@/lib/db";
 import { dbArtistToAdmin, adminArtistToDbInput } from "@/lib/admin-db-mappers";
+import {
+  AGENT_VISIBLE_ARTIST_IDS,
+  canAccessAdminArtistApiEmail,
+  canManageArtistsEmail,
+  getAdminEmailFromRequest,
+  isAgentAdminEmail,
+} from "@/lib/admin-permissions";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!prisma) {
     return Response.json({ error: "Database not connected" }, { status: 503 });
   }
+  const adminEmail = getAdminEmailFromRequest(request);
+  if (!canAccessAdminArtistApiEmail(adminEmail)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   const rows = await prisma.artist.findMany({
+    where: isAgentAdminEmail(adminEmail)
+      ? { id: { in: [...AGENT_VISIBLE_ARTIST_IDS] } }
+      : undefined,
     include: { socialStats: true },
     orderBy: { name: "asc" },
   });
@@ -21,6 +35,9 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!prisma) {
     return Response.json({ error: "Database not connected" }, { status: 503 });
+  }
+  if (!canManageArtistsEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await request.json();
   const data = adminArtistToDbInput(body);

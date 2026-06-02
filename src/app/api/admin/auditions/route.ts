@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/db";
+import { canViewAuditionsEmail, getAdminEmailFromRequest } from "@/lib/admin-permissions";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  if (!canViewAuditionsEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const status = request.nextUrl.searchParams.get("status");
   const classification = request.nextUrl.searchParams.get("classification");
