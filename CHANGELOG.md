@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `5792dd5` [jeremy] **Phase 3.7 C**: auditions in agent main nav, agent-scoped views (assigned only), owner-only delete.
 - `b00f875` [jeremy] **Phase 3.7 B-archive**: audition Archive status (replaces Lost), delete-cascades-to-assignments, hide-by-default toggle.
 - `a1bfdcf` [jeremy] **Phase 3.7 B-classifications**: dropdown adds Theatre Act (Musical) + Theatre Act (Non Musical), removes Sound Engineer, reordered.
 - `caddca3` [jeremy] **Phase 3.7 D + flash-fix**: venue list agent restrictions (no CSV/cron/edit/delete, contacts in row replaced w/ city+state), 100ms render-gate pattern applied to /admin/venues/[id] + /admin/venues to kill the 'caught a glimpse' contact flash.
