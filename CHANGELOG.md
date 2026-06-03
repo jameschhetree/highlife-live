@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `1b7afdd` [jeremy] **Phase 3.6 delete-demo-data**: button wired to real DB. Owner-admin guarded, audit-logged, preview counts live. Real partner data untouched.
 - `8d2a400` [jeremy] **Phase 3.6 schema**: VenueContactAccessRequest + VenueContactGrant tables added. Pushed to shared Neon. Both queryable. Workflow C foundation laid.
 - `337a100` [jeremy] **mascot retired** per Dok. Deleted NowBookingMascot.tsx + all mascot/box CSS, reverted hero pill to a plain Link. See MASCOT-RIP.md for the full journey + lessons.
 - `937e33b` [jeremy] mascot tuning round 4: 1.33× faster lap (31.2 → 23.5s), 2× stronger speed scaling AGAIN (multipliers maxed at 5.4×, so cursor-on-top makes a ~4.4s lap), GIVE_UP_MS proportional bump to 80s.
