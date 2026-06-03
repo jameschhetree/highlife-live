@@ -20,11 +20,14 @@ import { getAdminSession } from "@/lib/admin-auth";
 
 type DemoCounts = {
   artists: number;
-  venues: number;
-  contacts: number;
   campaigns: number;
   opportunities: number;
   epks: number;
+};
+
+type PreservedCounts = {
+  venues: number;
+  contacts: number;
 };
 
 const teamMembers = [
@@ -53,6 +56,7 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [dataCleared, setDataCleared] = useState(false);
   const [previewCounts, setPreviewCounts] = useState<DemoCounts | null>(null);
+  const [previewPreserved, setPreviewPreserved] = useState<PreservedCounts | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<DemoCounts | null>(null);
@@ -63,13 +67,18 @@ export default function SettingsPage() {
     const session = getAdminSession();
     if (!session) return;
     setPreviewCounts(null);
+    setPreviewPreserved(null);
     fetch("/api/admin/delete-demo-data", {
       method: "GET",
       headers: { "x-admin-email": session.email },
       cache: "no-store",
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j && setPreviewCounts(j.counts as DemoCounts))
+      .then((j) => {
+        if (!j) return;
+        setPreviewCounts(j.counts as DemoCounts);
+        if (j.preserved) setPreviewPreserved(j.preserved as PreservedCounts);
+      })
       .catch(() => setPreviewCounts(null));
   }, [showDeleteModal]);
 
@@ -389,7 +398,7 @@ export default function SettingsPage() {
           </div>
           {lastResult && (
             <p className="mt-3 text-xs text-emerald-300/80 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
-              <Check size={12} /> Deleted {lastResult.artists} artists, {lastResult.venues} venues, {lastResult.contacts} contacts, {lastResult.campaigns} campaigns, {lastResult.opportunities} opportunities, {lastResult.epks} EPKs.
+              <Check size={12} /> Deleted {lastResult.artists} artists, {lastResult.campaigns} campaigns, {lastResult.opportunities} opportunities, {lastResult.epks} EPKs. Venues + contacts preserved.
             </p>
           )}
         </motion.div>
@@ -433,15 +442,14 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-zinc-400 mb-4">
-                Are you sure? This will permanently delete all <code className="text-pink-300">isDemo=true</code> records from the database. Real partner data (inquiries, events, bookings, agent applications, venue logins) will NOT be touched.
+              <p className="text-sm text-zinc-400 mb-3">
+                This deletes seed/placeholder records only. Venues, contacts, inquiries, events, bookings, agent applications, and all logins are <strong className="text-zinc-300">preserved</strong> — those are real data.
               </p>
-              <ul className="text-sm text-zinc-500 space-y-1 mb-4 pl-4">
+              <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1.5">Will delete</div>
+              <ul className="text-sm text-zinc-500 space-y-1 mb-3 pl-4">
                 {previewCounts ? (
                   <>
                     <li>- {previewCounts.artists} demo artists</li>
-                    <li>- {previewCounts.venues} demo venues</li>
-                    <li>- {previewCounts.contacts} demo contacts</li>
                     <li>- {previewCounts.campaigns} demo campaigns</li>
                     <li>- {previewCounts.opportunities} demo opportunities</li>
                     <li>- {previewCounts.epks} demo EPKs</li>
@@ -450,6 +458,16 @@ export default function SettingsPage() {
                   <li className="text-zinc-600 italic">Loading current demo counts...</li>
                 )}
               </ul>
+              {previewPreserved && (
+                <>
+                  <div className="text-[10px] tracking-[0.18em] uppercase text-emerald-300/80 mb-1.5">Will preserve</div>
+                  <ul className="text-sm text-zinc-400 space-y-1 mb-4 pl-4">
+                    <li>- {previewPreserved.venues} venues (real)</li>
+                    <li>- {previewPreserved.contacts} contacts (real)</li>
+                    <li>- all inquiries, events, bookings, applications, logins</li>
+                  </ul>
+                </>
+              )}
               {deleteError && (
                 <p className="text-xs text-red-400 mb-3 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
                   {deleteError}

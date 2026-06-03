@@ -1,7 +1,16 @@
 // POST /api/admin/delete-demo-data
-// Hard-deletes all isDemo=true rows across the 6 seed models.
+// Hard-deletes isDemo=true rows across the seed models EXCEPT Venue and Contact.
 // Owner-admin (Jaco / Liam) only — gated server-side via x-admin-email header.
-// Real partner data (Inquiry, Event, Booking, AgentApplication, etc.) is NEVER touched.
+//
+// What this button NEVER touches (Dok's directives 2026-06-03):
+//   - Venue: "venue data is not demo data, those are real venues we can contact"
+//   - Contact: pending discriminator decision; real-lead data even when flagged isDemo
+//   - VenueLogin / AgentLogin / PartnerLoginRequest: never touched (logins)
+//   - Inquiry / Event / Booking / AgentApplication: never touched (real partner data)
+//
+// What this button DOES delete (placeholder seed data only):
+//   - Artist (Riko Lux et al)
+//   - Campaign / Opportunity / EPK (placeholder records tied to seed artists)
 
 import { prisma } from "@/lib/db";
 import { isOwnerAdminEmail, getAdminEmailFromRequest } from "@/lib/admin-permissions";
@@ -16,18 +25,24 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "Forbidden — owner-admin only" }, { status: 403 });
   }
 
-  const [artists, venues, contacts, campaigns, opportunities, epks] = await Promise.all([
+  const [artists, campaigns, opportunities, epks] = await Promise.all([
     prisma.artist.count({ where: { isDemo: true } }),
-    prisma.venue.count({ where: { isDemo: true } }),
-    prisma.contact.count({ where: { isDemo: true } }),
     prisma.campaign.count({ where: { isDemo: true } }),
     prisma.opportunity.count({ where: { isDemo: true } }),
     prisma.ePK.count({ where: { isDemo: true } }),
   ]);
 
+  // Preserved counts (informational, NOT included in delete) — surfaces real-data
+  // protection in the UI so admins see what's NOT going to be touched.
+  const [venuesPreserved, contactsPreserved] = await Promise.all([
+    prisma.venue.count(),
+    prisma.contact.count(),
+  ]);
+
   return Response.json({
-    counts: { artists, venues, contacts, campaigns, opportunities, epks },
-    total: artists + venues + contacts + campaigns + opportunities + epks,
+    counts: { artists, campaigns, opportunities, epks },
+    total: artists + campaigns + opportunities + epks,
+    preserved: { venues: venuesPreserved, contacts: contactsPreserved },
   });
 }
 
@@ -40,18 +55,17 @@ export async function POST(request: NextRequest) {
   }
 
   // Order matters: delete dependent rows first to avoid FK cascade surprises.
-  // Opportunities → reference Artist + Venue + Campaign
+  // Opportunities → reference Artist + Venue + Campaign (Venue is preserved, so
+  // any opportunities pointing to a Venue stay too unless Artist gets deleted)
   // EPK → references Artist
   // Campaign → references Artist
-  // Contact → CampaignContact join via cascade
   // Artist → cascade-deletes ArtistSocialStat
-  // Venue → standalone
+  //
+  // Venue + Contact intentionally excluded — see header comment.
   const opportunities = await prisma.opportunity.deleteMany({ where: { isDemo: true } });
   const epks = await prisma.ePK.deleteMany({ where: { isDemo: true } });
   const campaigns = await prisma.campaign.deleteMany({ where: { isDemo: true } });
-  const contacts = await prisma.contact.deleteMany({ where: { isDemo: true } });
   const artists = await prisma.artist.deleteMany({ where: { isDemo: true } });
-  const venues = await prisma.venue.deleteMany({ where: { isDemo: true } });
 
   const audit = await prisma.auditLog.create({
     data: {
@@ -61,11 +75,11 @@ export async function POST(request: NextRequest) {
       userId: adminEmail,
       details: {
         artists: artists.count,
-        venues: venues.count,
-        contacts: contacts.count,
         campaigns: campaigns.count,
         opportunities: opportunities.count,
         epks: epks.count,
+        venuesPreserved: true,
+        contactsPreserved: true,
       },
     },
   });
@@ -74,13 +88,12 @@ export async function POST(request: NextRequest) {
     ok: true,
     deleted: {
       artists: artists.count,
-      venues: venues.count,
-      contacts: contacts.count,
       campaigns: campaigns.count,
       opportunities: opportunities.count,
       epks: epks.count,
     },
-    total: artists.count + venues.count + contacts.count + campaigns.count + opportunities.count + epks.count,
+    total: artists.count + campaigns.count + opportunities.count + epks.count,
+    preserved: { venues: true, contacts: true },
     auditLogId: audit.id,
   });
 }
