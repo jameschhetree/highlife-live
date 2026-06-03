@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `9e6790d` [jeremy] **Phase 3.8 commit 7/7**: final report — PHASE-3.8-REPORT.md.
 - `1fd86e1` [jeremy] **Phase 3.8 commit 6/7**: Bookings owner view labeled LEGACY with inline 'see Inquiries' link; agent view already staged from commit 4.
 - `b367a1c` [jeremy] **Phase 3.8 commit 5/7**: New Campaign + Generate EPK now open StagedActionModal with phase targets instead of being dead buttons.
 - `78631b3` [jeremy] **Phase 3.8 commit 4/7**: agent visibility pass — filterArtistsForEmail double-filter bug fixed; 5 tabs (bookings/campaigns/pipeline/epks/research) staged for agents via new AgentStagedNotice component.
