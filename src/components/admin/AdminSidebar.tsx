@@ -125,6 +125,9 @@ export function AdminSidebar() {
     const Icon = leaf.icon;
     const active =
       leaf.href === "/admin" ? pathname === "/admin" : pathname?.startsWith(leaf.href);
+    // Agents see "My Artists" instead of "Artists" — same page, scoped view.
+    const displayLabel =
+      leaf.href === "/admin/artists" && !isOwnerAdmin(session) ? "My Artists" : leaf.label;
     return (
       <li key={leaf.href}>
         <Link
@@ -137,7 +140,7 @@ export function AdminSidebar() {
           }`}
         >
           <Icon size={16} strokeWidth={1.6} />
-          <span className="tracking-wide">{leaf.label}</span>
+          <span className="tracking-wide">{displayLabel}</span>
         </Link>
       </li>
     );

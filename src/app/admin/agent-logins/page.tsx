@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Trash2, RefreshCw, Search, UserCog, X, Check, KeyRound, Eye, EyeOff, Building2, Clock, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Search, UserCog, X, Check, KeyRound, Eye, EyeOff, Building2, Clock, ShieldCheck, Music } from "lucide-react";
 import { getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 import { useRouter } from "next/navigation";
 
@@ -103,6 +103,89 @@ export default function AgentLoginsPage() {
       body: JSON.stringify({ action, ...payload }),
     });
     await loadAccess(accessAgent.id);
+  };
+
+  // Artist assignment drawer state (Phase 3.7 pre)
+  type ArtistAssignmentSummary = {
+    agent: { id: string; name: string; email: string };
+    artists: Array<{ id: string; name: string; status: string; image: string; primaryGenre: string }>;
+  };
+  const [artistsOpen, setArtistsOpen] = useState(false);
+  const [artistsAgent, setArtistsAgent] = useState<AgentLogin | null>(null);
+  const [artistsData, setArtistsData] = useState<ArtistAssignmentSummary | null>(null);
+  const [artistsLoading, setArtistsLoading] = useState(false);
+  const [artistsSearch, setArtistsSearch] = useState("");
+  const [artistsSelected, setArtistsSelected] = useState<Set<string>>(new Set());
+  const [artistsSaving, setArtistsSaving] = useState(false);
+
+  // Pool of ALL artists in the system (for the multi-select picker)
+  const [allArtists, setAllArtists] = useState<Array<{ id: string; name: string; primaryGenre: string; status: string }>>([]);
+
+  const loadArtists = async (agentId: string) => {
+    if (!session) return;
+    setArtistsLoading(true);
+    try {
+      const [assignedRes, allRes] = await Promise.all([
+        fetch(`/api/admin/agent-logins/${agentId}/artists`, {
+          headers: ownerHeaders,
+          cache: "no-store",
+        }),
+        fetch("/api/admin/artists", { headers: ownerHeaders, cache: "no-store" }),
+      ]);
+      if (assignedRes.ok) {
+        const data = (await assignedRes.json()) as ArtistAssignmentSummary;
+        setArtistsData(data);
+        setArtistsSelected(new Set(data.artists.map((a) => a.id)));
+      }
+      if (allRes.ok) {
+        const all = await allRes.json();
+        setAllArtists(
+          Array.isArray(all)
+            ? all.map((a: { id: string; name: string; primaryGenre?: string; status?: string }) => ({
+                id: a.id,
+                name: a.name,
+                primaryGenre: a.primaryGenre ?? "",
+                status: a.status ?? "",
+              }))
+            : []
+        );
+      }
+    } finally {
+      setArtistsLoading(false);
+    }
+  };
+
+  const openArtists = (agent: AgentLogin) => {
+    setArtistsAgent(agent);
+    setArtistsOpen(true);
+    setArtistsData(null);
+    setArtistsSelected(new Set());
+    setArtistsSearch("");
+    loadArtists(agent.id);
+  };
+
+  const toggleArtist = (id: string) =>
+    setArtistsSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const saveArtistAssignments = async () => {
+    if (!artistsAgent || !session) return;
+    setArtistsSaving(true);
+    try {
+      await fetch(`/api/admin/agent-logins/${artistsAgent.id}/artists`, {
+        method: "PUT",
+        headers: { ...ownerHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ artistIds: Array.from(artistsSelected) }),
+      });
+      // Refresh the row counts in the list (Assigned: ...)
+      await fetchRows();
+      setArtistsOpen(false);
+    } finally {
+      setArtistsSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -378,6 +461,13 @@ export default function AgentLoginsPage() {
                     </button>
                   )}
                   <button
+                    onClick={() => openArtists(row)}
+                    className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-lg border border-violet-500/30 hover:border-violet-500/60 bg-violet-500/10 text-violet-200 transition-colors"
+                    title="Manage artist assignments for this agent"
+                  >
+                    <Music size={11} /> Artists ({row.artistAssignments.length})
+                  </button>
+                  <button
                     onClick={() => openVenueAccess(row)}
                     className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-lg border border-pink-500/30 hover:border-pink-500/60 bg-pink-500/10 text-pink-200 transition-colors"
                     title="Manage venue contact access for this agent"
@@ -500,6 +590,94 @@ export default function AgentLoginsPage() {
                 </button>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Artist Assignment drawer — Phase 3.7 pre */}
+      {artistsOpen && artistsAgent && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-stretch justify-end p-0 sm:p-4 sm:items-center sm:justify-center" onClick={() => setArtistsOpen(false)}>
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="glass-card rounded-none sm:rounded-2xl p-5 sm:p-6 w-full max-w-2xl max-h-screen sm:max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 inline-flex items-center gap-1.5"><Music size={10} className="text-violet-300" /> Artist Assignments</p>
+                <h2 className="font-display uppercase text-xl tracking-tight">{artistsAgent.name}</h2>
+                <p className="text-xs text-zinc-400 mt-1">{artistsAgent.email}</p>
+              </div>
+              <button onClick={() => setArtistsOpen(false)} className="p-2 rounded-lg border border-white/10 hover:border-white/25 text-zinc-400 hover:text-foreground transition-colors">
+                <X size={14} />
+              </button>
+            </div>
+
+            {artistsLoading || !artistsData ? (
+              <div className="py-10 text-center text-sm text-zinc-500">Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-xs text-zinc-400">
+                  This agent currently sees <strong className="text-violet-300">{artistsSelected.size}</strong> {artistsSelected.size === 1 ? "artist" : "artists"} on /admin/artists. Check or uncheck to change.
+                </p>
+
+                <input
+                  type="text"
+                  value={artistsSearch}
+                  onChange={(e) => setArtistsSearch(e.target.value)}
+                  placeholder="Search all artists by name..."
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-violet-400/60"
+                />
+
+                <ul className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+                  {allArtists
+                    .filter((a) => !artistsSearch.trim() || a.name.toLowerCase().includes(artistsSearch.trim().toLowerCase()))
+                    .map((a) => {
+                      const checked = artistsSelected.has(a.id);
+                      return (
+                        <li key={a.id}>
+                          <label className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                            checked
+                              ? "border-violet-400/30 bg-violet-400/5"
+                              : "border-white/5 hover:border-white/15 bg-black/20"
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleArtist(a.id)}
+                              className="accent-violet-400 shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-zinc-200 truncate">{a.name}</div>
+                              <div className="text-[10px] text-zinc-500">{a.primaryGenre || a.status || "—"}</div>
+                            </div>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  {allArtists.length === 0 && (
+                    <li className="text-xs text-zinc-600 italic p-3">No artists in the system yet.</li>
+                  )}
+                </ul>
+
+                <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+                  <button
+                    onClick={() => setArtistsOpen(false)}
+                    className="px-4 py-2 rounded-full border border-white/10 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground hover:border-white/25 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveArtistAssignments}
+                    disabled={artistsSaving}
+                    className="flex-1 py-2 rounded-full btn-gradient text-xs tracking-[0.18em] uppercase font-bold disabled:opacity-50"
+                  >
+                    {artistsSaving ? "Saving..." : `Save (${artistsSelected.size} assigned)`}
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       )}
