@@ -361,40 +361,63 @@ export function NowBookingMascot() {
               </linearGradient>
             </defs>
 
-            {/* Box body (4-sided) */}
+            {/* Box body (front face) */}
             <path d="M 24 52 L 76 52 L 78 90 L 22 90 Z" fill="url(#cardboard)" stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
-            {/* Center seam tape */}
+            {/* Center seam tape (only visible when open OR closed, sits on front face) */}
             <rect x="48" y="52" width="4" height="38" fill="rgba(0,0,0,0.18)" />
 
-            {/* Left flap — open angled out by default, rotates flat when closed */}
-            <g
-              className={boxClosed ? "box-flap box-flap-l-closed" : "box-flap box-flap-l-open"}
-              style={{ transformOrigin: "50px 52px" }}
-            >
-              <path d="M 24 52 L 50 52 L 50 36 L 12 30 Z" fill="url(#cardboard-dark)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
-            </g>
-            {/* Right flap */}
-            <g
-              className={boxClosed ? "box-flap box-flap-r-closed" : "box-flap box-flap-r-open"}
-              style={{ transformOrigin: "50px 52px" }}
-            >
-              <path d="M 76 52 L 50 52 L 50 36 L 88 30 Z" fill="url(#cardboard-dark)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
-            </g>
-
-            {/* Ribbon — appears only when closed */}
-            {boxClosed && (
+            {!boxClosed ? (
+              /* OPEN STATE — two flaps angled outward like an open box top */
               <>
+                <path
+                  d="M 24 52 L 50 52 L 50 36 L 12 30 Z"
+                  fill="url(#cardboard-dark)"
+                  stroke="rgba(0,0,0,0.3)"
+                  strokeWidth="0.5"
+                  className="box-flap box-flap-l-open"
+                  style={{ transformOrigin: "50px 52px" }}
+                />
+                <path
+                  d="M 76 52 L 50 52 L 50 36 L 88 30 Z"
+                  fill="url(#cardboard-dark)"
+                  stroke="rgba(0,0,0,0.3)"
+                  strokeWidth="0.5"
+                  className="box-flap box-flap-r-open"
+                  style={{ transformOrigin: "50px 52px" }}
+                />
+              </>
+            ) : (
+              /* CLOSED STATE — flat lid surface (parallelogram seen at a slight angle)
+                 sitting on top of the box body, with a thin top-front edge,
+                 plus the ribbon wrapping over the whole thing. */
+              <>
+                {/* Lid top surface — a parallelogram skewed back so it reads as
+                    the top of a 3D box, not a wedge pointing up */}
+                <path
+                  d="M 24 52 L 76 52 L 70 44 L 30 44 Z"
+                  fill="url(#cardboard-dark)"
+                  stroke="rgba(0,0,0,0.32)"
+                  strokeWidth="0.5"
+                />
+                {/* Center lid seam */}
+                <line x1="50" y1="52" x2="50" y2="44" stroke="rgba(0,0,0,0.22)" strokeWidth="0.6" />
+                {/* Small highlight on lid front to suggest depth */}
+                <line x1="25" y1="52.3" x2="75" y2="52.3" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" />
+
+                {/* Ribbon wraps over the closed lid */}
                 {/* Horizontal strap across body */}
-                <rect x="22" y="60" width="56" height="6" fill="url(#ribbon)" />
-                {/* Vertical strap (front) */}
+                <rect x="22" y="64" width="56" height="6" fill="url(#ribbon)" />
+                {/* Vertical strap (front face) */}
                 <rect x="46" y="52" width="8" height="38" fill="url(#ribbon)" />
-                {/* Bow on top — two leaves + center knot */}
-                <ellipse cx="42" cy="48" rx="9" ry="6" fill="url(#ribbon)" transform="rotate(-18 42 48)" />
-                <ellipse cx="58" cy="48" rx="9" ry="6" fill="url(#ribbon)" transform="rotate(18 58 48)" />
-                <circle cx="50" cy="50" r="3.5" fill="#be1d6d" />
-                {/* Bow streamers */}
-                <path d="M 46 56 L 42 66" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
-                <path d="M 54 56 L 58 66" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
+                {/* Vertical strap continuation across the lid top */}
+                <path d="M 47 44 L 53 44 L 52 52 L 48 52 Z" fill="url(#ribbon)" />
+                {/* Bow on top — two leaves + center knot — sits above the lid */}
+                <ellipse cx="43" cy="40" rx="8" ry="5.5" fill="url(#ribbon)" transform="rotate(-22 43 40)" />
+                <ellipse cx="57" cy="40" rx="8" ry="5.5" fill="url(#ribbon)" transform="rotate(22 57 40)" />
+                <circle cx="50" cy="42" r="3.2" fill="#be1d6d" />
+                {/* Streamers trailing down the front */}
+                <path d="M 46 46 L 41 56" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
+                <path d="M 54 46 L 59 56" stroke="url(#ribbon)" strokeWidth="2.4" strokeLinecap="round" />
               </>
             )}
           </svg>
