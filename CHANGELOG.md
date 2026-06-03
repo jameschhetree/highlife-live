@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `b367a1c` [jeremy] **Phase 3.8 commit 5/7**: New Campaign + Generate EPK now open StagedActionModal with phase targets instead of being dead buttons.
 - `78631b3` [jeremy] **Phase 3.8 commit 4/7**: agent visibility pass — filterArtistsForEmail double-filter bug fixed; 5 tabs (bookings/campaigns/pipeline/epks/research) staged for agents via new AgentStagedNotice component.
 - `53dfb00` [jeremy] **Phase 3.8 commit 3/7**: Dashboard live counts (Artists/Venues/Inquiries/Events) + DEMO badges on the rest + empty-state messages on Drafts/Pipeline/Activity. Reports gets DemoAnalyticsBanner.
 - `681c8ba` [jeremy] **Phase 3.8 commit 2/7**: footer/audition mailto → display-only, seed events removed (DB-only), event cards staged ticket popup wired.
