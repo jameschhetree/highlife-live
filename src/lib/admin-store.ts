@@ -18,10 +18,14 @@ import {
 } from "./admin-data";
 
 // ── Feature flag ────────────────────────────────────────────
+// 2026-06-03 — Was env-gated via NEXT_PUBLIC_USE_DB. The Vercel demo env wasn't
+// reliably setting it, which caused admin writes to silently land in localStorage
+// while reads from /roster (public, DB-backed) showed nothing. Dok hit this trying
+// to add an artist: his artist appeared in /admin/artists (localStorage) but not on
+// /roster (DB). Hardcoded to true so the admin always reads/writes the DB.
 
 export function useDB(): boolean {
-  if (typeof window === "undefined") return false;
-  return process.env.NEXT_PUBLIC_USE_DB === "true";
+  return true;
 }
 
 // ── API helpers (DB mode) ───────────────────────────────────
