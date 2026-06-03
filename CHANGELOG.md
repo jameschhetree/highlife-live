@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `337a100` [jeremy] **mascot retired** per Dok. Deleted NowBookingMascot.tsx + all mascot/box CSS, reverted hero pill to a plain Link. See MASCOT-RIP.md for the full journey + lessons.
 - `937e33b` [jeremy] mascot tuning round 4: 1.33× faster lap (31.2 → 23.5s), 2× stronger speed scaling AGAIN (multipliers maxed at 5.4×, so cursor-on-top makes a ~4.4s lap), GIVE_UP_MS proportional bump to 80s.
 - `d5bc203` [jeremy] mascot tuning round 3: 4× slower lap (BASE_LOOP_SECONDS 7.8 → 31.2), 6s catch (down from 7), 2× stronger inverse-radius/speed scaling (max multiplier 2.10 → 3.20), jump-into-box simplified from 3-phase plant+squash+bezier to one clean arc — fixes the visible sideways jerk before the dive.
 - `37a2318` [jeremy] favicon: replaced default Next.js favicon.ico with HighLife logo (icon.png + apple-icon.png in src/app/).
