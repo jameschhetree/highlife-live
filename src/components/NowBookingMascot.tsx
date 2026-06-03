@@ -172,7 +172,10 @@ export function NowBookingMascot() {
     const innerRadius = outerRadius * 0.28;
     const step = (outerRadius - innerRadius) / 7;
     const tier = clamp(Math.floor((outerRadius - distance) / step), 0, 7);
-    const multipliers = [1.12, 1.28, 1.48, 1.74, 2.08, 2.48, 2.96, 3.55];
+    // Softer scaling: max 2.1× instead of 3.55× — the lap stays catchable
+    // even when cursor is right on top of the mic, per Dok's "slow it down"
+    // and "still doesn't move at a constant speed" notes.
+    const multipliers = [1.08, 1.18, 1.30, 1.45, 1.62, 1.80, 1.96, 2.10];
     return { multiplier: multipliers[tier], tier, outerRadius };
   }, []);
 
@@ -185,11 +188,15 @@ export function NowBookingMascot() {
   }, [flightPath]);
 
   const enterFlying = useCallback(() => {
-    const rect = containerRef.current?.getBoundingClientRect();
+    // Capture the paced mic's ACTUAL rendered position (it's mid-bunny-hop with a
+    // shifting margin-left), not the wrapper center — so the floating mic spawns
+    // exactly where the paced mic was at the click moment. No entry snap.
+    const pacedMic = containerRef.current?.querySelector<HTMLElement>(".mascot-mic");
+    const rect = pacedMic?.getBoundingClientRect() ?? containerRef.current?.getBoundingClientRect();
     if (rect) {
-      const home = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      homeRef.current = home;
-      posRef.current = home;
+      const spawn = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      homeRef.current = spawn;
+      posRef.current = spawn;
     }
     chaseAccumMs.current = 0;
     outOfRangeMsRef.current = 0;
@@ -372,16 +379,16 @@ export function NowBookingMascot() {
   const openCoupon = () => setMode("coupon");
 
   const closeCoupon = () => {
-    setMode("pacing");
+    // Route through "returning" instead of jumping straight to pacing — the
+    // returning loop lerps the mic from its current position (inside the box)
+    // back to the dock home over ~950ms via easeInOut. NO teleport on close.
     boxRef.current = { x: -90, y: 0 };
     boxFrontRef.current = false;
     boxRevealRef.current = 0;
     jumpRef.current = null;
-    returnRef.current = null;
-    chaseAccumMs.current = 0;
-    outOfRangeMsRef.current = 0;
-    reachedCloseRadiusRef.current = false;
-    speedMultiplierRef.current = 1;
+    // Seed the return path from wherever the mic currently sits
+    returnRef.current = { start: { ...posRef.current }, t: 0 };
+    setMode("returning");
   };
 
   const [copied, setCopied] = useState(false);

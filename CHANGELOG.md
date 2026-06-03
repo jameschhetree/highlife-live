@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `[next]` [jeremy] mascot teleport fix per Dok: closeCoupon now routes through 'returning' mode (Murd's existing lerp back to dock over 950ms) instead of snap-to-pacing; entry spawn reads the paced mic's actual rendered position (mid-bunny-hop) not the wrapper center; speed multipliers softened max 3.55× → 2.10× so the chase stays catchable when cursor is close.
 - `a2f29e4` [jeremy] 404 / portal-transition fix: friendly `app/not-found.tsx`, new `PortalTransition` overlay component that fades a brief "Entering / Leaving back-end tools" warning between public site and admin portal, wired into Header's Agent Login (desktop + mobile drawer) and AdminSidebar's new "Public Site" link (desktop + mobile drawer). Replaces the 404 flash Dok was hitting between portals.
 - `052e599` [jeremy] mascot tuning on top of Murd's phase 3.5 (per Dok HL Live spec): slower base loop (5.6→7.8s), 7s catch (down from 8), removed inner-ring gate, soft drain instead of hard reset, GIVE_UP_MS bumped to 36s.
 - `6b3435d` [murd] phase 3.5 mascot path chase polish — tuning pass on the chase/homing math on top of Jeremy's dorito-fix.
