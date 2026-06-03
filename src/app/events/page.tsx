@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { StagedActionModal } from "@/components/admin/StagedActionModal";
 
 type EventItem = {
   id: string;
@@ -17,40 +18,11 @@ type EventItem = {
   isPast: boolean;
 };
 
-// Fallback seed events shown when the DB has nothing published yet.
-// Owners can replace these by adding rows through /admin/events.
-const seedEvents: EventItem[] = [
-  {
-    id: "evt-1",
-    title: "HighLife Sessions ATL",
-    date: "June 21, 2026",
-    city: "Atlanta, GA",
-    venue: "The Velvet Room",
-    featuredArtists: ["Foolery"],
-    ticketStatus: "Available" as const,
-    isPast: false,
-  },
-  {
-    id: "evt-2",
-    title: "Black Room Showcase",
-    date: "July 12, 2026",
-    city: "Washington, DC",
-    venue: "The Anthem (Private Floor)",
-    featuredArtists: ["Foolery"],
-    ticketStatus: "Limited" as const,
-    isPast: false,
-  },
-  {
-    id: "evt-3",
-    title: "HighLife Live Night",
-    date: "August 2, 2026",
-    city: "Baltimore, MD",
-    venue: "Ottobar",
-    featuredArtists: ["Foolery"],
-    ticketStatus: "Available" as const,
-    isPast: false,
-  },
-];
+// Phase 3.8 — no fake events seeded; /events is DB-only via /api/events. When
+// owners haven't published anything, page shows a clean empty state rather than
+// presenting placeholder shows as real (Dok: 'no fake data', Murd: 'should not
+// show fake events as real').
+const seedEvents: EventItem[] = [];
 
 const statusColors = {
   Available: "text-emerald-300 bg-emerald-400/10 border-emerald-400/30",
@@ -74,6 +46,9 @@ export default function EventsPage() {
   const [cityFilter, setCityFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
   const [sortBy, setSortBy] = useState<SortKey>("date");
+  // Staged ticket popup target — track which event triggered the modal so the body
+  // can name the show. Phase 3.8 — replaces the prior disabled 'Tickets Soon' button.
+  const [stagedTicketEvent, setStagedTicketEvent] = useState<EventItem | null>(null);
 
   // Pull DB-backed events on mount; if any published rows exist, they REPLACE
   // the seed list. If the DB is empty or unreachable, seed stays.
@@ -269,9 +244,8 @@ export default function EventsPage() {
                               </a>
                             ) : (
                               <button
-                                disabled
-                                className="shrink-0 self-stretch sm:self-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-xs tracking-[0.18em] uppercase font-bold cursor-not-allowed"
-                                title="Tickets coming soon"
+                                onClick={() => setStagedTicketEvent(event)}
+                                className="shrink-0 self-stretch sm:self-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-200 hover:text-foreground text-xs tracking-[0.18em] uppercase font-bold transition-colors"
                               >
                                 <Ticket size={14} />
                                 Tickets Soon
@@ -333,6 +307,26 @@ export default function EventsPage() {
           )}
         </div>
       </div>
+
+      <StagedActionModal
+        open={!!stagedTicketEvent}
+        onClose={() => setStagedTicketEvent(null)}
+        title="Tickets coming soon"
+        targetPhase="Phase 4.5"
+        icon={<Ticket size={16} className="text-pink-200" />}
+        body={
+          stagedTicketEvent ? (
+            <>
+              <p>
+                Ticketing for <strong className="text-foreground">{stagedTicketEvent.title}</strong> isn&apos;t live yet. We&apos;ll publish the ticket link the moment the venue confirms availability.
+              </p>
+              <p className="mt-2 text-xs text-zinc-400">
+                Want a heads-up the second tickets drop? Subscribe via the footer email signup — we&apos;ll send a single notice, no spam.
+              </p>
+            </>
+          ) : null
+        }
+      />
     </div>
   );
 }

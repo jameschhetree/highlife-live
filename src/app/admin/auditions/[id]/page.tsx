@@ -160,12 +160,10 @@ export default function AuditionDetailPage() {
           <div className="glass-card rounded-2xl p-6">
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-4">Contact</h2>
             <div className="space-y-3">
-              <a
-                href={`mailto:${row.email}`}
-                className="flex items-center gap-3 text-sm text-zinc-200 hover:text-foreground"
-              >
+              {/* Phase 3.8 — mailto neutralized per Liam (no email-client links). */}
+              <div className="flex items-center gap-3 text-sm text-zinc-200 select-all">
                 <Mail size={14} className="text-zinc-500" /> {row.email}
-              </a>
+              </div>
               <a
                 href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}
                 className="flex items-center gap-3 text-sm text-zinc-200 hover:text-foreground"
