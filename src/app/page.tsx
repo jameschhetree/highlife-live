@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { artists } from "@/lib/data";
+import type { Artist } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
 
@@ -18,6 +19,14 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const [artists, setArtists] = useState<Artist[]>([]);
+
+  useEffect(() => {
+    fetch("/api/artists", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Artist[]) => setArtists(Array.isArray(rows) ? rows : []))
+      .catch(() => setArtists([]));
+  }, []);
 
   return (
     <div>
@@ -159,17 +168,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Artist marquee */}
-      <section className="border-y border-border/30 py-4 overflow-hidden bg-charcoal/50">
-        <div className="animate-marquee flex whitespace-nowrap">
-          {[...artists, ...artists].map((artist, i) => (
-            <span key={i} className="mx-8 text-sm tracking-[0.2em] uppercase text-muted">
-              {artist.name}
-              <span className="mx-8 text-border/50">/</span>
-            </span>
-          ))}
-        </div>
-      </section>
+      {/* Artist marquee — pulled from live DB roster. Hidden when no artists yet. */}
+      {artists.length > 0 && (
+        <section className="border-y border-border/30 py-4 overflow-hidden bg-charcoal/50">
+          <div className="animate-marquee flex whitespace-nowrap">
+            {[...artists, ...artists].map((artist, i) => (
+              <span key={i} className="mx-8 text-sm tracking-[0.2em] uppercase text-muted">
+                {artist.name}
+                <span className="mx-8 text-border/50">/</span>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* About */}
       <section className="py-24 lg:py-32">

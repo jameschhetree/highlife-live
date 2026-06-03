@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, Send } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
-import { artists } from "@/lib/data";
+import type { Artist } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 
 interface BookingForm {
@@ -49,9 +49,17 @@ function BookingFormContent() {
   const [form, setForm] = useState<BookingForm>(emptyForm(preselected));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [artists, setArtists] = useState<Artist[]>([]);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/artists", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Artist[]) => setArtists(Array.isArray(rows) ? rows : []))
+      .catch(() => setArtists([]));
   }, []);
 
   useEffect(() => {
