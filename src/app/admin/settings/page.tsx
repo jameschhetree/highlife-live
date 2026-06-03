@@ -115,11 +115,30 @@ export default function SettingsPage() {
     }
   }
 
-  function handleResetDemoData() {
-    resetDemoData();
-    triggerStoreUpdate();
-    setDataCleared(false);
-    setLastResult(null);
+  const [reseedPending, setReseedPending] = useState(false);
+  const [reseedResult, setReseedResult] = useState<DemoCounts | null>(null);
+  async function handleResetDemoData() {
+    const session = getAdminSession();
+    if (!session) return;
+    setReseedPending(true);
+    setReseedResult(null);
+    try {
+      const res = await fetch("/api/admin/seed-demo-data", {
+        method: "POST",
+        headers: { "x-admin-email": session.email },
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setReseedResult(data.seeded as DemoCounts);
+      }
+      // Also seed legacy localStorage so any localStorage-backed components see data
+      resetDemoData();
+      triggerStoreUpdate();
+      setDataCleared(false);
+      setLastResult(null);
+    } finally {
+      setReseedPending(false);
+    }
   }
 
   return (
@@ -387,18 +406,22 @@ export default function SettingsPage() {
             >
               <Trash size={14} /> Delete All Demo Data
             </button>
-            {dataCleared && (
-              <button
-                onClick={handleResetDemoData}
-                className="px-4 py-2 rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 text-sm text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center gap-2"
-              >
-                <RotateCcw size={14} /> Re-seed Demo Data
-              </button>
-            )}
+            <button
+              onClick={handleResetDemoData}
+              disabled={reseedPending}
+              className="px-4 py-2 rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 text-sm text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              <RotateCcw size={14} /> {reseedPending ? "Re-seeding..." : "Re-seed Demo Data"}
+            </button>
           </div>
           {lastResult && (
             <p className="mt-3 text-xs text-emerald-300/80 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
               <Check size={12} /> Deleted {lastResult.artists} artists, {lastResult.campaigns} campaigns, {lastResult.opportunities} opportunities, {lastResult.epks} EPKs. Venues + contacts preserved.
+            </p>
+          )}
+          {reseedResult && (
+            <p className="mt-3 text-xs text-emerald-300/80 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+              <Check size={12} /> Re-seeded {reseedResult.artists} artists, {reseedResult.campaigns} campaigns, {reseedResult.opportunities} opportunities, {reseedResult.epks} EPKs into the database.
             </p>
           )}
         </motion.div>
