@@ -387,6 +387,8 @@ model AgentLogin {
 
   artistAssignments AgentArtistAssignment[]
   auditionAssignments AuditionAssignment[]
+  venueContactRequests VenueContactAccessRequest[]
+  venueContactGrants   VenueContactGrant[]
 }
 
 model AgentArtistAssignment {
@@ -398,6 +400,38 @@ model AgentArtistAssignment {
 
   @@unique([agentLoginId, artistId])
   @@index([artistId])
+}
+
+// ── Venue Contact Access (Phase 3.6) ───────────────────────
+// Agent must request access to a venue's contact data; super-admin approves.
+// Grants are append-only — revoke = delete row.
+
+model VenueContactAccessRequest {
+  id           String     @id @default(cuid())
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  venueId      String     // references Venue.id (no FK so a venue delete doesn't nuke audit trail)
+  status       String     @default("Pending") // Pending, Approved, Denied
+  requestedAt  DateTime   @default(now())
+  decidedAt    DateTime?
+  decidedBy    String?    // User.id or "system"
+  reason       String     @default("") @db.Text
+
+  @@unique([agentLoginId, venueId, status])
+  @@index([status, requestedAt])
+  @@index([venueId])
+}
+
+model VenueContactGrant {
+  id           String     @id @default(cuid())
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  venueId      String     // references Venue.id
+  grantedAt    DateTime   @default(now())
+  grantedBy    String     // User.id of the super-admin who granted
+
+  @@unique([agentLoginId, venueId])
+  @@index([venueId])
 }
 
 // ── Audition Assignments (Workstream 6A) ───────────────────
