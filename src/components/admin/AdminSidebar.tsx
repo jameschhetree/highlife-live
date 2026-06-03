@@ -31,6 +31,8 @@ import {
   CalendarRange,
 } from "lucide-react";
 import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { PortalTransition } from "@/components/PortalTransition";
+import { ExternalLink } from "lucide-react";
 
 type Gate = "all" | "owner" | "auditions" | "venue-logins";
 type NavLeaf = { kind: "leaf"; href: string; label: string; icon: typeof LayoutDashboard; gate: Gate };
@@ -199,7 +201,19 @@ export function AdminSidebar() {
 
         <nav className="flex-1 overflow-y-auto py-4">{navList()}</nav>
 
-        <div className="border-t border-white/8 p-3">
+        <div className="border-t border-white/8 p-3 space-y-0.5">
+          <PortalTransition to="/" direction="leaving">
+            {(start) => (
+              <button
+                type="button"
+                onClick={start}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
+              >
+                <ExternalLink size={16} strokeWidth={1.6} />
+                <span className="tracking-wide">Public Site</span>
+              </button>
+            )}
+          </PortalTransition>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
@@ -284,7 +298,19 @@ export function AdminSidebar() {
 
               <nav className="flex-1 overflow-y-auto py-4">{navList(() => setMobileOpen(false))}</nav>
 
-              <div className="border-t border-white/8 p-3">
+              <div className="border-t border-white/8 p-3 space-y-0.5">
+                <PortalTransition to="/" direction="leaving">
+                  {(start) => (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileOpen(false); start(); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
+                    >
+                      <ExternalLink size={16} strokeWidth={1.6} />
+                      <span className="tracking-wide">Public Site</span>
+                    </button>
+                  )}
+                </PortalTransition>
                 <button
                   onClick={() => {
                     setMobileOpen(false);

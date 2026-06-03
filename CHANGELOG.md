@@ -13,6 +13,8 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `[next]` [jeremy] 404 / portal-transition fix: friendly `app/not-found.tsx`, new `PortalTransition` overlay component that fades a brief "Entering / Leaving back-end tools" warning between public site and admin portal, wired into Header's Agent Login (desktop + mobile drawer) and AdminSidebar's new "Public Site" link (desktop + mobile drawer). Replaces the 404 flash Dok was hitting between portals.
+- `052e599` [jeremy] mascot tuning on top of Murd's phase 3.5 (per Dok HL Live spec): slower base loop (5.6→7.8s), 7s catch (down from 8), removed inner-ring gate, soft drain instead of hard reset, GIVE_UP_MS bumped to 36s.
 - `6b3435d` [murd] phase 3.5 mascot path chase polish — tuning pass on the chase/homing math on top of Jeremy's dorito-fix.
 - `ba2c323` [jeremy] mascot box: closed state is now a proper flat lid parallelogram with a wrapped ribbon, not a triangular wedge sticking up.
 - `163ef3f` [murd] phase 3.5 mascot copy and desktop polish — copy edits + desktop-only display rule for the pacing mic.
