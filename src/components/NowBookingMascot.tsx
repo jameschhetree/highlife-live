@@ -44,12 +44,15 @@ const catmullRom = (p0: Point, p1: Point, p2: Point, p3: Point, t: number): Poin
 //  - 6s required chase (down from 7)
 //  - 2× stronger inverse-radius/speed scaling (see chaseSpeed multipliers below)
 //  - tolerant decay still applies (brief misses drain slowly, no hard reset)
-const BASE_LOOP_SECONDS = 31.2;
-const REVEAL_LOOP_SECONDS = 32.0;
+// Tuning per Dok HL Live 2026-06-02 round 4:
+//  - 1.33× faster lap than round 3 (31.2 → 23.5)
+//  - 2× stronger inverse-radius/speed scaling AGAIN (round 3 deltas doubled again)
+const BASE_LOOP_SECONDS = 23.5;
+const REVEAL_LOOP_SECONDS = 24.0;
 const MOUSE_FRESH_MS = 650;
 const CHASE_REQUIRED_MS = 6000;
 const CHASE_DRAIN_RATE = 0.3;
-const GIVE_UP_MS = 56000;          // bumped proportionally to the 4× lap slowdown
+const GIVE_UP_MS = 80000;
 
 export function NowBookingMascot() {
   const [mode, setMode] = useState<Mode>("pacing");
@@ -173,12 +176,12 @@ export function NowBookingMascot() {
     const innerRadius = outerRadius * 0.28;
     const step = (outerRadius - innerRadius) / 7;
     const tier = clamp(Math.floor((outerRadius - distance) / step), 0, 7);
-    // 2× the inverse-radius/speed scaling per Dok HL Live 2026-06-02 round 3:
-    // doubled the (multiplier - 1) delta at every tier so close-cursor pressure
-    // is twice as strong relative to the new much slower base lap.
-    //   tier 0 was 1.08 → now 1.16 (delta 0.08 × 2)
-    //   tier 7 was 2.10 → now 3.20 (delta 1.10 × 2)
-    const multipliers = [1.16, 1.36, 1.60, 1.90, 2.24, 2.60, 2.92, 3.20];
+    // 2× the round-3 scaling per Dok HL Live 2026-06-02 round 4 ("speed
+    // increase isnt there"). Round-3 deltas were [.16, .36, .60, .90, 1.24,
+    // 1.60, 1.92, 2.20] → doubled to [.32, .72, 1.20, 1.80, 2.48, 3.20, 3.84,
+    // 4.40]. Close cursor + slower base lap = real pressure at max tier
+    // (~4.4s lap when cursor on top vs 23.5s base).
+    const multipliers = [1.32, 1.72, 2.20, 2.80, 3.48, 4.20, 4.84, 5.40];
     return { multiplier: multipliers[tier], tier, outerRadius };
   }, []);
 
