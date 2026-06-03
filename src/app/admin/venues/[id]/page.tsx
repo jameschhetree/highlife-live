@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,9 +16,12 @@ import {
   Mail,
   Globe,
   AlertTriangle,
+  Lock,
+  Clock,
 } from "lucide-react";
 import { useVenues, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateVenue, deleteVenue } from "@/lib/admin-store";
+import { getAdminSession } from "@/lib/admin-auth";
 import type { ReviewStatus, RelationshipStatus, AdminVenue, VenueType } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -52,6 +55,50 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AdminVenue>>({});
   const [showDelete, setShowDelete] = useState(false);
+
+  // Venue contact access gate (Phase 3.6 / Workflow C)
+  const [accessState, setAccessState] = useState<{
+    loaded: boolean;
+    canSeeContacts: boolean;
+    requestPending: boolean;
+    isOwnerAdmin: boolean;
+  }>({ loaded: false, canSeeContacts: false, requestPending: false, isOwnerAdmin: false });
+  const [requestingAccess, setRequestingAccess] = useState(false);
+
+  useEffect(() => {
+    const session = getAdminSession();
+    if (!session) return;
+    fetch("/api/venue-access", { headers: { "x-admin-email": session.email }, cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        const isOwner = Boolean(j?.ownerAdmin);
+        const granted: string[] = Array.isArray(j?.grantedVenueIds) ? j.grantedVenueIds : [];
+        const pending: string[] = Array.isArray(j?.pendingVenueIds) ? j.pendingVenueIds : [];
+        setAccessState({
+          loaded: true,
+          isOwnerAdmin: isOwner,
+          canSeeContacts: isOwner || granted.includes(id),
+          requestPending: pending.includes(id),
+        });
+      })
+      .catch(() => setAccessState({ loaded: true, canSeeContacts: false, requestPending: false, isOwnerAdmin: false }));
+  }, [id]);
+
+  async function handleRequestAccess() {
+    const session = getAdminSession();
+    if (!session) return;
+    setRequestingAccess(true);
+    try {
+      await fetch("/api/venue-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ venueId: id }),
+      });
+      setAccessState((s) => ({ ...s, requestPending: true }));
+    } finally {
+      setRequestingAccess(false);
+    }
+  }
 
   if (!venue) {
     return (
@@ -105,12 +152,16 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={openEdit} className="p-2 rounded-lg border border-white/8 hover:bg-white/4 text-zinc-400 hover:text-foreground transition-colors">
-              <Edit size={14} />
-            </button>
-            <button onClick={() => setShowDelete(true)} className="p-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors">
-              <Trash size={14} />
-            </button>
+            {accessState.isOwnerAdmin && (
+              <>
+                <button onClick={openEdit} className="p-2 rounded-lg border border-white/8 hover:bg-white/4 text-zinc-400 hover:text-foreground transition-colors">
+                  <Edit size={14} />
+                </button>
+                <button onClick={() => setShowDelete(true)} className="p-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors">
+                  <Trash size={14} />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -140,62 +191,111 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
           <div className="lg:col-span-2 space-y-6">
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Contact Information</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Contact Person</div>
-                    <div className="text-sm text-zinc-200">{venue.contactPerson}</div>
-                    <div className="text-xs text-zinc-500">{venue.contactTitle}</div>
+
+              {accessState.loaded && !accessState.canSeeContacts ? (
+                // Agent view without an active grant → contacts hidden, request CTA shown
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-400/20 bg-amber-400/5">
+                    <Lock size={16} className="text-amber-300 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm text-amber-200 font-medium">Contact details hidden</div>
+                      <div className="text-xs text-zinc-400 mt-1">
+                        Venue contacts (name, email, phone, booking + talent buyer addresses) are restricted to owner-admins by default. Request access below and an owner-admin will review.
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Email</div>
-                    <div className="text-sm text-zinc-200">{venue.email}</div>
-                    {venue.talentBuyerEmail !== venue.email && (
-                      <div className="text-xs text-zinc-500 mt-0.5">Talent: {venue.talentBuyerEmail}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Phone</div>
-                    <div className="text-sm text-zinc-200">{venue.phone}</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Globe size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Website</div>
-                    <div className="text-sm text-pink-300 inline-flex items-center gap-1">
-                      {venue.website} <ExternalLink size={10} />
+
+                  {accessState.requestPending ? (
+                    <button
+                      disabled
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-amber-400/30 bg-amber-400/10 text-sm text-amber-300 cursor-not-allowed"
+                    >
+                      <Clock size={14} /> Request pending owner-admin approval
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleRequestAccess}
+                      disabled={requestingAccess}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-pink-400/30 hover:border-pink-400/60 bg-pink-500/10 hover:bg-pink-500/20 text-sm text-pink-300 hover:text-pink-200 transition-colors disabled:opacity-50"
+                    >
+                      <Mail size={14} /> {requestingAccess ? "Sending..." : "Request venue contacts"}
+                    </button>
+                  )}
+
+                  {/* Non-sensitive fields still visible to agents */}
+                  <div className="flex items-start gap-3 sm:col-span-2 pt-2 border-t border-white/5">
+                    <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Address</div>
+                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}</div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 sm:col-span-2">
-                  <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Address</div>
-                    <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}</div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Contact Person</div>
+                      <div className="text-sm text-zinc-200">{venue.contactPerson}</div>
+                      <div className="text-xs text-zinc-500">{venue.contactTitle}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Email</div>
+                      <div className="text-sm text-zinc-200">{venue.email}</div>
+                      {venue.talentBuyerEmail !== venue.email && (
+                        <div className="text-xs text-zinc-500 mt-0.5">Talent: {venue.talentBuyerEmail}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Phone</div>
+                      <div className="text-sm text-zinc-200">{venue.phone}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Globe size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Website</div>
+                      <div className="text-sm text-pink-300 inline-flex items-center gap-1">
+                        {venue.website} <ExternalLink size={10} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 sm:col-span-2">
+                    <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Address</div>
+                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Venue Details</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {[
-                  ["Type", venue.venueType],
-                  ["Region", venue.region],
-                  ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
-                  ["Instagram", venue.instagram],
-                  ["Booking Email", venue.bookingEmail],
-                  ["Talent Buyer", venue.talentBuyerEmail],
-                ].map(([label, value]) => (
+                {(accessState.loaded && !accessState.canSeeContacts
+                  ? [
+                      ["Type", venue.venueType],
+                      ["Region", venue.region],
+                      ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
+                    ]
+                  : [
+                      ["Type", venue.venueType],
+                      ["Region", venue.region],
+                      ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
+                      ["Instagram", venue.instagram],
+                      ["Booking Email", venue.bookingEmail],
+                      ["Talent Buyer", venue.talentBuyerEmail],
+                    ]
+                ).map(([label, value]) => (
                   <div key={label as string}>
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
                     <div className="text-sm text-zinc-300">{value}</div>
