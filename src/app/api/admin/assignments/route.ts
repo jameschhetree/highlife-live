@@ -82,6 +82,48 @@ export async function POST(request: NextRequest) {
   return Response.json(assignment, { status: 201 });
 }
 
+// PUT /api/admin/assignments  body: { auditionId, agentLoginId }
+// Re-assigns an audition: deletes any existing assignment row(s) for this audition and
+// creates a fresh one. Idempotent. Phase 3.7 B-assignments-ux click-to-assign flow.
+export async function PUT(request: NextRequest) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  if (!isOwnerAdminEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const body = (await request.json()) as { auditionId?: string; agentLoginId?: string };
+  if (!body.auditionId || !body.agentLoginId) {
+    return Response.json({ error: "auditionId and agentLoginId required" }, { status: 400 });
+  }
+  const [audition, agent] = await Promise.all([
+    prisma.agentApplication.findUnique({ where: { id: body.auditionId } }),
+    prisma.agentLogin.findUnique({ where: { id: body.agentLoginId } }),
+  ]);
+  if (!audition) return Response.json({ error: "Audition not found" }, { status: 404 });
+  if (!agent) return Response.json({ error: "Agent not found" }, { status: 404 });
+
+  await prisma.auditionAssignment.deleteMany({ where: { auditionId: body.auditionId } });
+  const assignment = await prisma.auditionAssignment.create({
+    data: { auditionId: body.auditionId, agentLoginId: body.agentLoginId },
+  });
+
+  try { await sendAssignmentEmail(agent, audition); }
+  catch (err) { console.error("[Assignment email] Failed:", err); }
+
+  return Response.json(assignment);
+}
+
+// DELETE /api/admin/assignments?auditionId=...  → unassigns the audition.
+export async function DELETE(request: NextRequest) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  if (!isOwnerAdminEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const auditionId = request.nextUrl.searchParams.get("auditionId");
+  if (!auditionId) return Response.json({ error: "auditionId query param required" }, { status: 400 });
+  const result = await prisma.auditionAssignment.deleteMany({ where: { auditionId } });
+  return Response.json({ ok: true, deleted: result.count });
+}
+
 async function sendAssignmentEmail(
   agent: { email: string; name: string },
   audition: { actStageName: string; fullName: string; classification: string }
