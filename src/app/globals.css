@@ -130,7 +130,7 @@ body {
 }
 
 /* Mic mascot — paces back and forth along a flat baseline above
-   "Now Booking 2026 & 2027" with gentle bunny hops. The pace animation
+   "Now Booking 2026 & 2027" with a gentle hop. The pace animation
    alternates direction (left → right → left); the hop is a small repeating
    bounce on top. ease-in-out on the pace creates natural pause/slow-down
    at each end. No rotation — mic stays upright. */
@@ -138,7 +138,7 @@ body {
   position: absolute;
   display: none;
   left: 50%;
-  top: -52px;
+  top: -44px;
   margin-left: -16px; /* center the 32px sprite on the pill axis */
   transform-origin: 50% 100%;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45));
@@ -201,7 +201,7 @@ body {
 
 /* Box flaps — angled outward when open, rotate flat when closed */
 .box-flap {
-  transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 170ms cubic-bezier(0.45, 0, 0.55, 1.4);
 }
 .box-flap-l-open {
   transform: rotate(-32deg);

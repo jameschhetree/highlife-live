@@ -7,7 +7,44 @@ import { Copy } from "lucide-react";
 // Official coupon code from James (HL Live, 2026-06-02).
 const COUPON_CODE = "HLLbeta1.1-4jeremy";
 
-type Mode = "pacing" | "flying" | "homing" | "boxed" | "coupon";
+type Mode = "pacing" | "flying" | "revealing" | "jumping" | "returning" | "boxed" | "coupon";
+
+type Point = { x: number; y: number };
+
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const easeOutBack = (t: number) => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+};
+
+const catmullRom = (p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point => {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return {
+    x: 0.5 * (
+      2 * p1.x +
+      (-p0.x + p2.x) * t +
+      (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+      (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+    ),
+    y: 0.5 * (
+      2 * p1.y +
+      (-p0.y + p2.y) * t +
+      (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+      (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+    ),
+  };
+};
+
+const BASE_LOOP_SECONDS = 5.6;
+const REVEAL_LOOP_SECONDS = 5.9;
+const MOUSE_FRESH_MS = 650;
+const CHASE_REQUIRED_MS = 8000;
+const CHASE_GRACE_MS = 1500;
+const GIVE_UP_MS = 32000;
 
 export function NowBookingMascot() {
   const [mode, setMode] = useState<Mode>("pacing");
@@ -16,6 +53,18 @@ export function NowBookingMascot() {
   // We mirror them into state only when needed for render.
   const posRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const boxRef = useRef<{ x: number; y: number }>({ x: -90, y: 280 });
+  const boxFrontRef = useRef(false);
+  const homeRef = useRef<Point>({ x: 0, y: 0 });
+  const pathProgressRef = useRef(0);
+  const speedMultiplierRef = useRef(1);
+  const flightStartedAtRef = useRef(0);
+  const outOfRangeMsRef = useRef(0);
+  const reachedCloseRadiusRef = useRef(false);
+  const boxPassTargetRef = useRef(0);
+  const boxRevealRef = useRef(0);
+  const jumpRef = useRef<{ start: Point; t: number } | null>(null);
+  const returnRef = useRef<{ start: Point; t: number } | null>(null);
+  const micTransformRef = useRef("translate(-50%, -50%)");
   const [, forceRender] = useState(0);
   const tickRender = useRef(0);
 
@@ -33,35 +82,126 @@ export function NowBookingMascot() {
     t: 0,
   });
   const chaseAccumMs = useRef(0);
-  const arcStateRef = useRef<{ start: { x: number; y: number }; t: number } | null>(null);
-  const phaseRef = useRef<"box-sliding" | "mic-arcing">("box-sliding");
-  // Escape state — the mic picks an escape direction and commits to it for
-  // a short window before re-evaluating, so motion looks like a panicked
-  // animal running rather than a vector pinned to the cursor.
-  const escapeRef = useRef<{ vx: number; vy: number; expiresAt: number }>({
-    vx: 0,
-    vy: 0,
-    expiresAt: 0,
-  });
 
-  const boxTarget = useCallback(() => {
-    if (typeof window === "undefined") return { x: 90, y: 300 };
+  const heroCardRect = useCallback(() => {
+    const card = containerRef.current?.closest(".glass-card");
+    return card?.getBoundingClientRect();
+  }, []);
+
+  const boxTarget = useCallback((): Point => {
+    if (typeof window === "undefined") return { x: 110, y: 300 };
+    const card = heroCardRect();
+    if (card) {
+      return {
+        x: clamp(card.left + 54, 86, window.innerWidth * 0.34),
+        y: clamp(card.top + card.height * 0.31, 210, window.innerHeight - 170),
+      };
+    }
     return {
-      x: Math.max(80, window.innerWidth * 0.07), // further left so it doesn't overlap hero content
+      x: Math.max(86, window.innerWidth * 0.08),
       y: Math.min(340, window.innerHeight * 0.36),
     };
+  }, [heroCardRect]);
+
+  const boxRevealPosition = useCallback((progress: number): Point => {
+    const target = boxTarget();
+    const card = heroCardRect();
+    const t = clamp(progress, 0, 1);
+    if (!card) {
+      return {
+        x: lerp(-90, target.x, easeInOut(t)),
+        y: target.y,
+      };
+    }
+
+    const behindX = card.left + 16;
+    const revealX = Math.max(76, card.left - 62);
+    const settleX = target.x;
+
+    if (t < 0.58) {
+      const u = easeOutBack(t / 0.58);
+      return { x: lerp(behindX, revealX, u), y: target.y };
+    }
+
+    const u = easeInOut((t - 0.58) / 0.42);
+    return { x: lerp(revealX, settleX, u), y: target.y };
+  }, [boxTarget, heroCardRect]);
+
+  const flightPath = useCallback((): Point[] => {
+    const vw = typeof window === "undefined" ? 1200 : window.innerWidth;
+    const vh = typeof window === "undefined" ? 820 : window.innerHeight;
+    const box = boxTarget();
+    const margin = 64;
+    const home = homeRef.current;
+    return [
+      home,
+      { x: clamp(vw * 0.61, margin, vw - margin), y: clamp(vh * 0.18, margin, vh - margin) },
+      { x: clamp(vw * 0.82, margin, vw - margin), y: clamp(vh * 0.42, margin, vh - margin) },
+      { x: clamp(vw * 0.66, margin, vw - margin), y: clamp(vh * 0.73, margin, vh - margin) },
+      { x: clamp(vw * 0.30, margin, vw - margin), y: clamp(vh * 0.66, margin, vh - margin) },
+      { x: box.x + 18, y: box.y - 18 },
+      { x: clamp(vw * 0.18, margin, vw - margin), y: clamp(vh * 0.26, margin, vh - margin) },
+      { x: clamp(vw * 0.49, margin, vw - margin), y: clamp(vh * 0.13, margin, vh - margin) },
+    ];
+  }, [boxTarget]);
+
+  const pointOnPath = useCallback((progress: number) => {
+    const points = flightPath();
+    const total = points.length;
+    const wrapped = ((progress % total) + total) % total;
+    const i = Math.floor(wrapped);
+    const t = wrapped - i;
+    return catmullRom(
+      points[(i - 1 + total) % total],
+      points[i],
+      points[(i + 1) % total],
+      points[(i + 2) % total],
+      t
+    );
+  }, [flightPath]);
+
+  const chaseSpeed = useCallback((distance: number) => {
+    if (typeof window === "undefined") return { multiplier: 1, tier: -1, outerRadius: 112 };
+    const outerRadius = clamp(Math.min(window.innerWidth, window.innerHeight) * 0.125, 92, 132);
+    if (distance > outerRadius) return { multiplier: 1, tier: -1, outerRadius };
+
+    const innerRadius = outerRadius * 0.28;
+    const step = (outerRadius - innerRadius) / 7;
+    const tier = clamp(Math.floor((outerRadius - distance) / step), 0, 7);
+    const multipliers = [1.12, 1.28, 1.48, 1.74, 2.08, 2.48, 2.96, 3.55];
+    return { multiplier: multipliers[tier], tier, outerRadius };
   }, []);
+
+  const nextBoxPassProgress = useCallback((progress: number) => {
+    const boxPointIndex = 5;
+    const total = flightPath().length;
+    const cycle = Math.floor(progress / total);
+    const currentInCycle = progress - cycle * total;
+    return (currentInCycle < boxPointIndex ? cycle : cycle + 1) * total + boxPointIndex;
+  }, [flightPath]);
 
   const enterFlying = useCallback(() => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) {
-      posRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      const home = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      homeRef.current = home;
+      posRef.current = home;
     }
     chaseAccumMs.current = 0;
+    outOfRangeMsRef.current = 0;
+    reachedCloseRadiusRef.current = false;
+    pathProgressRef.current = 0;
+    speedMultiplierRef.current = 1;
+    flightStartedAtRef.current = performance.now();
+    boxRevealRef.current = 0;
+    boxFrontRef.current = false;
+    jumpRef.current = null;
+    returnRef.current = null;
+    micTransformRef.current = "translate(-50%, -50%)";
     setMode("flying");
   }, []);
 
-  // Cursor tracking — flee logic reads lastMouseRef every frame.
+  // Cursor tracking — the path logic reads lastMouseRef every frame.
   // Desktop only per scope; touch handlers intentionally not added.
   useEffect(() => {
     if (mode === "pacing" || mode === "coupon") return;
@@ -72,22 +212,24 @@ export function NowBookingMascot() {
     return () => window.removeEventListener("mousemove", onMove);
   }, [mode]);
 
-  // Single animation loop that handles flying / homing — runs while mode is
-  // either of those, and only re-mounts on mode boundary changes (NOT on every
-  // pos change). This is what was broken before: the arc kept resetting to 0
-  // because the effect re-ran on every setState.
+  // Single animation loop for the desktop Easter egg. The mic follows a
+  // repeatable path; the cursor changes speed and qualifies the chase, but it
+  // does not steer the mic directly.
   useEffect(() => {
-    if (mode !== "flying" && mode !== "homing") return;
+    if (mode !== "flying" && mode !== "revealing" && mode !== "jumping" && mode !== "returning") return;
 
     let rafId = 0;
     let lastT = performance.now();
 
-    // Reset homing state on entry into homing mode
-    if (mode === "homing") {
-      arcStateRef.current = { start: { ...posRef.current }, t: 0 };
-      const tgt = boxTarget();
-      boxRef.current = { x: -90, y: tgt.y };
-      phaseRef.current = "box-sliding";
+    if (mode === "revealing") {
+      boxRevealRef.current = 0;
+      boxFrontRef.current = false;
+      boxPassTargetRef.current = nextBoxPassProgress(pathProgressRef.current);
+      boxRef.current = boxRevealPosition(0);
+    }
+
+    if (mode === "returning" && !returnRef.current) {
+      returnRef.current = { start: { ...posRef.current }, t: 0 };
     }
 
     const tick = (now: number) => {
@@ -96,126 +238,122 @@ export function NowBookingMascot() {
 
       if (mode === "flying") {
         const { x: mx, y: my, t: mouseT } = lastMouseRef.current;
-        const px = posRef.current.x;
-        const py = posRef.current.y;
-        const dx = px - mx;
-        const dy = py - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const current = pointOnPath(pathProgressRef.current);
+        const dist = Math.hypot(current.x - mx, current.y - my);
+        const { multiplier, tier, outerRadius } = chaseSpeed(dist);
+        const mouseFresh = now - mouseT < MOUSE_FRESH_MS;
+        const inRange = mouseFresh && dist <= outerRadius;
+        const targetMultiplier = inRange ? multiplier : 1;
+        speedMultiplierRef.current = lerp(
+          speedMultiplierRef.current,
+          targetMultiplier,
+          clamp(dt / 180, 0, 1)
+        );
+        const loopSegmentsPerSecond = flightPath().length / BASE_LOOP_SECONDS;
 
-        // "Running from" model: when the cursor is close, the mic picks an
-        // escape direction (radial-from-cursor + random kick) and COMMITS to
-        // it for ~400-700ms before re-evaluating. This looks like a panicked
-        // animal making a run, not a vector glued to the mouse.
-        const MIN_DIST = 250;
-        const vw = window.innerWidth, vh = window.innerHeight;
-        let nextX = px;
-        let nextY = py;
+        pathProgressRef.current += loopSegmentsPerSecond * speedMultiplierRef.current * (dt / 1000);
+        posRef.current = pointOnPath(pathProgressRef.current);
+        micTransformRef.current = `translate(-50%, -50%) rotate(${Math.sin(now * 0.006) * 5}deg)`;
 
-        if (dist < MIN_DIST && dist > 0.1) {
-          // Re-evaluate escape direction ONLY on expiry. The previous build
-          // also recalced when cursor was "too close" (< 130px), which made
-          // the mic stutter — escape vector flipped with a fresh random kick
-          // every frame while the user was on top of it. Now: pick a direction
-          // and commit for the full 500-900ms window so it actually runs.
-          if (now > escapeRef.current.expiresAt) {
-            const ux = dx / dist;
-            const uy = dy / dist;
-            // Random angular kick of ±30° off pure-radial — enough to look
-            // alive, narrow enough to feel like a coherent escape, not a flail
-            const kickAngle = (Math.random() - 0.5) * (Math.PI / 3);
-            const cosK = Math.cos(kickAngle);
-            const sinK = Math.sin(kickAngle);
-            const ekx = ux * cosK - uy * sinK;
-            const eky = ux * sinK + uy * cosK;
-            escapeRef.current = {
-              vx: ekx,
-              vy: eky,
-              expiresAt: now + 500 + Math.random() * 400,
-            };
-          }
-          // Speed scales with how close the cursor is — sprint when close
-          const intensity = Math.pow(1 - dist / MIN_DIST, 1.4);
-          const sprintSpeed = 14 + intensity * 22; // px per 16ms baseline
-          const step = sprintSpeed * (dt / 16);
-          nextX = px + escapeRef.current.vx * step;
-          nextY = py + escapeRef.current.vy * step;
-        } else {
-          // Cursor far/idle: drift back toward top-center with a tiny wander.
-          // No escape commitment active.
-          escapeRef.current.expiresAt = 0;
-          const mouseIdleMs = now - mouseT;
-          const tx = window.innerWidth / 2;
-          const ty = 110;
-          const driftLerp = mouseIdleMs > 600 ? 0.025 : 0.008;
-          const wanderX = Math.sin(now * 0.0011) * 0.5;
-          const wanderY = Math.cos(now * 0.0013) * 0.4;
-          nextX = px + (tx - px) * driftLerp + wanderX;
-          nextY = py + (ty - py) * driftLerp + wanderY;
-        }
-
-        // Soft clamp + corner-escape: if hitting an edge, force a fresh
-        // escape direction that points back into the viewport
-        if (nextX < 48 || nextX > vw - 48 || nextY < 48 || nextY > vh - 48) {
-          nextX = Math.max(48, Math.min(vw - 48, nextX));
-          nextY = Math.max(48, Math.min(vh - 48, nextY));
-          // Aim escape back toward center on next eval
-          const cx = vw / 2 - nextX;
-          const cy = vh / 2 - nextY;
-          const cMag = Math.hypot(cx, cy) || 1;
-          escapeRef.current = {
-            vx: cx / cMag + (Math.random() - 0.5) * 0.4,
-            vy: cy / cMag + (Math.random() - 0.5) * 0.4,
-            expiresAt: now + 350,
-          };
-        }
-        posRef.current = { x: nextX, y: nextY };
-
-        // Chase detection: cursor present + within 300px
-        const mouseFresh = now - mouseT < 500;
-        if (mouseFresh && dist < 300) {
+        if (inRange) {
+          outOfRangeMsRef.current = 0;
           chaseAccumMs.current += dt;
-          if (chaseAccumMs.current > 7000) {
-            setMode("homing");
+          if (tier >= 5) reachedCloseRadiusRef.current = true;
+          if (chaseAccumMs.current >= CHASE_REQUIRED_MS && reachedCloseRadiusRef.current) {
+            boxPassTargetRef.current = nextBoxPassProgress(pathProgressRef.current);
+            setMode("revealing");
             return;
           }
-        } else {
-          chaseAccumMs.current = Math.max(0, chaseAccumMs.current - dt * 0.5);
+        } else if (chaseAccumMs.current > 0) {
+          outOfRangeMsRef.current += dt;
+          if (outOfRangeMsRef.current > CHASE_GRACE_MS) {
+            chaseAccumMs.current = 0;
+            outOfRangeMsRef.current = 0;
+            reachedCloseRadiusRef.current = false;
+          }
         }
-      } else if (mode === "homing") {
-        const tgt = boxTarget();
-        if (phaseRef.current === "box-sliding") {
-          // Box slides from -90 to tgt.x at ~280px/s
-          const newX = boxRef.current.x + dt * 0.28;
-          if (newX >= tgt.x) {
-            boxRef.current = { x: tgt.x, y: tgt.y };
-            phaseRef.current = "mic-arcing";
-            // Capture mic start position now that box is in place
-            arcStateRef.current = { start: { ...posRef.current }, t: 0 };
-          } else {
-            boxRef.current = { x: newX, y: tgt.y };
-          }
-        } else if (phaseRef.current === "mic-arcing" && arcStateRef.current) {
-          arcStateRef.current.t = Math.min(1, arcStateRef.current.t + dt / 1500);
-          const u = arcStateRef.current.t;
-          const startX = arcStateRef.current.start.x;
-          const startY = arcStateRef.current.start.y;
-          const endX = tgt.x;
-          const endY = tgt.y - 6;
-          const apexX = (startX + endX) / 2;
-          const apexY = Math.min(startY, tgt.y) - 90;
-          const oneMinusU = 1 - u;
-          // Base bezier
-          const baseX = oneMinusU * oneMinusU * startX + 2 * oneMinusU * u * apexX + u * u * endX;
-          const baseY = oneMinusU * oneMinusU * startY + 2 * oneMinusU * u * apexY + u * u * endY;
-          // Small wobble that fades to 0 as it lands (so it docks cleanly)
-          const wobbleAmp = (1 - u) * 4;
-          const wobX = Math.sin(now * 0.012) * wobbleAmp;
-          const wobY = Math.cos(now * 0.014) * wobbleAmp * 0.6;
-          posRef.current = { x: baseX + wobX, y: baseY + wobY };
-          if (arcStateRef.current.t >= 1) {
-            setMode("boxed");
+
+        if (now - flightStartedAtRef.current > GIVE_UP_MS) {
+          returnRef.current = { start: { ...posRef.current }, t: 0 };
+          setMode("returning");
+          return;
+        }
+      } else if (mode === "revealing") {
+        boxRevealRef.current = Math.min(1, boxRevealRef.current + dt / 1200);
+        boxFrontRef.current = boxRevealRef.current > 0.58;
+        boxRef.current = boxRevealPosition(boxRevealRef.current);
+
+        speedMultiplierRef.current = lerp(speedMultiplierRef.current, 1.08, clamp(dt / 220, 0, 1));
+        const loopSegmentsPerSecond = flightPath().length / REVEAL_LOOP_SECONDS;
+        pathProgressRef.current += loopSegmentsPerSecond * speedMultiplierRef.current * (dt / 1000);
+        posRef.current = pointOnPath(pathProgressRef.current);
+        micTransformRef.current = `translate(-50%, -50%) rotate(${Math.sin(now * 0.007) * 4}deg)`;
+
+        if (boxRevealRef.current >= 1 && pathProgressRef.current >= boxPassTargetRef.current) {
+          if (pathProgressRef.current - boxPassTargetRef.current > 0.45) {
+            boxPassTargetRef.current = nextBoxPassProgress(pathProgressRef.current);
+            scheduleRender();
+            rafId = requestAnimationFrame(tick);
             return;
           }
+          jumpRef.current = { start: { ...posRef.current }, t: 0 };
+          setMode("jumping");
+          return;
+        }
+      } else if (mode === "jumping") {
+        const jump = jumpRef.current ?? { start: { ...posRef.current }, t: 0 };
+        jumpRef.current = jump;
+        jump.t = Math.min(1, jump.t + dt / 1450);
+        const box = boxTarget();
+        boxRef.current = box;
+        boxFrontRef.current = true;
+
+        const plant = { x: box.x + 62, y: box.y - 12 };
+        const end = { x: box.x, y: box.y - 8 };
+        if (jump.t < 0.32) {
+          const u = easeInOut(jump.t / 0.32);
+          posRef.current = {
+            x: lerp(jump.start.x, plant.x, u),
+            y: lerp(jump.start.y, plant.y, u),
+          };
+          micTransformRef.current = "translate(-50%, -50%) rotate(-8deg)";
+        } else if (jump.t < 0.47) {
+          const squash = Math.sin(((jump.t - 0.32) / 0.15) * Math.PI);
+          posRef.current = plant;
+          micTransformRef.current = `translate(-50%, -50%) scale(${1 + squash * 0.18}, ${1 - squash * 0.28}) rotate(-8deg)`;
+        } else {
+          const u = easeOutBack((jump.t - 0.47) / 0.53);
+          const oneMinusU = 1 - u;
+          const apex = { x: (plant.x + end.x) / 2, y: Math.min(plant.y, end.y) - 86 };
+          posRef.current = {
+            x: oneMinusU * oneMinusU * plant.x + 2 * oneMinusU * u * apex.x + u * u * end.x,
+            y: oneMinusU * oneMinusU * plant.y + 2 * oneMinusU * u * apex.y + u * u * end.y,
+          };
+          micTransformRef.current = `translate(-50%, -50%) rotate(${lerp(-8, -24, u)}deg)`;
+        }
+
+        if (jump.t >= 1) {
+          setMode("boxed");
+          return;
+        }
+      } else if (mode === "returning") {
+        const returning = returnRef.current ?? { start: { ...posRef.current }, t: 0 };
+        returnRef.current = returning;
+        returning.t = Math.min(1, returning.t + dt / 950);
+        const u = easeInOut(returning.t);
+        posRef.current = {
+          x: lerp(returning.start.x, homeRef.current.x, u),
+          y: lerp(returning.start.y, homeRef.current.y, u),
+        };
+        micTransformRef.current = `translate(-50%, -50%) rotate(${lerp(12, 0, u)}deg)`;
+        if (returning.t >= 1) {
+          chaseAccumMs.current = 0;
+          outOfRangeMsRef.current = 0;
+          reachedCloseRadiusRef.current = false;
+          speedMultiplierRef.current = 1;
+          micTransformRef.current = "translate(-50%, -50%)";
+          setMode("pacing");
+          return;
         }
       }
 
@@ -225,15 +363,21 @@ export function NowBookingMascot() {
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [mode, boxTarget]); // intentionally NOT depending on pos/box refs
+  }, [mode, boxRevealPosition, boxTarget, chaseSpeed, flightPath, nextBoxPassProgress, pointOnPath]); // refs hold frame state
 
   const openCoupon = () => setMode("coupon");
 
   const closeCoupon = () => {
     setMode("pacing");
     boxRef.current = { x: -90, y: 0 };
+    boxFrontRef.current = false;
+    boxRevealRef.current = 0;
+    jumpRef.current = null;
+    returnRef.current = null;
     chaseAccumMs.current = 0;
-    arcStateRef.current = null;
+    outOfRangeMsRef.current = 0;
+    reachedCloseRadiusRef.current = false;
+    speedMultiplierRef.current = 1;
   };
 
   const [copied, setCopied] = useState(false);
@@ -247,17 +391,16 @@ export function NowBookingMascot() {
     }
   };
 
-  const showFloatingMic = mode === "flying" || mode === "homing";
-  const inFlight = mode === "flying" || mode === "homing" || mode === "boxed";
-  const showBox = mode === "homing" || mode === "boxed";
+  const showFloatingMic = mode === "flying" || mode === "revealing" || mode === "jumping" || mode === "returning";
+  const inFlight = showFloatingMic || mode === "boxed";
+  const showBox = mode === "revealing" || mode === "jumping" || mode === "boxed";
 
-  // Box visually transitions from "open flaps" (during homing + first beat of boxed)
+  // Box visually transitions from "open flaps" (during jump + first beat of boxed)
   // to "closed flaps + ribbon" (rest of boxed mode). Trigger via timed class.
   const [boxClosed, setBoxClosed] = useState(false);
   useEffect(() => {
     if (mode === "boxed") {
-      // 250ms delay so the mic visually settles inside before flaps close
-      const t = setTimeout(() => setBoxClosed(true), 250);
+      const t = setTimeout(() => setBoxClosed(true), 90);
       return () => clearTimeout(t);
     }
     setBoxClosed(false);
@@ -306,7 +449,7 @@ export function NowBookingMascot() {
             top: `${posRef.current.y}px`,
             width: 40,
             height: 40,
-            transform: "translate(-50%, -50%)",
+            transform: micTransformRef.current,
             zIndex: 60,
             pointerEvents: "none",
             willChange: "left, top",
@@ -327,7 +470,7 @@ export function NowBookingMascot() {
             left: `${boxRef.current.x}px`,
             top: `${boxRef.current.y}px`,
             transform: "translate(-50%, -50%)",
-            zIndex: 55,
+            zIndex: boxFrontRef.current ? 55 : 35,
             width: 110,
             height: 110,
             background: "transparent",
