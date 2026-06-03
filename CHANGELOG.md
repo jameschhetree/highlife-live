@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `d5bc203` [jeremy] mascot tuning round 3: 4× slower lap (BASE_LOOP_SECONDS 7.8 → 31.2), 6s catch (down from 7), 2× stronger inverse-radius/speed scaling (max multiplier 2.10 → 3.20), jump-into-box simplified from 3-phase plant+squash+bezier to one clean arc — fixes the visible sideways jerk before the dive.
 - `37a2318` [jeremy] favicon: replaced default Next.js favicon.ico with HighLife logo (icon.png + apple-icon.png in src/app/).
 - `73a2a89` [jeremy] mascot teleport fix per Dok: closeCoupon now routes through 'returning' mode (Murd's existing lerp back to dock over 950ms) instead of snap-to-pacing; entry spawn reads the paced mic's actual rendered position (mid-bunny-hop) not the wrapper center; speed multipliers softened max 3.55× → 2.10× so the chase stays catchable when cursor is close.
 - `a2f29e4` [jeremy] 404 / portal-transition fix: friendly `app/not-found.tsx`, new `PortalTransition` overlay component that fades a brief "Entering / Leaving back-end tools" warning between public site and admin portal, wired into Header's Agent Login (desktop + mobile drawer) and AdminSidebar's new "Public Site" link (desktop + mobile drawer). Replaces the 404 flash Dok was hitting between portals.
