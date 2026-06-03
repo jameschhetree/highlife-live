@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
 import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
+import { StagedActionModal } from "@/components/admin/StagedActionModal";
+import { Megaphone } from "lucide-react";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { useCampaigns, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { deleteCampaign } from "@/lib/admin-store";
@@ -30,6 +32,7 @@ export default function CampaignsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [session, setSession] = useState<AdminSession | null>(null);
   const [accessChecked, setAccessChecked] = useState(false);
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   useEffect(() => {
     setSession(getAdminSession());
     setAccessChecked(true);
@@ -70,7 +73,10 @@ export default function CampaignsPage() {
         </p>
         <div className="flex items-center justify-between">
           <h1 className="font-display uppercase text-3xl tracking-tight">Campaigns</h1>
-          <button className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
+          <button
+            onClick={() => setNewCampaignOpen(true)}
+            className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+          >
             <Plus size={14} /> New Campaign
           </button>
         </div>
@@ -183,6 +189,24 @@ export default function CampaignsPage() {
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <StagedActionModal
+        open={newCampaignOpen}
+        onClose={() => setNewCampaignOpen(false)}
+        title="Campaign builder coming soon"
+        targetPhase="Phase 4.5"
+        icon={<Megaphone size={16} className="text-pink-200" />}
+        body={
+          <>
+            <p>
+              The end-to-end campaign builder — target list selection, multi-step email sequence, approval flow, send scheduling — lands in Phase 4.5.
+            </p>
+            <p className="mt-2 text-xs text-zinc-400">
+              No outbound sends or AI drafting are wired yet, so the New Campaign action is staged for now.
+            </p>
+          </>
+        }
       />
     </div>
   );
