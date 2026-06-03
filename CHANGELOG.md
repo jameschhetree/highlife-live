@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `ef71191` [jeremy] **Phase 3.6 Workflow C**: venue contact security + request/grant flow. /api/venue-access (agent self-service), /api/admin/agent-logins/[id]/venue-access (admin), contact-info block on venue detail gated for non-owners, 'Venue Access' button per agent row opens approve/deny/grant drawer.
 - `dae3308` [jeremy] **Phase 3.6 Workflow A**: venue request → autofill master venue list. Per-row 'add to venue list' button + checkbox in Create Login modal. Backed by new POST /add-to-venues endpoint.
 - `1b7afdd` [jeremy] **Phase 3.6 delete-demo-data**: button wired to real DB. Owner-admin guarded, audit-logged, preview counts live. Real partner data untouched.
 - `8d2a400` [jeremy] **Phase 3.6 schema**: VenueContactAccessRequest + VenueContactGrant tables added. Pushed to shared Neon. Both queryable. Workflow C foundation laid.
