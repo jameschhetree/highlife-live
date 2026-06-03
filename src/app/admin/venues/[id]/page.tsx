@@ -68,20 +68,36 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     const session = getAdminSession();
     if (!session) return;
+    let cancelled = false;
+    const start = performance.now();
     fetch("/api/venue-access", { headers: { "x-admin-email": session.email }, cache: "no-store" })
       .then((r) => r.json())
       .then((j) => {
+        if (cancelled) return;
         const isOwner = Boolean(j?.ownerAdmin);
         const granted: string[] = Array.isArray(j?.grantedVenueIds) ? j.grantedVenueIds : [];
         const pending: string[] = Array.isArray(j?.pendingVenueIds) ? j.pendingVenueIds : [];
-        setAccessState({
-          loaded: true,
-          isOwnerAdmin: isOwner,
-          canSeeContacts: isOwner || granted.includes(id),
-          requestPending: pending.includes(id),
-        });
+        // 100ms minimum render-gate so contacts never flash visible before the
+        // access check returns (Dok HL Live 2026-06-03 — "i caught a quick glimpse").
+        const elapsed = performance.now() - start;
+        const wait = Math.max(0, 100 - elapsed);
+        setTimeout(() => {
+          if (cancelled) return;
+          setAccessState({
+            loaded: true,
+            isOwnerAdmin: isOwner,
+            canSeeContacts: isOwner || granted.includes(id),
+            requestPending: pending.includes(id),
+          });
+        }, wait);
       })
-      .catch(() => setAccessState({ loaded: true, canSeeContacts: false, requestPending: false, isOwnerAdmin: false }));
+      .catch(() => {
+        if (cancelled) return;
+        setAccessState({ loaded: true, canSeeContacts: false, requestPending: false, isOwnerAdmin: false });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   async function handleRequestAccess() {
@@ -192,7 +208,14 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Contact Information</h2>
 
-              {accessState.loaded && !accessState.canSeeContacts ? (
+              {!accessState.loaded ? (
+                // Default-deny render until access check returns (+100ms buffer).
+                // Prevents the "I caught a glimpse" flash bug Dok reported 2026-06-03.
+                <div className="py-8 text-center">
+                  <Lock size={18} className="text-zinc-600 mx-auto mb-2" />
+                  <p className="text-xs text-zinc-500">Loading access state...</p>
+                </div>
+              ) : !accessState.canSeeContacts ? (
                 // Agent view without an active grant → contacts hidden, request CTA shown
                 <div className="space-y-4">
                   <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-400/20 bg-amber-400/5">
@@ -281,7 +304,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Venue Details</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {(accessState.loaded && !accessState.canSeeContacts
+                {(!accessState.loaded || !accessState.canSeeContacts
                   ? [
                       ["Type", venue.venueType],
                       ["Region", venue.region],

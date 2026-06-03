@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Search, Edit, Trash2, Upload, RefreshCw } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Upload, RefreshCw, Lock } from "lucide-react";
 import { useVenues, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { createVenue, updateVenue, deleteVenue } from "@/lib/admin-store";
+import { getAdminSession, isOwnerAdmin } from "@/lib/admin-auth";
 import type { VenueType, ReviewStatus, RelationshipStatus, AdminVenue } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -72,11 +73,34 @@ export default function VenuesPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
+  // Owner-admin gate for sensitive controls (CSV import, cron sync, edit, delete) +
+  // contact-info preview in the list. Agents see the venue list but no contacts (Phase 3.7 D).
+  // Default-deny while session loads (Dok HL Live 2026-06-03 "100ms buffer" rule).
+  const [permState, setPermState] = useState<{ loaded: boolean; isOwnerAdmin: boolean }>({ loaded: false, isOwnerAdmin: false });
+  useEffect(() => {
+    const start = performance.now();
+    let cancelled = false;
+    const session = getAdminSession();
+    const isOwner = isOwnerAdmin(session);
+    const elapsed = performance.now() - start;
+    const wait = Math.max(0, 100 - elapsed);
+    setTimeout(() => {
+      if (cancelled) return;
+      setPermState({ loaded: true, isOwnerAdmin: isOwner });
+    }, wait);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = venues.filter((v) => {
+    const q = search.toLowerCase();
+    // Search across contact name is owner-only — agents shouldn't be able to
+    // discover hidden contact data via guess-typing.
     const matchesSearch =
-      v.name.toLowerCase().includes(search.toLowerCase()) ||
-      v.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
-      v.city.toLowerCase().includes(search.toLowerCase());
+      v.name.toLowerCase().includes(q) ||
+      v.city.toLowerCase().includes(q) ||
+      (permState.isOwnerAdmin && v.contactPerson.toLowerCase().includes(q));
     const matchesRegion = regionFilter === "All Regions" || v.region === regionFilter;
     const matchesType = typeFilter === "All Types" || v.venueType === typeFilter;
     return matchesSearch && matchesRegion && matchesType;
@@ -166,26 +190,31 @@ export default function VenuesPage() {
         <div className="flex items-center justify-between">
           <h1 className="font-display uppercase text-3xl tracking-tight">Venues</h1>
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleSyncCron}
-              disabled={syncing}
-              className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-              {syncing ? "Syncing…" : "Sync from Cron"}
-            </button>
-            <Link
-              href="/admin/venues/import"
-              className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2"
-            >
-              <Upload size={14} /> Import CSV
-            </Link>
-            <button
-              onClick={openNew}
-              className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
-            >
-              <Plus size={14} /> Add Venue
-            </button>
+            {/* Owner-only data ingest controls (Phase 3.7 D). Agents see neither. */}
+            {permState.loaded && permState.isOwnerAdmin && (
+              <>
+                <button
+                  onClick={handleSyncCron}
+                  disabled={syncing}
+                  className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                  {syncing ? "Syncing…" : "Sync from Cron"}
+                </button>
+                <Link
+                  href="/admin/venues/import"
+                  className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2"
+                >
+                  <Upload size={14} /> Import CSV
+                </Link>
+                <button
+                  onClick={openNew}
+                  className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+                >
+                  <Plus size={14} /> Add Venue
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -258,7 +287,19 @@ export default function VenuesPage() {
                     <td className="px-4 py-3.5">
                       <Link href={`/admin/venues/${venue.id}`} className="block">
                         <div className="text-zinc-200 font-medium hover:text-pink-200 transition-colors">{venue.name}</div>
-                        <div className="text-[11px] text-zinc-500 mt-0.5">{venue.contactPerson} · {venue.email}</div>
+                        {/* Contact preview: owner-only. Agents see city/state instead so they
+                            can still recognize the venue without seeing names/emails. */}
+                        {permState.loaded && permState.isOwnerAdmin ? (
+                          <div className="text-[11px] text-zinc-500 mt-0.5">{venue.contactPerson} · {venue.email}</div>
+                        ) : permState.loaded ? (
+                          <div className="text-[11px] text-zinc-500 mt-0.5 inline-flex items-center gap-1.5">
+                            {venue.city ? `${venue.city}, ${venue.state}` : "Contact hidden"}
+                            <Lock size={9} className="text-zinc-600" />
+                          </div>
+                        ) : (
+                          // 100ms loading buffer — default-deny render so contacts don't flash
+                          <div className="text-[11px] text-zinc-700 mt-0.5">...</div>
+                        )}
                       </Link>
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell">
@@ -279,6 +320,7 @@ export default function VenuesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
+                      {permState.loaded && permState.isOwnerAdmin && (
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => openEdit(venue)}
@@ -293,6 +335,7 @@ export default function VenuesPage() {
                           <Trash2 size={12} />
                         </button>
                       </div>
+                      )}
                     </td>
                   </motion.tr>
                 ))}
