@@ -181,33 +181,37 @@ export default function PortalPage() {
                   const config = statusConfig[inq.status] || defaultStatus;
                   const Icon = config.icon;
                   return (
-                    <motion.div
-                      key={inq.id}
-                      whileHover={{ y: -2 }}
-                      className={`glass-card rounded-2xl p-5 border ${config.bg}`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 font-mono">
-                          {inq.inquiryNumber}
-                        </span>
-                        <Icon size={14} className={config.color} />
-                      </div>
-                      <h3 className="text-sm font-medium mb-1">{inq.artistName}</h3>
-                      <p className="text-xs text-zinc-500 mb-3">
-                        {inq.venueName} ·{" "}
-                        {inq.eventDate || new Date(inq.submittedAt).toLocaleDateString()}
-                      </p>
-                      {inq.eventDescription && (
-                        <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                          {inq.eventDescription}
-                        </p>
-                      )}
-                      <span
-                        className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}
+                    <Link key={inq.id} href={`/portal/inquiries/${inq.id}`} className="block group">
+                      <motion.div
+                        whileHover={{ y: -2 }}
+                        className={`glass-card rounded-2xl p-5 border ${config.bg} h-full hover:border-pink-400/40 transition-colors`}
                       >
-                        {inq.status}
-                      </span>
-                    </motion.div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 font-mono">
+                            {inq.inquiryNumber}
+                          </span>
+                          <Icon size={14} className={config.color} />
+                        </div>
+                        <h3 className="text-sm font-medium mb-1 group-hover:text-pink-300 transition-colors">{inq.artistName}</h3>
+                        <p className="text-xs text-zinc-500 mb-3">
+                          {inq.venueName} ·{" "}
+                          {inq.eventDate || new Date(inq.submittedAt).toLocaleDateString()}
+                        </p>
+                        {inq.eventDescription && (
+                          <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+                            {inq.eventDescription}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}>
+                            {inq.status}
+                          </span>
+                          <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 group-hover:text-pink-300 transition-colors inline-flex items-center gap-1">
+                            View / Edit <ArrowRight size={11} />
+                          </span>
+                        </div>
+                      </motion.div>
+                    </Link>
                   );
                 })}
               </div>

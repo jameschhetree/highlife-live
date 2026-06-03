@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -61,6 +62,7 @@ const sourceColor: Record<string, string> = {
 };
 
 export default function AdminInquiriesPage() {
+  const router = useRouter();
   const [session, setSession] = useState<AdminSession | null>(null);
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,7 +210,8 @@ export default function AdminInquiriesPage() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: i * 0.02 }}
-                      className="border-b border-white/4 hover:bg-white/[0.02] transition-colors"
+                      onClick={() => router.push(`/admin/inquiries/${inq.id}`)}
+                      className="border-b border-white/4 hover:bg-white/[0.04] transition-colors cursor-pointer"
                     >
                       <td className="py-3 px-2.5 sm:px-4">
                         <span className="text-[11px] text-zinc-300 font-mono">{inq.inquiryNumber}</span>
