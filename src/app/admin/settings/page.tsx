@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
@@ -16,6 +16,16 @@ import {
 } from "lucide-react";
 import { clearAllData, resetDemoData } from "@/lib/admin-store";
 import { triggerStoreUpdate } from "@/hooks/useAdminStore";
+import { getAdminSession } from "@/lib/admin-auth";
+
+type DemoCounts = {
+  artists: number;
+  venues: number;
+  contacts: number;
+  campaigns: number;
+  opportunities: number;
+  epks: number;
+};
 
 const teamMembers = [
   { name: "James Carter", email: "james@highlifedmv.com", role: "Owner/Admin", status: "Active" },
@@ -42,19 +52,65 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [dataCleared, setDataCleared] = useState(false);
+  const [previewCounts, setPreviewCounts] = useState<DemoCounts | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<DemoCounts | null>(null);
 
-  function handleDeleteDemoData() {
-    clearAllData();
-    triggerStoreUpdate();
-    setShowDeleteModal(false);
-    setDeleteConfirm("");
-    setDataCleared(true);
+  // Fetch live counts whenever the delete modal opens
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    const session = getAdminSession();
+    if (!session) return;
+    setPreviewCounts(null);
+    fetch("/api/admin/delete-demo-data", {
+      method: "GET",
+      headers: { "x-admin-email": session.email },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setPreviewCounts(j.counts as DemoCounts))
+      .catch(() => setPreviewCounts(null));
+  }, [showDeleteModal]);
+
+  async function handleDeleteDemoData() {
+    const session = getAdminSession();
+    if (!session) {
+      setDeleteError("Not signed in.");
+      return;
+    }
+    setDeletePending(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/admin/delete-demo-data", {
+        method: "POST",
+        headers: { "x-admin-email": session.email },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setDeleteError(data?.error || `Delete failed (${res.status})`);
+        setDeletePending(false);
+        return;
+      }
+      // Also clear legacy localStorage seed
+      clearAllData();
+      triggerStoreUpdate();
+      setLastResult(data.deleted as DemoCounts);
+      setShowDeleteModal(false);
+      setDeleteConfirm("");
+      setDataCleared(true);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setDeletePending(false);
+    }
   }
 
   function handleResetDemoData() {
     resetDemoData();
     triggerStoreUpdate();
     setDataCleared(false);
+    setLastResult(null);
   }
 
   return (
@@ -331,6 +387,11 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
+          {lastResult && (
+            <p className="mt-3 text-xs text-emerald-300/80 bg-emerald-500/5 border border-emerald-500/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+              <Check size={12} /> Deleted {lastResult.artists} artists, {lastResult.venues} venues, {lastResult.contacts} contacts, {lastResult.campaigns} campaigns, {lastResult.opportunities} opportunities, {lastResult.epks} EPKs.
+            </p>
+          )}
         </motion.div>
 
         <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 pt-4 border-t border-white/5">
@@ -373,16 +434,27 @@ export default function SettingsPage() {
               </div>
 
               <p className="text-sm text-zinc-400 mb-4">
-                Are you sure? This will permanently delete all seed/demo records including:
+                Are you sure? This will permanently delete all <code className="text-pink-300">isDemo=true</code> records from the database. Real partner data (inquiries, events, bookings, agent applications, venue logins) will NOT be touched.
               </p>
               <ul className="text-sm text-zinc-500 space-y-1 mb-4 pl-4">
-                <li>- 8 demo artists</li>
-                <li>- 12 demo venues</li>
-                <li>- 5 demo campaigns</li>
-                <li>- 10 demo opportunities</li>
-                <li>- 8 demo EPKs</li>
-                <li>- 8 demo research contacts</li>
+                {previewCounts ? (
+                  <>
+                    <li>- {previewCounts.artists} demo artists</li>
+                    <li>- {previewCounts.venues} demo venues</li>
+                    <li>- {previewCounts.contacts} demo contacts</li>
+                    <li>- {previewCounts.campaigns} demo campaigns</li>
+                    <li>- {previewCounts.opportunities} demo opportunities</li>
+                    <li>- {previewCounts.epks} demo EPKs</li>
+                  </>
+                ) : (
+                  <li className="text-zinc-600 italic">Loading current demo counts...</li>
+                )}
               </ul>
+              {deleteError && (
+                <p className="text-xs text-red-400 mb-3 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {deleteError}
+                </p>
+              )}
 
               <div className="mb-4">
                 <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1.5">
@@ -405,15 +477,15 @@ export default function SettingsPage() {
                   Cancel
                 </button>
                 <button
-                  disabled={deleteConfirm !== "DELETE"}
+                  disabled={deleteConfirm !== "DELETE" || deletePending}
                   onClick={handleDeleteDemoData}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors ${
-                    deleteConfirm === "DELETE"
+                    deleteConfirm === "DELETE" && !deletePending
                       ? "bg-red-500 text-white hover:bg-red-600"
                       : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
                   }`}
                 >
-                  <Trash size={14} /> Delete Demo Data
+                  <Trash size={14} /> {deletePending ? "Deleting..." : "Delete Demo Data"}
                 </button>
               </div>
             </motion.div>
