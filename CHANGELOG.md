@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `caddca3` [jeremy] **Phase 3.7 D + flash-fix**: venue list agent restrictions (no CSV/cron/edit/delete, contacts in row replaced w/ city+state), 100ms render-gate pattern applied to /admin/venues/[id] + /admin/venues to kill the 'caught a glimpse' contact flash.
 - `b27ee47` [jeremy] **Phase 3.7 A**: venue login requests delete button + archive hide/show toggle.
 - `b5260b8` [jeremy] **Phase 3.7 pre / delete-demo-data certified + seed-demo-data endpoint**: full seed→delete cycle e2e tested. Re-seed button now hits DB, not just localStorage.
 - `194e217` [jeremy] **Phase 3.7 pre / agent artist access**: 'My Artists' label for agents, owner-side Artists drawer in /admin/agent-logins to edit assignments. New /api/admin/agent-logins/[id]/artists endpoint (GET + PUT).
