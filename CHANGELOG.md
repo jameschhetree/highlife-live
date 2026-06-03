@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `dae3308` [jeremy] **Phase 3.6 Workflow A**: venue request → autofill master venue list. Per-row 'add to venue list' button + checkbox in Create Login modal. Backed by new POST /add-to-venues endpoint.
 - `1b7afdd` [jeremy] **Phase 3.6 delete-demo-data**: button wired to real DB. Owner-admin guarded, audit-logged, preview counts live. Real partner data untouched.
 - `8d2a400` [jeremy] **Phase 3.6 schema**: VenueContactAccessRequest + VenueContactGrant tables added. Pushed to shared Neon. Both queryable. Workflow C foundation laid.
 - `337a100` [jeremy] **mascot retired** per Dok. Deleted NowBookingMascot.tsx + all mascot/box CSS, reverted hero pill to a plain Link. See MASCOT-RIP.md for the full journey + lessons.
