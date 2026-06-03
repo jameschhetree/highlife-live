@@ -34,10 +34,15 @@ function categoryFor(primaryGenre: string): string {
 export async function GET() {
   if (!prisma) return Response.json([] as Artist[]);
 
+  // Public roster includes anyone still bookable/being considered.
+  // Excluded: Paused (temporarily off) + Archived (gone).
+  // The /admin/artists UI defaults new artists to 'Testing', so include that here
+  // — otherwise a freshly-created artist would not appear on /roster (the 'why
+  // isn't it working' bug Dok hit 2026-06-03).
   const rows = await prisma.artist.findMany({
     where: {
       isDemo: false,
-      status: { in: ["Active", "Priority"] },
+      status: { in: ["Active", "Priority", "Testing"] },
     },
     orderBy: [
       { status: "asc" }, // Priority alphabetically before Active is fine; tweak if Dok wants priority-first
