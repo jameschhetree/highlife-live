@@ -205,16 +205,15 @@ function write<T>(key: string, data: T): void {
   window.dispatchEvent(new CustomEvent(STORE_EVENT, { detail: { key } }));
 }
 
+// 2026-06-03 — Dok directive: no fake data. localStorage seed disabled entirely.
+// Previously this hydrated Riko Lux / Foolery / etc. on every fresh visit.
+// Now a no-op + one-shot cleanup that wipes the seeded keys if they exist
+// (so users who visited before this change get a clean slate too).
 function ensureSeeded(): void {
   if (!isBrowser()) return;
-  if (localStorage.getItem(KEYS.initialized)) return;
-  write(KEYS.artists, demoArtists);
-  write(KEYS.venues, demoVenues);
-  write(KEYS.campaigns, demoCampaigns);
-  write(KEYS.opportunities, demoOpportunities);
-  write(KEYS.epks, demoEpks);
-  write(KEYS.research, demoResearchQueue);
-  localStorage.setItem(KEYS.initialized, "1");
+  if (localStorage.getItem(KEYS.initialized)) {
+    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+  }
 }
 
 function generateId(prefix: string): string {
