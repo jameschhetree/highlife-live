@@ -35,6 +35,9 @@ interface PartnerRequest {
   extraNotes: string;
   status: string;
   submittedAt: string;
+  // Populated by GET /api/admin/venue-logins/requests for the "in venue list?" UI.
+  matchedVenueId: string | null;
+  matchedVenueName: string | null;
 }
 
 interface VenueLoginRow {
@@ -145,6 +148,22 @@ export default function VenueLoginsPage() {
     fetchRequests();
   };
 
+  const [addingToVenuesId, setAddingToVenuesId] = useState<string | null>(null);
+  const addToVenues = async (id: string) => {
+    if (!session) return;
+    setAddingToVenuesId(id);
+    try {
+      await fetch(`/api/admin/venue-logins/requests/${id}/add-to-venues`, {
+        method: "POST",
+        headers: { "x-admin-email": session.email },
+      });
+      // Re-fetch so the row picks up matchedVenueId from the server
+      await fetchRequests();
+    } finally {
+      setAddingToVenuesId(null);
+    }
+  };
+
   const openCreateFromRequest = (req: PartnerRequest) => {
     setCreateFrom(req);
     setCreateForm({
@@ -163,6 +182,8 @@ export default function VenueLoginsPage() {
     setShowCreateModal(true);
   };
 
+  const [alsoCreateVenue, setAlsoCreateVenue] = useState(true);
+
   const handleCreate = async () => {
     if (!session || !createForm.email || !createForm.password || !createForm.displayName) return;
     setCreateLoading(true);
@@ -176,6 +197,13 @@ export default function VenueLoginsPage() {
         }),
       });
       if (res.ok) {
+        // If admin opted in AND request has no existing venue match, also create the venue row
+        if (createFrom && alsoCreateVenue && !createFrom.matchedVenueId && createForm.accountType === "Venue") {
+          await fetch(`/api/admin/venue-logins/requests/${createFrom.id}/add-to-venues`, {
+            method: "POST",
+            headers: { "x-admin-email": session.email },
+          });
+        }
         setShowCreateModal(false);
         fetchLogins();
         if (createFrom) fetchRequests();
@@ -378,6 +406,22 @@ export default function VenueLoginsPage() {
                               <span className="text-zinc-200 font-medium text-[12px]">{req.organizationName}</span>
                               {req.address && (
                                 <span className="block text-[10px] text-zinc-500 mt-0.5">{req.address}</span>
+                              )}
+                              {req.accountType === "Venue" && (
+                                req.matchedVenueId ? (
+                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-emerald-300/90 border border-emerald-400/30 bg-emerald-400/10 rounded-full px-2 py-0.5">
+                                    <Check size={9} /> In venue list
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => addToVenues(req.id)}
+                                    disabled={addingToVenuesId === req.id}
+                                    className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-amber-300 hover:text-amber-200 border border-amber-400/30 hover:border-amber-400/60 bg-amber-400/10 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
+                                    title="Add this venue to the master venue list (autofills from request)"
+                                  >
+                                    + {addingToVenuesId === req.id ? "Adding..." : "Add to venue list"}
+                                  </button>
+                                )
                               )}
                             </td>
                             <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
@@ -738,6 +782,20 @@ export default function VenueLoginsPage() {
                     placeholder="The Grand Venue"
                   />
                 </div>
+                {createFrom && createForm.accountType === "Venue" && !createFrom.matchedVenueId && (
+                  <label className="flex items-start gap-2 text-[11px] text-zinc-300 cursor-pointer select-none border border-amber-400/20 bg-amber-400/5 rounded-xl px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={alsoCreateVenue}
+                      onChange={(e) => setAlsoCreateVenue(e.target.checked)}
+                      className="mt-0.5 accent-amber-400"
+                    />
+                    <span>
+                      Also add <strong className="text-amber-300">{createForm.organizationName || "this venue"}</strong> to the master venue list (autofills address, contact, email from this request — keeps Find an Artist / opportunities flow tidy).
+                    </span>
+                  </label>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowCreateModal(false)}

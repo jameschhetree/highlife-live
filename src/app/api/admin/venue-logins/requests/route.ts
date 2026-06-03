@@ -18,7 +18,25 @@ export async function GET(request: NextRequest) {
     where,
     orderBy: { submittedAt: "desc" },
   });
-  return Response.json(rows);
+
+  // For each request, look up whether a Venue with that organizationName already exists.
+  // Case-insensitive, trimmed match on Venue.name. Drives the inline "+ Add to venue list"
+  // button vs. "✓ In venue list" badge on the requests table.
+  const normalizedNames = Array.from(new Set(rows.map((r) => r.organizationName.trim().toLowerCase())));
+  const allMatches = normalizedNames.length
+    ? await prisma.venue.findMany({
+        where: { name: { in: rows.map((r) => r.organizationName), mode: "insensitive" } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const byNorm = new Map(allMatches.map((v) => [v.name.trim().toLowerCase(), v]));
+
+  const enriched = rows.map((r) => {
+    const m = byNorm.get(r.organizationName.trim().toLowerCase());
+    return { ...r, matchedVenueId: m?.id ?? null, matchedVenueName: m?.name ?? null };
+  });
+
+  return Response.json(enriched);
 }
 
 export async function PATCH(request: NextRequest) {
