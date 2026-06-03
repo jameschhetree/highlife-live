@@ -8,8 +8,8 @@ import { prisma } from "@/lib/db";
 import {
   getAdminEmailFromRequest,
   isOwnerAdminEmail,
-  isAgentAdminEmail,
 } from "@/lib/admin-permissions";
+import { isAgentLoginEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -42,8 +42,9 @@ async function loadInquiryForCaller(id: string, callerEmail: string) {
     },
   });
   if (!inq) return null;
-  // Agent scope check: must be assigned to this artistName
-  if (isAgentAdminEmail(callerEmail)) {
+  // Agent scope check: must be assigned to this artistName.
+  // (Owner-admins bypass.)
+  if (!isOwnerAdminEmail(callerEmail)) {
     const agent = await prisma.agentLogin.findFirst({
       where: { email: callerEmail, isActive: true },
       include: { artistAssignments: true },
@@ -66,7 +67,8 @@ export async function GET(
 ) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+  const isOwner = isOwnerAdminEmail(email);
+  if (!isOwner && !(await isAgentLoginEmail(email))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await context.params;
@@ -83,7 +85,7 @@ export async function GET(
     venueLoginLabel = v?.organizationName || v?.email || null;
   }
 
-  if (isAgentAdminEmail(email)) {
+  if (!isOwner) {
     const { bookingOffer: _b, ...safe } = inq;
     return Response.json({ ...safe, venueLoginLabel });
   }
@@ -96,19 +98,20 @@ export async function PATCH(
 ) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+  const isOwner = isOwnerAdminEmail(email);
+  if (!isOwner && !(await isAgentLoginEmail(email))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await context.params;
   const inq = await loadInquiryForCaller(id, email);
   if (!inq) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const allowedFields = isOwnerAdminEmail(email) ? ADMIN_EDITABLE_FIELDS : AGENT_EDITABLE_FIELDS;
+  const allowedFields = isOwner ? ADMIN_EDITABLE_FIELDS : AGENT_EDITABLE_FIELDS;
   const body = (await request.json()) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
     if (!allowedFields.has(k)) continue;
-    if (!isOwnerAdminEmail(email) && OWNER_ONLY_FIELDS.has(k)) continue;
+    if (!isOwner && OWNER_ONLY_FIELDS.has(k)) continue;
     patch[k] = v;
   }
   if (Object.keys(patch).length === 0) {

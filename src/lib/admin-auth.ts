@@ -4,9 +4,7 @@ import {
   canManageArtistsEmail,
   canManageVenueLoginsEmail,
   canViewArtistEmail,
-  canViewAuditionsEmail,
   filterArtistsForEmail,
-  isAgentAdminEmail,
   isOwnerAdminEmail,
   type ArtistAccessRecord,
 } from "@/lib/admin-permissions";
@@ -19,10 +17,12 @@ interface AdminUser {
   displayName: string;
 }
 
+// 2026-06-03 — Dok directive: 'only two hard coded logins should be jaco@highlifedmv.com
+// and liam@highlifedmv.com'. The legacy agent@highlifedmv.com test login is removed.
+// Real agents authenticate via the DB-backed /api/admin/agent-auth path.
 const ADMIN_USERS: ReadonlyArray<AdminUser> = [
   { email: "jaco@highlifedmv.com", password: "Jaco.iv1", displayName: "Jaco" },
   { email: "liam@highlifedmv.com", password: "DokMurda1", displayName: "Liam" },
-  { email: "agent@highlifedmv.com", password: "agentLogin1", displayName: "Agent" },
 ];
 
 export interface AdminSession {
@@ -81,11 +81,14 @@ export function isOwnerAdmin(session: AdminSession | null = getAdminSession()): 
 }
 
 export function isAgentAdmin(session: AdminSession | null = getAdminSession()): boolean {
-  return isAgentAdminEmail(session?.email) || session?.role === "agent";
+  return session?.role === "agent";
 }
 
+// Client-side audition visibility — owners always, agents always (server filters
+// scope to assignments). Server still enforces auth properly via canViewAuditionsEmail.
 export function canViewAuditions(session: AdminSession | null = getAdminSession()): boolean {
-  return canViewAuditionsEmail(session?.email);
+  if (!session) return false;
+  return isOwnerAdminEmail(session.email) || session.role === "agent";
 }
 
 export function canManageArtists(session: AdminSession | null = getAdminSession()): boolean {

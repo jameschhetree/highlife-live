@@ -7,8 +7,8 @@ import { prisma } from "@/lib/db";
 import {
   getAdminEmailFromRequest,
   isOwnerAdminEmail,
-  isAgentAdminEmail,
 } from "@/lib/admin-permissions";
+import { isAgentLoginEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET(
 ) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+  if (!isOwnerAdminEmail(email) && !(await isAgentLoginEmail(email))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await context.params;
@@ -36,7 +36,7 @@ export async function POST(
 ) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+  if (!isOwnerAdminEmail(email) && !(await isAgentLoginEmail(email))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await context.params;

@@ -5,11 +5,11 @@
 import { prisma } from "@/lib/db";
 import { dbArtistToAdmin, adminArtistToDbInput } from "@/lib/admin-db-mappers";
 import {
-  canAccessAdminArtistApiEmail,
   canManageArtistsEmail,
   canViewArtistEmail,
   getAdminEmailFromRequest,
 } from "@/lib/admin-permissions";
+import { canAccessAdminArtistApiEmail } from "@/lib/admin-permissions-server";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export async function GET(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
   const adminEmail = getAdminEmailFromRequest(request);
-  if (!canAccessAdminArtistApiEmail(adminEmail) || !canViewArtistEmail(adminEmail, row)) {
+  if (!(await canAccessAdminArtistApiEmail(adminEmail)) || !canViewArtistEmail(adminEmail, row)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   return Response.json(dbArtistToAdmin(row));

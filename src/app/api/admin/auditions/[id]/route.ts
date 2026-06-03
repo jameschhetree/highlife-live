@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/db";
 import {
-  canViewAuditionsEmail,
   canManageAuditionsEmail,
   getAdminEmailFromRequest,
-  isAgentAdminEmail,
   isOwnerAdminEmail,
 } from "@/lib/admin-permissions";
+import { canViewAuditionsEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -15,22 +14,22 @@ interface RouteContext {
 }
 
 // Agents can only touch auditions assigned to them (via AuditionAssignment).
-// Owners see everything.
+// Owners see everything. Non-existent / inactive AgentLogin emails get false.
 async function isAuditionVisibleToCaller(auditionId: string, email: string): Promise<boolean> {
   if (!prisma) return false;
   if (isOwnerAdminEmail(email)) return true;
-  if (!isAgentAdminEmail(email)) return false;
   const agentLogin = await prisma.agentLogin.findFirst({
     where: { email, isActive: true },
     include: { auditionAssignments: { select: { auditionId: true } } },
   });
-  return (agentLogin?.auditionAssignments ?? []).some((a) => a.auditionId === auditionId);
+  if (!agentLogin) return false;
+  return agentLogin.auditionAssignments.some((a) => a.auditionId === auditionId);
 }
 
 export async function GET(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!canViewAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await canViewAuditionsEmail(email))) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
   if (!(await isAuditionVisibleToCaller(id, email))) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!canViewAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await canViewAuditionsEmail(email))) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
   if (!(await isAuditionVisibleToCaller(id, email))) {
     return Response.json({ error: "Not found" }, { status: 404 });

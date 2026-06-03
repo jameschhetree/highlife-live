@@ -6,9 +6,9 @@ import { prisma } from "@/lib/db";
 import {
   getAdminEmailFromRequest,
   isOwnerAdminEmail,
-  isAgentAdminEmail,
   stripMoneyFieldsArray,
 } from "@/lib/admin-permissions";
+import { isAgentLoginEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
 
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+  const isOwner = isOwnerAdminEmail(email);
+  const isAgent = !isOwner && (await isAgentLoginEmail(email));
+  if (!isOwner && !isAgent) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
   if (source) where.source = source;
   if (status) where.status = status;
 
-  if (isAgentAdminEmail(email)) {
+  if (isAgent) {
     // Get assigned artist slugs for this agent
     const agentLogin = await prisma.agentLogin.findFirst({
       where: { email, isActive: true },
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
       : null,
   }));
 
-  if (isAgentAdminEmail(email)) {
+  if (isAgent) {
     return Response.json(stripMoneyFieldsArray(enriched as Record<string, unknown>[]));
   }
 

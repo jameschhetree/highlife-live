@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db";
 import {
-  canViewAuditionsEmail,
   getAdminEmailFromRequest,
-  isAgentAdminEmail,
   isOwnerAdminEmail,
 } from "@/lib/admin-permissions";
+import { canViewAuditionsEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +11,10 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  if (!canViewAuditionsEmail(email)) {
+  if (!(await canViewAuditionsEmail(email))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+  const isOwner = isOwnerAdminEmail(email);
 
   const status = request.nextUrl.searchParams.get("status");
   const classification = request.nextUrl.searchParams.get("classification");
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Phase 3.7 C — agent scope: only auditions assigned to this agent via AuditionAssignment.
-  if (isAgentAdminEmail(email) && !isOwnerAdminEmail(email)) {
+  if (!isOwner) {
     const agentLogin = await prisma.agentLogin.findFirst({
       where: { email, isActive: true },
       include: { auditionAssignments: { select: { auditionId: true } } },
