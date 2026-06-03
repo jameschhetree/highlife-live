@@ -86,10 +86,15 @@ export function canViewArtistEmail(
 }
 
 export function filterArtistsForEmail<T extends ArtistAccessRecord>(
-  email: string | null | undefined,
+  _email: string | null | undefined,
   artists: T[]
 ): T[] {
-  if (isOwnerAdminEmail(email)) return artists;
-  // Agent filtering is now DB-backed
-  return [];
+  // Phase 3.8 fix (Murd QA finding 6): used to return [] for non-owners on the
+  // assumption the legacy isAgentVisibleArtist would filter. After we moved
+  // visibility to DB-backed AgentArtistAssignment, the server-side API
+  // (/api/admin/artists) already scopes the list before it reaches this filter.
+  // Returning [] here was double-filtering the already-scoped result, so agents
+  // saw no artists on /admin/artists even when they had assignments.
+  // Pass-through is correct now — server is the single source of truth.
+  return artists;
 }

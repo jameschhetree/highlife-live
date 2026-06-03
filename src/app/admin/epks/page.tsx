@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Edit, Plus, Trash2 } from "lucide-react";
 import { useEpks, useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { deleteEpk } from "@/lib/admin-store";
 import type { EpkStatus } from "@/lib/admin-data";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
 
 const statusColor: Record<EpkStatus, string> = {
   Draft: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
@@ -22,6 +24,21 @@ export default function EpksPage() {
   const artists = useArtists();
   const [filter, setFilter] = useState<EpkStatus | "All">("All");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="EPKs"
+        description="EPK generation is owner-only today. Agent-facing EPK approvals + the generation pipeline ship in Phase 5.5 after the artist-conversion workflow lands."
+      />
+    );
+  }
 
   const filtered = epks.filter((e) => filter === "All" || e.status === filter);
 

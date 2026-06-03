@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { GripVertical } from "lucide-react";
 import { useOpportunities, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateOpportunity } from "@/lib/admin-store";
 import type { OpportunityStatus, AdminOpportunity } from "@/lib/admin-data";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
 
 const columns: OpportunityStatus[] = [
   "Lead",
@@ -85,6 +87,25 @@ function PipelineCard({
 export default function PipelinePage() {
   const opportunities = useOpportunities();
   const [dragId, setDragId] = useState<string | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  // Phase 3.8 — Pipeline carries dollar amounts (proposedFee, expectedFee,
+  // confirmedFee) globally. Murd QA finding 5: agent saw cross-company money +
+  // global opportunities. Staged for agents until Phase 5.5 builds an agent-safe
+  // scoped Kanban with money stripping.
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="Pipeline"
+        description="The opportunity Kanban shows venue-side fee negotiations across the whole roster. We need to scope it to your assigned artists and strip dollar amounts before agents see it. Owner Pipeline is fully functional today."
+      />
+    );
+  }
 
   const getColumnOpps = (status: OpportunityStatus) =>
     opportunities.filter((o) => o.status === status);

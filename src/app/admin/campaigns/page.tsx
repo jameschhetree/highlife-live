@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { useCampaigns, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { deleteCampaign } from "@/lib/admin-store";
@@ -26,6 +28,23 @@ export default function CampaignsPage() {
   const [filter, setFilter] = useState<CampaignStatus | "All">("All");
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  // Phase 3.8 — Campaigns is owner-only until Phase 5.5 (agent-safe outreach
+  // pending). Broad-nav strategy: keep tab visible for agents, stage the content.
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="Campaigns"
+        description="Agent-scoped outreach campaigns ship in Phase 5.5 once we lock down which contact lists agents can email and what guardrails the AI drafting layer needs. For now, campaign authoring is owner-only."
+      />
+    );
+  }
 
   const filtered = campaigns.filter((c) => {
     const matchesFilter = filter === "All" || c.status === filter;

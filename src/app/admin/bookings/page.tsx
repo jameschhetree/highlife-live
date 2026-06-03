@@ -14,6 +14,8 @@ import {
   ArrowRight,
   RefreshCw,
 } from "lucide-react";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
 
 interface BookingRow {
   id: string;
@@ -55,6 +57,13 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
 
   const fetchBookings = () => {
     setLoading(true);
@@ -81,6 +90,17 @@ export default function AdminBookingsPage() {
       b.contactEmail.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Phase 3.8 — agents see a staged preview instead of the legacy bookings table.
+  // Bookings is owner-only legacy until Phase 5.5 retires the /api/bookings endpoint.
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="Bookings"
+        description="Bookings is a legacy view kept for owner reference until the canonical Inquiries workflow fully replaces it. Agent-facing booking surfaces ship in Phase 5.5 alongside the agent permission rewrite."
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen text-foreground">
