@@ -365,13 +365,35 @@ model Inquiry {
   status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
   adminNotes       String?  @db.Text
   bookingOffer     String?  // optional opening offer (e.g. "$12,000"). Stripped from agent-facing responses.
+  convertedEventId String?  // populated when admin finalizes the inquiry as an event
   submittedAt      DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  notes InquiryNote[]
+
   @@index([source, submittedAt])
   @@index([venueLoginId])
   @@index([contactEmail])
+}
+
+// ── Inquiry Notes (Phase 3.6 — Workflow B) ─────────────────
+// Threaded notes between the venue partner and the admin team on a specific inquiry.
+// authorType discriminates: "venue" notes are visible to venue + admin; "admin" notes
+// are visible to venue + admin too (admin can post a private note via authorType="internal"
+// which the venue portal will filter out).
+
+model InquiryNote {
+  id          String   @id @default(cuid())
+  inquiryId   String
+  inquiry     Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  authorType  String   // "venue" | "admin" | "internal"
+  authorEmail String
+  authorName  String   @default("")
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([inquiryId, createdAt])
 }
 
 // ── Agent Logins (Workstream 6) ────────────────────────────

@@ -1,0 +1,120 @@
+// Admin-scoped inquiry detail + status mutation.
+// GET → full inquiry hydrated with venueLoginLabel + notes (admin sees everything).
+// PATCH → status, adminNotes, bookingOffer (owner-admin can edit anything; agents
+//         can only edit status to Reviewed/Replied for their assigned artists).
+//         Editable fields are explicit per Dok's Phase 3.6 spec.
+
+import { prisma } from "@/lib/db";
+import {
+  getAdminEmailFromRequest,
+  isOwnerAdminEmail,
+  isAgentAdminEmail,
+} from "@/lib/admin-permissions";
+import type { NextRequest } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+const ADMIN_EDITABLE_FIELDS = new Set([
+  "status",
+  "adminNotes",
+  "bookingOffer",
+  "venueName",
+  "venueAddress",
+  "contactName",
+  "contactEmail",
+  "contactPhone",
+  "eventDescription",
+  "messageToAgent",
+  "eventDate", // owner-admin only — guarded below
+  "artistSlug",
+  "artistName",
+]);
+
+const AGENT_EDITABLE_FIELDS = new Set(["status", "adminNotes"]);
+const OWNER_ONLY_FIELDS = new Set(["eventDate", "artistSlug", "artistName", "bookingOffer"]);
+
+async function loadInquiryForCaller(id: string, callerEmail: string) {
+  if (!prisma) return null;
+  const inq = await prisma.inquiry.findUnique({
+    where: { id },
+    include: {
+      notes: { orderBy: { createdAt: "asc" } },
+    },
+  });
+  if (!inq) return null;
+  // Agent scope check: must be assigned to this artistName
+  if (isAgentAdminEmail(callerEmail)) {
+    const agent = await prisma.agentLogin.findFirst({
+      where: { email: callerEmail, isActive: true },
+      include: { artistAssignments: true },
+    });
+    if (!agent || agent.artistAssignments.length === 0) return null;
+    const artistIds = agent.artistAssignments.map((a) => a.artistId);
+    const myArtists = await prisma.artist.findMany({
+      where: { id: { in: artistIds } },
+      select: { name: true },
+    });
+    const myNames = new Set(myArtists.map((a) => a.name));
+    if (!myNames.has(inq.artistName)) return null;
+  }
+  return inq;
+}
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const email = getAdminEmailFromRequest(request);
+  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { id } = await context.params;
+  const inq = await loadInquiryForCaller(id, email);
+  if (!inq) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // Hydrate venueLoginLabel
+  let venueLoginLabel: string | null = null;
+  if (inq.venueLoginId) {
+    const v = await prisma.venueLogin.findUnique({
+      where: { id: inq.venueLoginId },
+      select: { organizationName: true, email: true },
+    });
+    venueLoginLabel = v?.organizationName || v?.email || null;
+  }
+
+  if (isAgentAdminEmail(email)) {
+    const { bookingOffer: _b, ...safe } = inq;
+    return Response.json({ ...safe, venueLoginLabel });
+  }
+  return Response.json({ ...inq, venueLoginLabel });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const email = getAdminEmailFromRequest(request);
+  if (!isOwnerAdminEmail(email) && !isAgentAdminEmail(email)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const { id } = await context.params;
+  const inq = await loadInquiryForCaller(id, email);
+  if (!inq) return Response.json({ error: "Not found" }, { status: 404 });
+
+  const allowedFields = isOwnerAdminEmail(email) ? ADMIN_EDITABLE_FIELDS : AGENT_EDITABLE_FIELDS;
+  const body = (await request.json()) as Record<string, unknown>;
+  const patch: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body)) {
+    if (!allowedFields.has(k)) continue;
+    if (!isOwnerAdminEmail(email) && OWNER_ONLY_FIELDS.has(k)) continue;
+    patch[k] = v;
+  }
+  if (Object.keys(patch).length === 0) {
+    return Response.json({ error: "No editable fields in payload" }, { status: 400 });
+  }
+
+  const updated = await prisma.inquiry.update({ where: { id }, data: patch });
+  return Response.json(updated);
+}
