@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `194e217` [jeremy] **Phase 3.7 pre / agent artist access**: 'My Artists' label for agents, owner-side Artists drawer in /admin/agent-logins to edit assignments. New /api/admin/agent-logins/[id]/artists endpoint (GET + PUT).
 - `5fede4b` [jeremy] **Phase 3.7 pre / delete-demo-data fix**: skip Venue + Contact per Dok directive 'venue data is not demo data.' UI surfaces 'will preserve' list before delete.
 
 ## 2026-06-02
