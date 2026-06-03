@@ -39,16 +39,17 @@ const catmullRom = (p0: Point, p1: Point, p2: Point, p3: Point, t: number): Poin
   };
 };
 
-// Tuning calibrated to Dok's spec (HL Live, 2026-06-02 round 2):
-//  - slower base loop so humans can actually keep up
-//  - 7s required chase (down from 8)
-//  - tolerant decay: brief misses drain chase slowly, never hard-reset to 0
-const BASE_LOOP_SECONDS = 7.8;
-const REVEAL_LOOP_SECONDS = 8.0;
+// Tuning per Dok HL Live 2026-06-02 round 3:
+//  - 4× slower base loop (7.8 → 31.2s/lap)
+//  - 6s required chase (down from 7)
+//  - 2× stronger inverse-radius/speed scaling (see chaseSpeed multipliers below)
+//  - tolerant decay still applies (brief misses drain slowly, no hard reset)
+const BASE_LOOP_SECONDS = 31.2;
+const REVEAL_LOOP_SECONDS = 32.0;
 const MOUSE_FRESH_MS = 650;
-const CHASE_REQUIRED_MS = 7000;
-const CHASE_DRAIN_RATE = 0.3;     // fraction of dt drained from chaseAccumMs each ms out of range
-const GIVE_UP_MS = 36000;
+const CHASE_REQUIRED_MS = 6000;
+const CHASE_DRAIN_RATE = 0.3;
+const GIVE_UP_MS = 56000;          // bumped proportionally to the 4× lap slowdown
 
 export function NowBookingMascot() {
   const [mode, setMode] = useState<Mode>("pacing");
@@ -172,10 +173,12 @@ export function NowBookingMascot() {
     const innerRadius = outerRadius * 0.28;
     const step = (outerRadius - innerRadius) / 7;
     const tier = clamp(Math.floor((outerRadius - distance) / step), 0, 7);
-    // Softer scaling: max 2.1× instead of 3.55× — the lap stays catchable
-    // even when cursor is right on top of the mic, per Dok's "slow it down"
-    // and "still doesn't move at a constant speed" notes.
-    const multipliers = [1.08, 1.18, 1.30, 1.45, 1.62, 1.80, 1.96, 2.10];
+    // 2× the inverse-radius/speed scaling per Dok HL Live 2026-06-02 round 3:
+    // doubled the (multiplier - 1) delta at every tier so close-cursor pressure
+    // is twice as strong relative to the new much slower base lap.
+    //   tier 0 was 1.08 → now 1.16 (delta 0.08 × 2)
+    //   tier 7 was 2.10 → now 3.20 (delta 1.10 × 2)
+    const multipliers = [1.16, 1.36, 1.60, 1.90, 2.24, 2.60, 2.92, 3.20];
     return { multiplier: multipliers[tier], tier, outerRadius };
   }, []);
 
@@ -312,36 +315,33 @@ export function NowBookingMascot() {
           return;
         }
       } else if (mode === "jumping") {
+        // Single clean arc from wherever the mic was at the start of jumping,
+        // up over an apex, then down into the box opening. No plant + squash
+        // intermediate phase — the old 3-phase choreography (lerp-to-plant
+        // → squash → bezier-from-plant) caused a visible jerk because the
+        // mic warped sideways to the plant point before the actual jump.
+        // Per Dok HL Live 2026-06-02 round 3.
         const jump = jumpRef.current ?? { start: { ...posRef.current }, t: 0 };
         jumpRef.current = jump;
-        jump.t = Math.min(1, jump.t + dt / 1450);
+        jump.t = Math.min(1, jump.t + dt / 1100);
         const box = boxTarget();
         boxRef.current = box;
         boxFrontRef.current = true;
 
-        const plant = { x: box.x + 62, y: box.y - 12 };
-        const end = { x: box.x, y: box.y - 8 };
-        if (jump.t < 0.32) {
-          const u = easeInOut(jump.t / 0.32);
-          posRef.current = {
-            x: lerp(jump.start.x, plant.x, u),
-            y: lerp(jump.start.y, plant.y, u),
-          };
-          micTransformRef.current = "translate(-50%, -50%) rotate(-8deg)";
-        } else if (jump.t < 0.47) {
-          const squash = Math.sin(((jump.t - 0.32) / 0.15) * Math.PI);
-          posRef.current = plant;
-          micTransformRef.current = `translate(-50%, -50%) scale(${1 + squash * 0.18}, ${1 - squash * 0.28}) rotate(-8deg)`;
-        } else {
-          const u = easeOutBack((jump.t - 0.47) / 0.53);
-          const oneMinusU = 1 - u;
-          const apex = { x: (plant.x + end.x) / 2, y: Math.min(plant.y, end.y) - 86 };
-          posRef.current = {
-            x: oneMinusU * oneMinusU * plant.x + 2 * oneMinusU * u * apex.x + u * u * end.x,
-            y: oneMinusU * oneMinusU * plant.y + 2 * oneMinusU * u * apex.y + u * u * end.y,
-          };
-          micTransformRef.current = `translate(-50%, -50%) rotate(${lerp(-8, -24, u)}deg)`;
-        }
+        const startP = jump.start;
+        const endP = { x: box.x, y: box.y - 8 };
+        const u = easeInOut(jump.t);
+        const oneMinusU = 1 - u;
+        // Apex sits above the midpoint between start and end, scaled by horizontal travel
+        const apexY = Math.min(startP.y, endP.y) - 80;
+        const apexX = (startP.x + endP.x) / 2;
+        posRef.current = {
+          x: oneMinusU * oneMinusU * startP.x + 2 * oneMinusU * u * apexX + u * u * endP.x,
+          y: oneMinusU * oneMinusU * startP.y + 2 * oneMinusU * u * apexY + u * u * endP.y,
+        };
+        // Subtle rotation through the arc so it reads as a dive, not a teleport
+        const rot = lerp(-4, -22, u);
+        micTransformRef.current = `translate(-50%, -50%) rotate(${rot}deg)`;
 
         if (jump.t >= 1) {
           setMode("boxed");
