@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-02
 
+- `4a81b6e` [jeremy] **Phase 3.6 e2e**: scripts/e2e-3.6.mjs — 15-step chain (request → venue → artist → roster → inquiry → seen → notes → finalize → event → /events public). All pass. Mobile-verified on 390px viewport.
 - `8109767` [jeremy] **Phase 3.6 Workflow B UI**: /portal/inquiries/[id] (venue-editable) + /admin/inquiries/[id] (admin meta + notes thread + Finalize as Event). Closes the inquiry → event chain end-to-end.
 - `a80c6bb` [jeremy] **Phase 3.6 Workflow B API tier**: InquiryNote schema + venue/admin inquiry detail + notes + finalize-as-event endpoints. UI tier next.
 - `ef71191` [jeremy] **Phase 3.6 Workflow C**: venue contact security + request/grant flow. /api/venue-access (agent self-service), /api/admin/agent-logins/[id]/venue-access (admin), contact-info block on venue detail gated for non-owners, 'Venue Access' button per agent row opens approve/deny/grant drawer.
