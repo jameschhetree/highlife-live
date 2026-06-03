@@ -41,6 +41,10 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   const forbidden = forbidIfNotAuditionsOwner(request);
   if (forbidden) return forbidden;
   const { id } = await ctx.params;
+  // AuditionAssignment.auditionId is a string ref (no FK / no auto-cascade).
+  // Manually delete dependent assignments first so the assignments tab doesn't show
+  // ghost rows pointing at deleted auditions (Phase 3.7 B4 — Dok 2026-06-03).
+  const assignmentDeletes = await prisma.auditionAssignment.deleteMany({ where: { auditionId: id } });
   await prisma.agentApplication.delete({ where: { id } });
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, deletedAssignments: assignmentDeletes.count });
 }

@@ -24,7 +24,8 @@ interface Audition {
   submittedAt: string;
 }
 
-const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Booked", "Lost"];
+// Phase 3.7 B8 — 'Lost' replaced by 'Archived' (hides from auditions + assignments lists).
+const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Booked", "Archived"];
 
 export default function AuditionDetailPage() {
   const params = useParams();

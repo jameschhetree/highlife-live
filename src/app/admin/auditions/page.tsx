@@ -20,14 +20,16 @@ interface Audition {
   uploads: unknown;
 }
 
-const STATUS_FILTERS = ["All", "New", "Reviewed", "Replied", "Booked", "Lost"];
+// Phase 3.7 B5/B8 — 'Lost' replaced by 'Archived'. Filter bar no longer includes 'Archived'
+// since archived rows are hidden by default behind the Show Archived toggle below.
+const STATUS_FILTERS = ["All", "New", "Reviewed", "Replied", "Booked"];
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; border: string }> = {
   New: { bg: "bg-amber-400/10", text: "text-amber-300", border: "border-amber-400/30" },
   Reviewed: { bg: "bg-sky-400/10", text: "text-sky-300", border: "border-sky-400/30" },
   Replied: { bg: "bg-violet-400/10", text: "text-violet-300", border: "border-violet-400/30" },
   Booked: { bg: "bg-emerald-400/10", text: "text-emerald-300", border: "border-emerald-400/30" },
-  Lost: { bg: "bg-rose-400/10", text: "text-rose-300", border: "border-rose-400/30" },
+  Archived: { bg: "bg-zinc-400/10", text: "text-zinc-400", border: "border-zinc-400/30" },
 };
 
 export default function AuditionsPage() {
@@ -38,6 +40,7 @@ export default function AuditionsPage() {
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchRows = async () => {
     if (!session || !canViewAuditions(session)) return;
@@ -71,6 +74,8 @@ export default function AuditionsPage() {
   }, [accessChecked, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newCount = rows.filter((r) => r.status === "New").length;
+  const archivedCount = rows.filter((r) => r.status === "Archived").length;
+  const visibleRows = showArchived ? rows : rows.filter((r) => r.status !== "Archived");
 
   if (!accessChecked) {
     return (
@@ -138,6 +143,15 @@ export default function AuditionsPage() {
                 )}
               </button>
             ))}
+            {archivedCount > 0 && (
+              <button
+                onClick={() => setShowArchived((v) => !v)}
+                className="text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-full border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-300 transition-colors"
+                title="Toggle visibility of archived auditions"
+              >
+                {showArchived ? `Hide archived (${archivedCount})` : `Show archived (${archivedCount})`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -167,7 +181,7 @@ export default function AuditionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, i) => {
+                  {visibleRows.map((row, i) => {
                     const sc = STATUS_COLOR[row.status] ?? {
                       bg: "bg-zinc-400/10",
                       text: "text-zinc-400",
