@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
 import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
+import { LegacyChip } from "@/components/admin/LegacyChip";
 
 interface BookingRow {
   id: string;
@@ -110,10 +111,11 @@ export default function AdminBookingsPage() {
           HighLife Live · Booking Pipeline
         </p>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="font-display uppercase text-3xl tracking-tight">
               Bookings
             </h1>
+            <LegacyChip />
             {newCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] tracking-[0.18em] uppercase font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
                 {newCount} new
@@ -128,6 +130,9 @@ export default function AdminBookingsPage() {
             <RefreshCw size={14} />
           </button>
         </div>
+        <p className="text-[11px] text-zinc-500 mt-2 max-w-2xl">
+          Legacy submissions kept for historical reference. The canonical booking workflow lives in <Link href="/admin/inquiries" className="text-pink-300 hover:underline">Inquiries</Link>. /api/bookings is scheduled for retirement in Phase 5.5.
+        </p>
       </div>
 
       {/* Filters */}
