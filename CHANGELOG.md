@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `aa12768` [jeremy] **Phase 3.7 B-assignments-ux**: assignments page rebuilt — all auditions listed, click status pill opens roster-style agent picker popup with thematic-gradient outline for current agent, Unassign action.
 - `5792dd5` [jeremy] **Phase 3.7 C**: auditions in agent main nav, agent-scoped views (assigned only), owner-only delete.
 - `b00f875` [jeremy] **Phase 3.7 B-archive**: audition Archive status (replaces Lost), delete-cascades-to-assignments, hide-by-default toggle.
 - `a1bfdcf` [jeremy] **Phase 3.7 B-classifications**: dropdown adds Theatre Act (Musical) + Theatre Act (Non Musical), removes Sound Engineer, reordered.
