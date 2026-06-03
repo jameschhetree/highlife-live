@@ -11,6 +11,10 @@ known broken or reverted later, note it inline.
 
 ---
 
+## 2026-06-03
+
+- `5fede4b` [jeremy] **Phase 3.7 pre / delete-demo-data fix**: skip Venue + Contact per Dok directive 'venue data is not demo data.' UI surfaces 'will preserve' list before delete.
+
 ## 2026-06-02
 
 - `4a81b6e` [jeremy] **Phase 3.6 e2e**: scripts/e2e-3.6.mjs — 15-step chain (request → venue → artist → roster → inquiry → seen → notes → finalize → event → /events public). All pass. Mobile-verified on 390px viewport.
