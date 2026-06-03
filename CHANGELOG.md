@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `681c8ba` [jeremy] **Phase 3.8 commit 2/7**: footer/audition mailto → display-only, seed events removed (DB-only), event cards staged ticket popup wired.
 - `5ffd487` [jeremy] **Phase 3.8 commit 1/7**: shared scaffolding — StagedActionModal, DemoAnalyticsBadge/Banner, LegacyChip.
 - `b0b23f9` [jeremy] **Phase 3.7 fix**: useDB() hardcoded to true. Kills the localStorage split-brain where admin pages wrote local-only while public /roster read DB.
 - `32d5139` [jeremy] **Phase 3.7 fix**: /api/artists now includes 'Testing' status (the default for new artist creates). Fixes the 'created an artist but it's not on roster' bug.
