@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Copy } from "lucide-react";
 
 // Official coupon code from James (HL Live, 2026-06-02).
 const COUPON_CODE = "HLLbeta1.1-4jeremy";
@@ -54,7 +55,7 @@ export function NowBookingMascot() {
   const enterFlying = useCallback(() => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) {
-      posRef.current = { x: rect.left + rect.width / 2, y: rect.top - 30 };
+      posRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     }
     chaseAccumMs.current = 0;
     setMode("flying");
@@ -262,9 +263,9 @@ export function NowBookingMascot() {
     setBoxClosed(false);
   }, [mode]);
 
-  const mic = (
+  const renderMic = (showWings = inFlight) => (
     <svg viewBox="0 0 32 32" className="w-full h-full" fill="none">
-      {inFlight && (
+      {showWings && (
         <>
           <path d="M 11 9 Q 4 6 1 10 Q 5 11 11 12 Z" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.3" className="mascot-wing mascot-wing-l" />
           <path d="M 21 9 Q 28 6 31 10 Q 27 11 21 12 Z" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.3)" strokeWidth="0.3" className="mascot-wing mascot-wing-r" />
@@ -289,10 +290,10 @@ export function NowBookingMascot() {
           type="button"
           aria-label="Catch the mascot"
           onClick={enterFlying}
-          className="mascot-mic w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
+          className="mascot-mic hidden lg:block w-8 h-8 cursor-pointer hover:scale-110 transition-transform"
           style={{ background: "transparent", border: "none", padding: 0 }}
         >
-          {mic}
+          {renderMic(false)}
         </button>
       )}
 
@@ -311,7 +312,7 @@ export function NowBookingMascot() {
             willChange: "left, top",
           }}
         >
-          {mic}
+          {renderMic(true)}
         </div>
       )}
 
@@ -398,6 +399,24 @@ export function NowBookingMascot() {
             )}
           </svg>
 
+          {mode === "boxed" && boxClosed && (
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "22px",
+                width: 28,
+                height: 28,
+                transform: "translateX(-50%) rotate(-7deg)",
+                pointerEvents: "none",
+                filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.35))",
+              }}
+            >
+              {renderMic(false)}
+            </span>
+          )}
+
           {/* "Tap to open" hint — only when boxed + flaps closed */}
           {mode === "boxed" && boxClosed && (
             <span
@@ -460,13 +479,16 @@ export function NowBookingMascot() {
               id="mascot-coupon-title"
               className="font-display uppercase text-xl tracking-tight text-foreground mb-2"
             >
-              You caught it
+              Beta Site Coupon Code
             </p>
             <p className="text-xs text-zinc-300 leading-relaxed mb-5">
-              Use this code at checkout on any upcoming HighLife Live show to
-              unlock your discount on tickets.
+              Thanks for becoming an early user, we hope you enjoy our site, to
+              reward you for finding an Easter Egg, here&apos;s a 10% off coupon
+              code!
             </p>
-            <div
+            <button
+              type="button"
+              onClick={copyCode}
               className="rounded-2xl px-4 py-3 mb-5"
               style={{
                 background: "#06080d",
@@ -474,8 +496,17 @@ export function NowBookingMascot() {
               }}
             >
               <p className="text-[9px] tracking-[0.25em] uppercase text-zinc-500 mb-1">Ticket coupon code</p>
-              <p className="font-mono text-xl tracking-[0.18em] text-foreground select-all">{COUPON_CODE}</p>
-            </div>
+              <span className="flex items-center justify-center gap-3">
+                <span className="font-mono text-xl tracking-[0.18em] text-foreground select-all">{COUPON_CODE}</span>
+                <Copy size={16} className="text-pink-300" aria-hidden />
+              </span>
+              <span className="sr-only">Copy coupon code</span>
+            </button>
+            <p className="text-[10px] text-zinc-400 leading-relaxed mb-5">
+              Terms: Code valid for all HighLife Live ticketed events unless
+              specifically specified in event terms, offer valid for all events
+              until September 1st 2026. 1:00GMT
+            </p>
             <Link
               href="/events"
               onClick={async (e) => {

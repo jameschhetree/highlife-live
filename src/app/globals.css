@@ -136,7 +136,7 @@ body {
    at each end. No rotation — mic stays upright. */
 .mascot-mic {
   position: absolute;
-  display: block;
+  display: none;
   left: 50%;
   top: -52px;
   margin-left: -16px; /* center the 32px sprite on the pill axis */
@@ -145,6 +145,12 @@ body {
   animation:
     mascot-pace 4.5s ease-in-out infinite alternate,
     mascot-bunny 0.65s ease-in-out infinite;
+}
+
+@media (min-width: 1024px) {
+  .mascot-mic {
+    display: block;
+  }
 }
 
 @keyframes mascot-pace {
