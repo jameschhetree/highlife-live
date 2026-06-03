@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `32d5139` [jeremy] **Phase 3.7 fix**: /api/artists now includes 'Testing' status (the default for new artist creates). Fixes the 'created an artist but it's not on roster' bug.
 - `5ce054d` [jeremy] **Phase 3.7 — admin artists → public roster**: new /api/artists endpoint; /roster, /artists/[slug], /, /book all wired to live DB instead of empty hardcoded array.
 - `c832246` [jeremy] **Phase 3.7 — agent@ login removed**: only jaco + liam hardcoded. Async DB-backed agent identity via new server-only admin-permissions-server.ts. 6+ API routes updated.
 - `cb558e7` [jeremy] **Phase 3.7 cleanup**: removed all fake artist data — DB (already 0), hardcoded src/lib/data.ts array, localStorage auto-seed. Stripped delete-demo-data + re-seed buttons + modal from /admin/settings.
