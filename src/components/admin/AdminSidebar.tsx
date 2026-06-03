@@ -44,6 +44,9 @@ const nav: NavItem[] = [
   { kind: "leaf", href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, gate: "all" },
   { kind: "leaf", href: "/admin/bookings", label: "Bookings", icon: Inbox, gate: "all" },
   { kind: "leaf", href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
+  // Phase 3.7 C — Auditions promoted out of Owner Hub so agents see it in main nav.
+  // canViewAuditions now allows agents (scoped server-side to their assignments).
+  { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
   { kind: "leaf", href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
   { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
   { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
@@ -59,7 +62,6 @@ const nav: NavItem[] = [
     children: [
       { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
       { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "owner" },
-      { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
       { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
       { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
       { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },

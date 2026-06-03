@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trash2, ExternalLink, Mail, Phone, Music } from "lucide-react";
-import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { canViewAuditions, getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -137,13 +137,15 @@ export default function AuditionDetailPage() {
                 </option>
               ))}
             </select>
-            <button
-              onClick={remove}
-              className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
-              title="Delete audition"
-            >
-              <Trash2 size={14} />
-            </button>
+            {isOwnerAdmin(session) && (
+              <button
+                onClick={remove}
+                className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
+                title="Delete audition"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
         </div>
       </div>

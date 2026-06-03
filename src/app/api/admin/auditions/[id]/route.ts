@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db";
-import { canViewAuditionsEmail, getAdminEmailFromRequest } from "@/lib/admin-permissions";
+import {
+  canViewAuditionsEmail,
+  canManageAuditionsEmail,
+  getAdminEmailFromRequest,
+  isAgentAdminEmail,
+  isOwnerAdminEmail,
+} from "@/lib/admin-permissions";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -8,16 +14,27 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-function forbidIfNotAuditionsOwner(request: NextRequest): Response | null {
-  if (canViewAuditionsEmail(getAdminEmailFromRequest(request))) return null;
-  return Response.json({ error: "Forbidden" }, { status: 403 });
+// Agents can only touch auditions assigned to them (via AuditionAssignment).
+// Owners see everything.
+async function isAuditionVisibleToCaller(auditionId: string, email: string): Promise<boolean> {
+  if (!prisma) return false;
+  if (isOwnerAdminEmail(email)) return true;
+  if (!isAgentAdminEmail(email)) return false;
+  const agentLogin = await prisma.agentLogin.findFirst({
+    where: { email, isActive: true },
+    include: { auditionAssignments: { select: { auditionId: true } } },
+  });
+  return (agentLogin?.auditionAssignments ?? []).some((a) => a.auditionId === auditionId);
 }
 
 export async function GET(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
-  const forbidden = forbidIfNotAuditionsOwner(request);
-  if (forbidden) return forbidden;
+  const email = getAdminEmailFromRequest(request);
+  if (!canViewAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
+  if (!(await isAuditionVisibleToCaller(id, email))) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   const row = await prisma.agentApplication.findUnique({ where: { id } });
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json(row);
@@ -25,21 +42,25 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
-  const forbidden = forbidIfNotAuditionsOwner(request);
-  if (forbidden) return forbidden;
+  const email = getAdminEmailFromRequest(request);
+  if (!canViewAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
+  if (!(await isAuditionVisibleToCaller(id, email))) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   const body = (await request.json()) as { status?: string; adminNotes?: string };
   const data: Record<string, unknown> = {};
+  // Agents may only update STATUS. Owners may set any future fields too.
   if (typeof body.status === "string") data.status = body.status;
-  // adminNotes isn't a column on AgentApplication yet — skip silently if sent
   const row = await prisma.agentApplication.update({ where: { id }, data });
   return Response.json(row);
 }
 
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
-  const forbidden = forbidIfNotAuditionsOwner(request);
-  if (forbidden) return forbidden;
+  const email = getAdminEmailFromRequest(request);
+  // Owner-only — agents see auditions read-only at the destructive layer.
+  if (!canManageAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
   // AuditionAssignment.auditionId is a string ref (no FK / no auto-cascade).
   // Manually delete dependent assignments first so the assignments tab doesn't show

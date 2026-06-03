@@ -41,7 +41,15 @@ export function isAnyAdminEmail(email: string | null | undefined): boolean {
   return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
 }
 
+// Phase 3.7 C — auditions are now visible to agents too, scoped server-side to their
+// assigned auditions only (via AuditionAssignment lookup in the API route).
 export function canViewAuditionsEmail(email: string | null | undefined): boolean {
+  return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
+}
+
+// Mutating an audition base record (delete, free-form edits) stays owner-only.
+// Status changes go through the standard PATCH path and are gated inside the route.
+export function canManageAuditionsEmail(email: string | null | undefined): boolean {
   return isOwnerAdminEmail(email);
 }
 
