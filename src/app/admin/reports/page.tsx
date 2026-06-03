@@ -8,6 +8,7 @@ import {
   Mail,
   DollarSign,
 } from "lucide-react";
+import { DemoAnalyticsBanner } from "@/components/admin/DemoAnalyticsBadge";
 
 // Demo report data
 const replyRateByGenre = [
@@ -183,6 +184,8 @@ export default function ReportsPage() {
       </div>
 
       <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
+        <DemoAnalyticsBanner />
+
         {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map((s, i) => {

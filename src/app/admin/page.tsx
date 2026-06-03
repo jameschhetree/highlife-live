@@ -16,69 +16,67 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { DemoAnalyticsBadge } from "@/components/admin/DemoAnalyticsBadge";
 
-const stats = [
-  { label: "Total Artists", value: "12", delta: "+3 this month", icon: Users },
-  { label: "Active Roster", value: "8", delta: "67% utilization", icon: TrendingUp },
-  { label: "Active Campaigns", value: "4", delta: "2 awaiting approval", icon: Megaphone },
-  { label: "Venues Contacted", value: "47", delta: "this week", icon: MapPinned },
-  { label: "Positive Replies", value: "9", delta: "+19% vs last week", icon: CheckCircle },
-  { label: "Bookings Won", value: "3", delta: "$28,500 confirmed", icon: Inbox },
-];
-
-const drafts = [
-  { id: "C-104", artist: "Nyla Vale", segment: "DC Lounge Promoters", contacts: 18, by: "Booker · Maria" },
-  { id: "C-105", artist: "Tone Brady", segment: "DMV Club Buyers", contacts: 32, by: "Booker · Maria" },
-];
-
-const pipeline = [
-  { artist: "Foolery", venue: "Black Cat DC", stage: "Negotiating", fee: "$4,500" },
-  { artist: "Nyla Vale", venue: "The Anthem (Support)", stage: "Replied", fee: "$8,000" },
-  { artist: "DJ Saint Noir", venue: "Echostage", stage: "Contract Pending", fee: "$6,000" },
-  { artist: "Tone Brady", venue: "9:30 Club", stage: "Interested", fee: "$12,000" },
-];
-
-const activity = [
-  { time: "12m ago", text: "Maria approved campaign C-103 (Foolery → DMV Colleges)" },
-  { time: "1h ago", text: "Reply received from booker@blackcatdc.com (Foolery)" },
-  { time: "3h ago", text: "Added 11 venues from CSV import (DMV Lounges Q3)" },
-  { time: "yesterday", text: "Tone Brady moved to Priority Roster" },
-];
+// Phase 3.8 — owner stats: 4 live counts from existing APIs (artists / venues /
+// inquiries / events) + 2 placeholder cards marked DEMO since the underlying
+// metric isn't wired yet. Removed the hardcoded "Total Artists 12" etc that
+// were lying about live data (Murd QA finding 4).
+type StatCard = { label: string; value: string; delta: string; icon: typeof Users; demo?: boolean };
 
 export default function AdminDashboardPage() {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [accessChecked, setAccessChecked] = useState(false);
   const agentView = isAgentAdmin(session);
   const [agentAssignedCount, setAgentAssignedCount] = useState<number | null>(null);
+
+  // Live counts (Phase 3.8) — pulled from existing list APIs. Cheap, all-DB,
+  // no new endpoints. Filled in once session is known so we can send x-admin-email.
+  const [liveCounts, setLiveCounts] = useState<{
+    artists: number | null;
+    venues: number | null;
+    inquiries: number | null;
+    events: number | null;
+  }>({ artists: null, venues: null, inquiries: null, events: null });
+
   useEffect(() => {
-    if (!agentView) return;
-    fetch("/api/admin/artists", { headers: { "x-admin-email": session?.email ?? "" } })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        const list = Array.isArray(data) ? data : data.artists ?? [];
-        setAgentAssignedCount(list.length);
-      })
-      .catch(() => setAgentAssignedCount(0));
-  }, [agentView, session?.email]);
+    if (!session) return;
+    const headers = { "x-admin-email": session.email };
+    Promise.all([
+      fetch("/api/admin/artists", { headers }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/admin/venues", { headers }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/admin/inquiries", { headers }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/admin/events", { headers }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ]).then(([a, v, i, e]) => {
+      const len = (x: unknown) => (Array.isArray(x) ? x.length : 0);
+      setLiveCounts({ artists: len(a), venues: len(v), inquiries: len(i), events: len(e) });
+      if (agentView) setAgentAssignedCount(len(a));
+    });
+  }, [session, agentView]);
+
   const assignedLabel =
     agentAssignedCount === null
       ? "—"
       : agentAssignedCount === 0
       ? "none assigned"
       : `${agentAssignedCount} artist${agentAssignedCount === 1 ? "" : "s"}`;
-  const visibleStats = agentView
-    ? [
-        { label: "Assigned Artists", value: String(agentAssignedCount ?? "—"), delta: assignedLabel, icon: Users },
-        { label: "Active Roster", value: String(agentAssignedCount ?? "—"), delta: "assigned to you", icon: TrendingUp },
-        { label: "Active Campaigns", value: "—", delta: "your campaigns", icon: Megaphone },
-        { label: "Venues Contacted", value: "—", delta: "your campaigns", icon: MapPinned },
-        { label: "Positive Replies", value: "—", delta: "your campaigns", icon: CheckCircle },
-        { label: "Bookings Won", value: "—", delta: "your artists", icon: Inbox },
-      ]
-    : stats;
-  const visibleDrafts = agentView ? [] : drafts;
-  const visiblePipeline = agentView ? [] : pipeline;
-  const visibleActivity = agentView ? [] : activity;
+
+  const ownerStats: StatCard[] = [
+    { label: agentView ? "My Artists" : "Total Artists", value: String(liveCounts.artists ?? "—"), delta: agentView ? assignedLabel : "live count", icon: Users },
+    { label: agentView ? "Assigned" : "Total Venues", value: String(agentView ? (agentAssignedCount ?? "—") : (liveCounts.venues ?? "—")), delta: agentView ? "assigned to you" : "in CRM", icon: MapPinned },
+    { label: "Inquiries", value: String(liveCounts.inquiries ?? "—"), delta: "total submitted", icon: Inbox },
+    { label: "Events", value: String(liveCounts.events ?? "—"), delta: "published", icon: CalendarClock },
+    { label: "Active Campaigns", value: "—", delta: "wiring in 4.5", icon: Megaphone, demo: true },
+    { label: "Bookings Won", value: "—", delta: "wiring in 4.5", icon: CheckCircle, demo: true },
+  ];
+
+  const visibleStats: StatCard[] = ownerStats;
+  // Phase 3.8 — drafts/pipeline/activity sections previously rendered hardcoded
+  // demo names (Nyla Vale, Tone Brady, Foolery). Empty for now so we don't lie;
+  // real data lands in Phase 4.5.
+  const visibleDrafts: never[] = [];
+  const visiblePipeline: never[] = [];
+  const visibleActivity: never[] = [];
 
   useEffect(() => {
     setSession(getAdminSession());
@@ -127,7 +125,11 @@ export default function AdminDashboardPage() {
                     <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
                       {s.label}
                     </span>
-                    <Icon size={14} className="text-zinc-500" strokeWidth={1.6} />
+                    {s.demo ? (
+                      <DemoAnalyticsBadge size="sm" />
+                    ) : (
+                      <Icon size={14} className="text-zinc-500" strokeWidth={1.6} />
+                    )}
                   </div>
                   <div className="font-display text-3xl text-gradient-hero leading-none mb-2">
                     {s.value}
@@ -155,23 +157,29 @@ export default function AdminDashboardPage() {
                 All Campaigns <ArrowRight size={11} />
               </Link>
             </div>
-            <ul className="divide-y divide-white/8">
-              {visibleDrafts.map((d) => (
-                <li key={d.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium">{d.artist}</div>
-                    <div className="text-[11px] text-zinc-500 mt-0.5">
-                      {d.segment} · {d.contacts} contacts · {d.by}
+            {visibleDrafts.length === 0 ? (
+              <div className="py-8 text-center text-xs text-zinc-500 italic">
+                No campaign drafts yet. Create one in <Link href="/admin/campaigns" className="text-pink-300 hover:underline">Campaigns</Link>.
+              </div>
+            ) : (
+              <ul className="divide-y divide-white/8">
+                {visibleDrafts.map((d: { id: string; artist: string; segment: string; contacts: number; by: string }) => (
+                  <li key={d.id} className="py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">{d.artist}</div>
+                      <div className="text-[11px] text-zinc-500 mt-0.5">
+                        {d.segment} · {d.contacts} contacts · {d.by}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] tracking-[0.18em] uppercase text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-1">
-                      {d.id} · Needs Approval
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] tracking-[0.18em] uppercase text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-1">
+                        {d.id} · Needs Approval
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="glass-card rounded-2xl p-5">
@@ -215,32 +223,38 @@ export default function AdminDashboardPage() {
                 Full Board <ArrowRight size={11} />
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                    <th className="text-left font-normal py-2">Artist</th>
-                    <th className="text-left font-normal py-2">Venue</th>
-                    <th className="text-left font-normal py-2">Stage</th>
-                    <th className="text-right font-normal py-2">Fee</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePipeline.map((row) => (
-                    <tr key={`${row.artist}-${row.venue}`} className="border-b border-white/4 last:border-0">
-                      <td className="py-3 text-zinc-200">{row.artist}</td>
-                      <td className="py-3 text-zinc-400">{row.venue}</td>
-                      <td className="py-3">
-                        <span className="text-[10px] tracking-[0.18em] uppercase text-pink-200 bg-pink-500/10 border border-pink-500/20 rounded-full px-2 py-1">
-                          {row.stage}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right text-zinc-300">{row.fee}</td>
+            {visiblePipeline.length === 0 ? (
+              <div className="py-8 text-center text-xs text-zinc-500 italic">
+                Pipeline summary lands in Phase 4.5. Full Kanban available at <Link href="/admin/pipeline" className="text-pink-300 hover:underline">Pipeline</Link>.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
+                      <th className="text-left font-normal py-2">Artist</th>
+                      <th className="text-left font-normal py-2">Venue</th>
+                      <th className="text-left font-normal py-2">Stage</th>
+                      <th className="text-right font-normal py-2">Fee</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {visiblePipeline.map((row: { artist: string; venue: string; stage: string; fee: string }) => (
+                      <tr key={`${row.artist}-${row.venue}`} className="border-b border-white/4 last:border-0">
+                        <td className="py-3 text-zinc-200">{row.artist}</td>
+                        <td className="py-3 text-zinc-400">{row.venue}</td>
+                        <td className="py-3">
+                          <span className="text-[10px] tracking-[0.18em] uppercase text-pink-200 bg-pink-500/10 border border-pink-500/20 rounded-full px-2 py-1">
+                            {row.stage}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right text-zinc-300">{row.fee}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="glass-card rounded-2xl p-5">
@@ -248,21 +262,25 @@ export default function AdminDashboardPage() {
               <Activity size={14} className="text-pink-300" strokeWidth={1.5} />
               Recent Activity
             </h2>
-            <ul className="space-y-3">
-              {visibleActivity.map((a, i) => (
-                <li key={i} className="text-sm">
-                  <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-                    {a.time}
-                  </div>
-                  <div className="text-zinc-300 mt-0.5">{a.text}</div>
-                </li>
-              ))}
-            </ul>
+            {visibleActivity.length === 0 ? (
+              <div className="py-8 text-center text-xs text-zinc-500 italic">
+                Live activity feed lands in Phase 4.5.
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {visibleActivity.map((a: { time: string; text: string }, i: number) => (
+                  <li key={i} className="text-sm">
+                    <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">{a.time}</div>
+                    <div className="text-zinc-300 mt-0.5">{a.text}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
         <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 pt-4 border-t border-white/5">
-          Demo data — replace with real records before launching outreach.
+          Live counts pulled from the database. Sections marked DEMO ship in Phase 4.5.
         </p>
       </div>
     </div>
