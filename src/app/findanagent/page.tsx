@@ -7,17 +7,20 @@ import { upload } from "@vercel/blob/client";
 import { ArrowRight, CheckCircle, Send, Upload } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
+// Sorted: vocal acts → instrumental → bands → performance art → variety → other.
+// "Sound Engineer" removed; "Theatre Act, Musical" and "Theatre Act (Non Musical)" added.
 const CLASSIFICATIONS = [
-  "DJ",
   "Vocalist",
   "Vocalist/Rapper",
   "Vocalist/Singer",
+  "DJ",
   "Instrumental Musician",
   "Classical Musician",
   "Band",
+  "Theatre Act, Musical",
+  "Theatre Act (Non Musical)",
   "Comedian",
   "Magician",
-  "Sound Engineer",
   "Skills/Circus Act",
   "Other (please specify)",
 ] as const;
