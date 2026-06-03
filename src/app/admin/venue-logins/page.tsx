@@ -76,6 +76,9 @@ export default function VenueLoginsPage() {
   // Undo state (client-side soft delete)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
+  // Show/hide archived requests (Phase 3.7 A)
+  const [showArchived, setShowArchived] = useState(false);
+
   // Inline edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ displayName: "", organizationName: "", email: "" });
@@ -144,6 +147,18 @@ export default function VenueLoginsPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "x-admin-email": session.email },
       body: JSON.stringify({ id, status }),
+    });
+    fetchRequests();
+  };
+
+  const deleteRequest = async (id: string) => {
+    if (!session) return;
+    if (!confirm("Permanently delete this request? This cannot be undone. (For spam or mistakes — use Archive for normal cleanup.)")) {
+      return;
+    }
+    await fetch(`/api/admin/venue-logins/requests?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
     });
     fetchRequests();
   };
@@ -276,6 +291,8 @@ export default function VenueLoginsPage() {
   };
 
   const newCount = requests.filter((r) => r.status === "New").length;
+  const archivedCount = requests.filter((r) => r.status === "Archived").length;
+  const visibleRequests = showArchived ? requests : requests.filter((r) => r.status !== "Archived");
   const isLoading = tab === "requests" ? requestsLoading : loginsLoading;
   const visibleLogins = logins.filter((l) => !removedIds.has(l.id));
 
@@ -353,10 +370,22 @@ export default function VenueLoginsPage() {
         {tab === "requests" && (
           <>
             <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-              {requests.length} request{requests.length === 1 ? "" : "s"}
+              {visibleRequests.length} {showArchived ? "" : "active "}request{visibleRequests.length === 1 ? "" : "s"}{archivedCount > 0 ? ` · ${archivedCount} archived` : ""}
             </p>
 
-            {requests.length === 0 ? (
+            {archivedCount > 0 && (
+              <div className="mb-3">
+                <button
+                  onClick={() => setShowArchived((s) => !s)}
+                  className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  {showArchived ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showArchived ? `Hide archived (${archivedCount})` : `Show archived (${archivedCount})`}
+                </button>
+              </div>
+            )}
+
+            {visibleRequests.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <Building2 size={28} strokeWidth={1.5} className="mx-auto mb-4 text-zinc-600" />
                 <p className="text-sm text-zinc-400">
@@ -382,7 +411,7 @@ export default function VenueLoginsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {requests.map((req, i) => {
+                      {visibleRequests.map((req, i) => {
                         const sc = STATUS_COLOR[req.status] ?? STATUS_COLOR.New;
                         const phones = [req.workPhone, req.mobilePhone].filter(Boolean).join(" / ");
                         return (
@@ -468,6 +497,23 @@ export default function VenueLoginsPage() {
                                     Archive
                                   </button>
                                 )}
+                                {/* Archive button available on any non-archived status; Delete is nuclear and always available */}
+                                {req.status !== "Archived" && req.status !== "Rejected" && (
+                                  <button
+                                    onClick={() => updateRequestStatus(req.id, "Archived")}
+                                    className="p-1.5 rounded-lg border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-400 hover:text-zinc-200 transition-colors"
+                                    title="Archive"
+                                  >
+                                    <Undo2 size={12} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteRequest(req.id)}
+                                  className="p-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 text-red-300 hover:text-red-200 transition-colors"
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
                               </div>
                             </td>
                           </motion.tr>

@@ -61,3 +61,17 @@ export async function PATCH(request: NextRequest) {
   });
   return Response.json(row);
 }
+
+// Hard delete a request row (owner-admin only). Use for spam / mistake submissions.
+// Archived requests are soft-hidden via Show Archive toggle; this endpoint is the
+// nuclear option for true removal.
+export async function DELETE(request: NextRequest) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  if (!canManageVenueLoginsEmail(getAdminEmailFromRequest(request))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return Response.json({ error: "id query param required" }, { status: 400 });
+  await prisma.partnerLoginRequest.delete({ where: { id } });
+  return Response.json({ ok: true });
+}
