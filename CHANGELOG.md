@@ -13,6 +13,7 @@ known broken or reverted later, note it inline.
 
 ## 2026-06-03
 
+- `5ffd487` [jeremy] **Phase 3.8 commit 1/7**: shared scaffolding — StagedActionModal, DemoAnalyticsBadge/Banner, LegacyChip.
 - `b0b23f9` [jeremy] **Phase 3.7 fix**: useDB() hardcoded to true. Kills the localStorage split-brain where admin pages wrote local-only while public /roster read DB.
 - `32d5139` [jeremy] **Phase 3.7 fix**: /api/artists now includes 'Testing' status (the default for new artist creates). Fixes the 'created an artist but it's not on roster' bug.
 - `5ce054d` [jeremy] **Phase 3.7 — admin artists → public roster**: new /api/artists endpoint; /roster, /artists/[slug], /, /book all wired to live DB instead of empty hardcoded array.
