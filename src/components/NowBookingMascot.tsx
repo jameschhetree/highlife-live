@@ -39,12 +39,16 @@ const catmullRom = (p0: Point, p1: Point, p2: Point, p3: Point, t: number): Poin
   };
 };
 
-const BASE_LOOP_SECONDS = 5.6;
-const REVEAL_LOOP_SECONDS = 5.9;
+// Tuning calibrated to Dok's spec (HL Live, 2026-06-02 round 2):
+//  - slower base loop so humans can actually keep up
+//  - 7s required chase (down from 8)
+//  - tolerant decay: brief misses drain chase slowly, never hard-reset to 0
+const BASE_LOOP_SECONDS = 7.8;
+const REVEAL_LOOP_SECONDS = 8.0;
 const MOUSE_FRESH_MS = 650;
-const CHASE_REQUIRED_MS = 8000;
-const CHASE_GRACE_MS = 1500;
-const GIVE_UP_MS = 32000;
+const CHASE_REQUIRED_MS = 7000;
+const CHASE_DRAIN_RATE = 0.3;     // fraction of dt drained from chaseAccumMs each ms out of range
+const GIVE_UP_MS = 36000;
 
 export function NowBookingMascot() {
   const [mode, setMode] = useState<Mode>("pacing");
@@ -258,20 +262,20 @@ export function NowBookingMascot() {
         if (inRange) {
           outOfRangeMsRef.current = 0;
           chaseAccumMs.current += dt;
-          if (tier >= 5) reachedCloseRadiusRef.current = true;
-          if (chaseAccumMs.current >= CHASE_REQUIRED_MS && reachedCloseRadiusRef.current) {
+          if (chaseAccumMs.current >= CHASE_REQUIRED_MS) {
             boxPassTargetRef.current = nextBoxPassProgress(pathProgressRef.current);
             setMode("revealing");
             return;
           }
         } else if (chaseAccumMs.current > 0) {
+          // Soft drain: brief misses cost a little, sustained misses cost more —
+          // but the timer never hard-resets to 0. Keeps the catch forgiving.
+          chaseAccumMs.current = Math.max(0, chaseAccumMs.current - dt * CHASE_DRAIN_RATE);
           outOfRangeMsRef.current += dt;
-          if (outOfRangeMsRef.current > CHASE_GRACE_MS) {
-            chaseAccumMs.current = 0;
-            outOfRangeMsRef.current = 0;
-            reachedCloseRadiusRef.current = false;
-          }
         }
+        // tier-based gate retired — Dok's spec is "simple 7-second chase";
+        // reaching the inner ring was an extra obstacle his ask removed.
+        void tier;
 
         if (now - flightStartedAtRef.current > GIVE_UP_MS) {
           returnRef.current = { start: { ...posRef.current }, t: 0 };
