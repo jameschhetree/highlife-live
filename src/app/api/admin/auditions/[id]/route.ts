@@ -58,12 +58,19 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   const email = getAdminEmailFromRequest(request);
-  // Owner-only — agents see auditions read-only at the destructive layer.
-  if (!canManageAuditionsEmail(email)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await ctx.params;
-  // AuditionAssignment.auditionId is a string ref (no FK / no auto-cascade).
-  // Manually delete dependent assignments first so the assignments tab doesn't show
-  // ghost rows pointing at deleted auditions (Phase 3.7 B4 — Dok 2026-06-03).
+
+  // Phase 3.9 Scope 10 — agents may now delete auditions they are ASSIGNED to.
+  // Owners may delete any audition. Cascade audition assignments either way.
+  const isOwner = canManageAuditionsEmail(email);
+  if (!isOwner) {
+    if (!(await canViewAuditionsEmail(email))) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!(await isAuditionVisibleToCaller(id, email))) {
+      return Response.json({ error: "Cannot delete an audition not assigned to you" }, { status: 403 });
+    }
+  }
   const assignmentDeletes = await prisma.auditionAssignment.deleteMany({ where: { auditionId: id } });
   await prisma.agentApplication.delete({ where: { id } });
   return Response.json({ ok: true, deletedAssignments: assignmentDeletes.count });

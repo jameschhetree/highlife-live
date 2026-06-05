@@ -25,8 +25,9 @@ interface Audition {
   submittedAt: string;
 }
 
-// Phase 3.7 B8 — 'Lost' replaced by 'Archived' (hides from auditions + assignments lists).
-const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Booked", "Archived"];
+// Phase 3.9 Scope 10 — status set: New, Reviewed, Replied, Submitted, Archived, Marked For Deletion.
+// "Booked" retired (no audition is itself a booking — those move into Bookings via convert-to-artist).
+const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Submitted", "Archived", "Marked For Deletion"];
 
 export default function AuditionDetailPage() {
   const params = useParams();
@@ -79,6 +80,27 @@ export default function AuditionDetailPage() {
       headers: { "x-admin-email": session.email },
     });
     router.push("/admin/auditions");
+  };
+
+  const convertToArtist = async () => {
+    if (!session || !row) return;
+    if (!confirm(`Convert "${row.actStageName}" into an Artist record? Owner can edit the resulting artist immediately after.`)) return;
+    const res = await fetch(`/api/admin/auditions/${id}/convert-to-artist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      const j = await res.json();
+      if (j.artist?.id) {
+        router.push(`/admin/artists/${j.artist.id}`);
+      } else {
+        router.push("/admin/artists");
+      }
+    } else {
+      const j = await res.json().catch(() => null);
+      alert(j?.error || "Could not convert audition.");
+    }
   };
 
   if (loading) {
@@ -140,13 +162,21 @@ export default function AuditionDetailPage() {
             </select>
             {isOwnerAdmin(session) && (
               <button
-                onClick={remove}
-                className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
-                title="Delete audition"
+                onClick={convertToArtist}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-400/30 hover:border-emerald-400/60 bg-emerald-400/10 text-emerald-300 hover:text-emerald-200 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+                title="Convert to Artist"
               >
-                <Trash2 size={14} />
+                Convert → Artist
               </button>
             )}
+            {/* Agents may delete only their assigned auditions (server-enforced). */}
+            <button
+              onClick={remove}
+              className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
+              title={isOwnerAdmin(session) ? "Delete audition" : "Delete assigned audition"}
+            >
+              <Trash2 size={14} />
+            </button>
           </div>
         </div>
       </div>
