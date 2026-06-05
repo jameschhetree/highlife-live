@@ -64,7 +64,31 @@ function BookingFormContent() {
   const [showDevelopingPopup, setShowDevelopingPopup] = useState(false);
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
+    const isAuthed = isAuthenticated();
+    setAuthed(isAuthed);
+    // Phase 3.9 Scope 12 — if authed and linked to a Venue, prefill venue fields
+    // (only if they're still empty so we don't overwrite an in-progress edit).
+    if (isAuthed) {
+      fetch("/api/partner/me", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data?.venue) return;
+          setForm((f) => {
+            const next = { ...f };
+            if (!next.venueName && data.venue.name) next.venueName = data.venue.name;
+            if (!next.venueAddress) {
+              const addr = [data.venue.address, data.venue.city, data.venue.state, data.venue.zipCode]
+                .filter(Boolean)
+                .join(", ");
+              if (addr) next.venueAddress = addr;
+            }
+            return next;
+          });
+        })
+        .catch(() => {
+          /* not critical */
+        });
+    }
   }, []);
 
   useEffect(() => {
