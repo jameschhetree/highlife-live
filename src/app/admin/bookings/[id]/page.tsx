@@ -1,420 +1,700 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+// /admin/bookings/[id] — operational booking detail (Phase 3.9 Scope 5).
+// Editable: event title, public description, final offer, ticket URL, tickets sold,
+// event date, artist linkage, venue linkage, contact info, internal message.
+// Materials: per-kind URL paste (banner, flier, video, contract, other).
+// Action: Request Event Card → posts to /api/admin/event-card-requests.
+// Booking.status NOT shown — legacy column kept in DB but hidden from UI.
+
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  Clock,
-  Eye,
-  Reply,
-  CheckCircle,
-  XCircle,
-  Trash2,
   Save,
-  Mail,
-  Phone,
+  Music,
   MapPin,
   Calendar,
+  Ticket,
   DollarSign,
-  User,
-  Music,
+  FileText,
+  Paperclip,
+  Trash2,
+  CalendarPlus,
+  ExternalLink,
 } from "lucide-react";
-import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
-interface BookingDetail {
+type Material = {
+  id: string;
+  kind: string;
+  url: string;
+  filename: string;
+  note: string;
+  createdAt: string;
+};
+
+type Booking = {
   id: string;
   artistSlug: string;
   artistName: string;
+  artistId: string | null;
   venueName: string;
   venueAddress: string;
+  venueId: string | null;
   eventDate: string;
+  eventTitle: string | null;
+  eventDescriptionPublic: string | null;
+  finalOffer: string | null;
   proposedOffer: string;
+  ticketUrl: string | null;
+  ticketsSold: number;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  eventDescription: string;
   messageToAgent: string;
+  inquiryId: string | null;
+  eventId: string | null;
   source: string;
   submittedAt: string;
-  status: string;
-  adminNotes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const allStatuses = ["New", "Reviewed", "Replied", "Booked", "Lost"];
-
-const statusColor: Record<string, string> = {
-  New: "text-amber-300 bg-amber-400/10 border-amber-400/20",
-  Reviewed: "text-sky-300 bg-sky-400/10 border-sky-400/20",
-  Replied: "text-violet-300 bg-violet-400/10 border-violet-400/20",
-  Booked: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
-  Lost: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
+  agentLoginId: string | null;
+  materials: Material[];
+  event: { id: string; title: string; published: boolean } | null;
+  inquiry: { id: string; inquiryNumber: string; status: string } | null;
 };
 
-const statusIcon: Record<string, typeof Clock> = {
-  New: Clock,
-  Reviewed: Eye,
-  Replied: Reply,
-  Booked: CheckCircle,
-  Lost: XCircle,
-};
+const KINDS = ["banner", "flier", "video", "contract", "other"] as const;
 
-export default function BookingDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function AdminBookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [deleted, setDeleted] = useState(false);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [savingField, setSavingField] = useState<string | null>(null);
 
-  const fetchBooking = useCallback(() => {
-    fetch(`/api/bookings/${id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Not found");
-        return r.json();
-      })
-      .then((data) => {
-        setBooking(data);
-        setNotes(data.adminNotes || "");
-      })
-      .catch(() => setBooking(null))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDescriptionPublic, setEventDescriptionPublic] = useState("");
+  const [finalOffer, setFinalOffer] = useState("");
+  const [ticketUrl, setTicketUrl] = useState("");
+  const [ticketsSold, setTicketsSold] = useState(0);
+  const [eventDate, setEventDate] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [venueAddress, setVenueAddress] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [messageToAgent, setMessageToAgent] = useState("");
+
+  const [matKind, setMatKind] = useState<(typeof KINDS)[number]>("banner");
+  const [matUrl, setMatUrl] = useState("");
+  const [matFilename, setMatFilename] = useState("");
+  const [matNote, setMatNote] = useState("");
+  const [addingMaterial, setAddingMaterial] = useState(false);
+
+  const [ecrOpen, setEcrOpen] = useState(false);
+  const [ecrTitle, setEcrTitle] = useState("");
+  const [ecrDate, setEcrDate] = useState("");
+  const [ecrVenueName, setEcrVenueName] = useState("");
+  const [ecrVenueAddress, setEcrVenueAddress] = useState("");
+  const [ecrTicketLink, setEcrTicketLink] = useState("");
+  const [ecrDescription, setEcrDescription] = useState("");
+  const [ecrSubmitting, setEcrSubmitting] = useState(false);
+  const [ecrMessage, setEcrMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBooking();
-  }, [fetchBooking]);
+    setSession(getAdminSession());
+  }, []);
 
-  const patchBooking = async (data: Record<string, unknown>) => {
-    setSaving(true);
+  const load = useCallback(async () => {
+    if (!session) return;
+    setLoading(true);
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        headers: { "x-admin-email": session.email },
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setBooking(null);
+        return;
+      }
+      const b = (await res.json()) as Booking;
+      setBooking(b);
+      setEventTitle(b.eventTitle ?? "");
+      setEventDescriptionPublic(b.eventDescriptionPublic ?? "");
+      setFinalOffer(b.finalOffer ?? "");
+      setTicketUrl(b.ticketUrl ?? "");
+      setTicketsSold(b.ticketsSold ?? 0);
+      setEventDate(b.eventDate ?? "");
+      setVenueName(b.venueName ?? "");
+      setVenueAddress(b.venueAddress ?? "");
+      setContactName(b.contactName ?? "");
+      setContactEmail(b.contactEmail ?? "");
+      setContactPhone(b.contactPhone ?? "");
+      setMessageToAgent(b.messageToAgent ?? "");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, session]);
+
+  useEffect(() => {
+    if (session) load();
+  }, [session, load]);
+
+  const saveField = async (key: string, value: unknown) => {
+    if (!session) return;
+    setSavingField(key);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ [key]: value }),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setBooking(updated);
-        setNotes(updated.adminNotes || "");
+        const updated = (await res.json()) as Booking;
+        setBooking((prev) => (prev ? { ...prev, ...updated } : updated));
+        setSavedAt(new Date());
       }
     } finally {
-      setSaving(false);
+      setSavingField(null);
     }
   };
 
-  const handleStatusChange = (status: string) => patchBooking({ status });
-  const handleNotesBlur = () => {
-    if (notes !== (booking?.adminNotes || "")) {
-      patchBooking({ adminNotes: notes });
+  const addMaterial = async () => {
+    if (!session || !booking) return;
+    if (!matUrl.trim()) return;
+    setAddingMaterial(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/materials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({
+          kind: matKind,
+          url: matUrl.trim(),
+          filename: matFilename.trim(),
+          note: matNote.trim(),
+        }),
+      });
+      if (res.ok) {
+        const m = (await res.json()) as Material;
+        setBooking((prev) => (prev ? { ...prev, materials: [...prev.materials, m] } : prev));
+        setMatUrl("");
+        setMatFilename("");
+        setMatNote("");
+      } else {
+        const j = await res.json().catch(() => null);
+        alert(j?.error || "Could not add material");
+      }
+    } finally {
+      setAddingMaterial(false);
     }
   };
 
-  const handleDelete = async () => {
-    await fetch(`/api/bookings/${id}`, { method: "DELETE" });
-    setDeleted(true);
-    setShowDelete(false);
+  const deleteMaterial = async (materialId: string) => {
+    if (!session || !booking) return;
+    if (!confirm("Remove this material?")) return;
+    const res = await fetch(`/api/admin/bookings/${id}/materials?materialId=${materialId}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
+    });
+    if (res.ok) {
+      setBooking((prev) =>
+        prev ? { ...prev, materials: prev.materials.filter((m) => m.id !== materialId) } : prev,
+      );
+    }
   };
 
-  if (deleted) {
+  const openEcr = () => {
+    if (!booking) return;
+    setEcrTitle(eventTitle || `${booking.artistName} at ${booking.venueName}`);
+    setEcrDate(eventDate);
+    setEcrVenueName(venueName);
+    setEcrVenueAddress(venueAddress);
+    setEcrTicketLink(ticketUrl);
+    setEcrDescription(eventDescriptionPublic);
+    setEcrMessage(null);
+    setEcrOpen(true);
+  };
+
+  const submitEcr = async () => {
+    if (!session || !booking) return;
+    setEcrSubmitting(true);
+    setEcrMessage(null);
+    try {
+      const res = await fetch(`/api/admin/event-card-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          inquiryId: booking.inquiryId,
+          artistIds: booking.artistId ? [booking.artistId] : [],
+          eventTitle: ecrTitle.trim(),
+          eventDate: ecrDate.trim(),
+          venueName: ecrVenueName.trim(),
+          venueAddress: ecrVenueAddress.trim(),
+          ticketLink: ecrTicketLink.trim(),
+          description: ecrDescription.trim(),
+        }),
+      });
+      if (res.ok) {
+        setEcrMessage("Request filed. Owner will review in the Event Card Request queue.");
+        setTimeout(() => setEcrOpen(false), 1400);
+      } else {
+        const j = await res.json().catch(() => null);
+        setEcrMessage(j?.error || "Could not file request.");
+      }
+    } finally {
+      setEcrSubmitting(false);
+    }
+  };
+
+  const materialsByKind = useMemo(() => {
+    const map: Record<string, Material[]> = {};
+    booking?.materials.forEach((m) => {
+      (map[m.kind] = map[m.kind] || []).push(m);
+    });
+    return map;
+  }, [booking?.materials]);
+
+  if (loading || !booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center">
-        <div>
-          <p className="text-sm text-zinc-400 mb-4">Booking deleted.</p>
-          <Link
-            href="/admin/bookings"
-            className="text-[10px] tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200"
-          >
-            Back to Bookings
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center text-sm text-zinc-500">
+        {loading ? "Loading..." : "Booking not available."}
       </div>
     );
   }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-500">
-          Loading...
-        </span>
-      </div>
-    );
-  }
-
-  if (!booking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center">
-        <div>
-          <p className="text-sm text-zinc-400 mb-4">Booking not found.</p>
-          <Link
-            href="/admin/bookings"
-            className="text-[10px] tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200"
-          >
-            Back to Bookings
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const StatusIcon = statusIcon[booking.status] || Clock;
 
   return (
     <div className="min-h-screen text-foreground">
-      {/* Header */}
       <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <Link
           href="/admin/bookings"
-          className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground transition-colors mb-3"
+          className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-foreground mb-3 transition-colors"
         >
-          <ArrowLeft size={12} />
-          All Bookings
+          <ArrowLeft size={12} /> Back to Bookings
         </Link>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
-              #{booking.id.slice(-8).toUpperCase()} ·{" "}
-              {booking.source === "authenticated" ? "Signed In" : "Public"}
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1">
+              {booking.inquiry && (
+                <Link href={`/admin/inquiries/${booking.inquiry.id}`} className="hover:text-pink-300 mr-3">
+                  ← {booking.inquiry.inquiryNumber}
+                </Link>
+              )}
+              {booking.event && (
+                <Link href={`/admin/events`} className="text-emerald-300 hover:text-emerald-200 mr-3">
+                  Promoted as Event
+                </Link>
+              )}
+              <span>created {new Date(booking.submittedAt).toLocaleDateString()}</span>
             </p>
-            <h1 className="font-display uppercase text-2xl sm:text-3xl tracking-tight">
-              {booking.artistName}{" "}
-              <span className="text-zinc-500 font-normal">for</span>{" "}
-              {booking.venueName}
+            <h1 className="font-display uppercase text-2xl sm:text-3xl tracking-tight break-words">
+              {eventTitle || `${booking.artistName} at ${booking.venueName}`}
             </h1>
-          </div>
-          <span
-            className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase font-semibold border rounded-full px-3 py-1 shrink-0 ${
-              statusColor[booking.status] || ""
-            }`}
-          >
-            <StatusIcon size={12} />
-            {booking.status}
-          </span>
-        </div>
-      </div>
-
-      <div className="px-4 sm:px-6 lg:px-10 py-8 max-w-5xl">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left column -- details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Booking details */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="glass-card rounded-2xl p-6"
-            >
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
-                Booking Details
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <DetailRow icon={Music} label="Artist" value={booking.artistName} />
-                <DetailRow icon={MapPin} label="Venue" value={booking.venueName} />
-                <DetailRow icon={MapPin} label="Address" value={booking.venueAddress} />
-                <DetailRow icon={Calendar} label="Event Date" value={booking.eventDate || "Not specified"} />
-                <DetailRow icon={DollarSign} label="Proposed Offer" value={booking.proposedOffer} highlight />
-                <DetailRow
-                  icon={Clock}
-                  label="Submitted"
-                  value={new Date(booking.submittedAt).toLocaleString("en-US", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                />
-              </div>
-            </motion.div>
-
-            {/* Contact info */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05 }}
-              className="glass-card rounded-2xl p-6"
-            >
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
-                Contact Information
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <DetailRow icon={User} label="Name" value={booking.contactName} />
-                <DetailRow icon={Mail} label="Email" value={booking.contactEmail} />
-                <DetailRow icon={Phone} label="Phone" value={booking.contactPhone} />
-              </div>
-            </motion.div>
-
-            {/* Event description & message */}
-            {(booking.eventDescription || booking.messageToAgent) && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="glass-card rounded-2xl p-6 space-y-5"
-              >
-                {booking.eventDescription && (
-                  <div>
-                    <h3 className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-2">
-                      Event Description
-                    </h3>
-                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                      {booking.eventDescription}
-                    </p>
-                  </div>
-                )}
-                {booking.messageToAgent && (
-                  <div>
-                    <h3 className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-2">
-                      Message to Agent
-                    </h3>
-                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                      {booking.messageToAgent}
-                    </p>
-                  </div>
-                )}
-              </motion.div>
+            {savedAt && (
+              <p className="text-[10px] tracking-[0.18em] uppercase text-emerald-300 mt-2">
+                Saved {savedAt.toLocaleTimeString()}
+                {savingField ? ` (saving ${savingField}…)` : ""}
+              </p>
             )}
           </div>
-
-          {/* Right column -- actions */}
-          <div className="space-y-6">
-            {/* Status control */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="glass-card rounded-2xl p-6"
+          {!booking.eventId && (
+            <button
+              onClick={openEcr}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-pink-400/40 hover:border-pink-400/70 bg-pink-400/10 text-pink-200 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
             >
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-4">
-                Status
-              </h2>
-              <select
-                value={booking.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={saving}
-                className="w-full px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/40 appearance-none cursor-pointer mb-4"
-              >
-                {allStatuses.map((s) => (
-                  <option key={s} value={s} className="bg-zinc-900">
-                    {s}
-                  </option>
-                ))}
-              </select>
-
-              <div className="space-y-2">
-                <h3 className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 mb-2">
-                  Quick Actions
-                </h3>
-                {[
-                  { label: "Mark Reviewed", status: "Reviewed", icon: Eye, color: "border-sky-500/20 hover:border-sky-500/40 text-sky-300" },
-                  { label: "Mark Replied", status: "Replied", icon: Reply, color: "border-violet-500/20 hover:border-violet-500/40 text-violet-300" },
-                  { label: "Mark Booked", status: "Booked", icon: CheckCircle, color: "border-emerald-500/20 hover:border-emerald-500/40 text-emerald-300" },
-                  { label: "Mark Lost", status: "Lost", icon: XCircle, color: "border-zinc-500/20 hover:border-zinc-500/40 text-zinc-400" },
-                ].map((action) => {
-                  const ActionIcon = action.icon;
-                  return (
-                    <button
-                      key={action.status}
-                      onClick={() => handleStatusChange(action.status)}
-                      disabled={saving || booking.status === action.status}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border bg-black/30 text-xs tracking-wide transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${action.color}`}
-                    >
-                      <ActionIcon size={13} />
-                      {action.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* Admin Notes */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-              className="glass-card rounded-2xl p-6"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400">
-                  Admin Notes
-                </h2>
-                {saving && (
-                  <span className="text-[9px] tracking-[0.18em] uppercase text-pink-300">
-                    <Save size={10} className="inline mr-1" />
-                    Saving...
-                  </span>
-                )}
-              </div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={handleNotesBlur}
-                rows={5}
-                placeholder="Internal notes about this booking..."
-                className="w-full px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/40 resize-none"
-              />
-            </motion.div>
-
-            {/* Delete */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-            >
-              <button
-                onClick={() => setShowDelete(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-red-500/15 hover:border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-xs tracking-wide text-red-400 hover:text-red-300 transition-colors"
-              >
-                <Trash2 size={13} />
-                Delete Booking
-              </button>
-            </motion.div>
-          </div>
+              <CalendarPlus size={12} /> Request Event Card
+            </button>
+          )}
         </div>
       </div>
 
-      <ConfirmDialog
-        open={showDelete}
-        title="Delete Booking"
-        message={`Delete the inquiry from ${booking.contactName} for ${booking.artistName} at ${booking.venueName}? This cannot be undone.`}
-        confirmLabel="Delete"
-        danger
-        onConfirm={handleDelete}
-        onCancel={() => setShowDelete(false)}
-      />
+      <div className="px-4 sm:px-6 lg:px-10 py-8 grid lg:grid-cols-3 gap-6 max-w-7xl">
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="lg:col-span-2 space-y-5"
+        >
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Show Details</h2>
+            <FieldRow icon={Music} label="Event Title">
+              <input
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.target.value)}
+                onBlur={() => booking.eventTitle !== eventTitle && saveField("eventTitle", eventTitle)}
+                placeholder="(none — defaults to 'Artist at Venue')"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+              />
+            </FieldRow>
+            <FieldRow icon={Calendar} label="Event Date">
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                onBlur={() => booking.eventDate !== eventDate && saveField("eventDate", eventDate)}
+                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+              />
+            </FieldRow>
+            <FieldRow icon={MapPin} label="Venue">
+              <div className="space-y-2">
+                <input
+                  value={venueName}
+                  onChange={(e) => setVenueName(e.target.value)}
+                  onBlur={() => booking.venueName !== venueName && saveField("venueName", venueName)}
+                  placeholder="Venue name"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                />
+                <input
+                  value={venueAddress}
+                  onChange={(e) => setVenueAddress(e.target.value)}
+                  onBlur={() => booking.venueAddress !== venueAddress && saveField("venueAddress", venueAddress)}
+                  placeholder="Venue address"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                />
+              </div>
+            </FieldRow>
+            <FieldRow icon={FileText} label="Event Description (public)">
+              <textarea
+                value={eventDescriptionPublic}
+                onChange={(e) => setEventDescriptionPublic(e.target.value)}
+                onBlur={() =>
+                  booking.eventDescriptionPublic !== eventDescriptionPublic &&
+                  saveField("eventDescriptionPublic", eventDescriptionPublic)
+                }
+                rows={3}
+                placeholder="Audience-facing description, used when promoted as a public Event."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
+              />
+            </FieldRow>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Offer + Tickets</h2>
+            <FieldRow icon={DollarSign} label="Final Offer">
+              <input
+                value={finalOffer}
+                onChange={(e) => setFinalOffer(e.target.value)}
+                onBlur={() => booking.finalOffer !== finalOffer && saveField("finalOffer", finalOffer)}
+                placeholder="$15,000 + travel · 80/20 door split"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+              />
+            </FieldRow>
+            <FieldRow icon={Ticket} label="Ticket URL">
+              <input
+                value={ticketUrl}
+                onChange={(e) => setTicketUrl(e.target.value)}
+                onBlur={() => booking.ticketUrl !== ticketUrl && saveField("ticketUrl", ticketUrl)}
+                placeholder="https://..."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+              />
+            </FieldRow>
+            <FieldRow icon={Ticket} label="Tickets Sold">
+              <input
+                type="number"
+                min={0}
+                value={ticketsSold}
+                onChange={(e) => setTicketsSold(Number(e.target.value || 0))}
+                onBlur={() => booking.ticketsSold !== ticketsSold && saveField("ticketsSold", ticketsSold)}
+                className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 w-32"
+              />
+            </FieldRow>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 inline-flex items-center gap-2">
+              <Paperclip size={12} /> Materials ({booking.materials.length})
+            </h2>
+            {KINDS.map((kind) => (
+              <div key={kind}>
+                <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-2">
+                  {kind === "other" ? "Other / Misc" : kind.charAt(0).toUpperCase() + kind.slice(1)}
+                </p>
+                {(materialsByKind[kind] ?? []).length === 0 ? (
+                  <p className="text-xs text-zinc-600 italic">No {kind} attached.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(materialsByKind[kind] ?? []).map((m) => (
+                      <li
+                        key={m.id}
+                        className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-white/8 bg-black/30"
+                      >
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-zinc-200 hover:text-pink-300 truncate flex items-center gap-1.5 min-w-0 flex-1"
+                        >
+                          <ExternalLink size={12} className="shrink-0" />
+                          <span className="truncate">{m.filename || m.url}</span>
+                        </a>
+                        {m.note && <span className="text-[10px] text-zinc-500 shrink-0">{m.note}</span>}
+                        <button
+                          onClick={() => deleteMaterial(m.id)}
+                          className="text-zinc-500 hover:text-rose-400 p-1"
+                          title="Remove"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+
+            <div className="pt-3 border-t border-white/5 space-y-2">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-400">Add material (URL paste)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <select
+                  value={matKind}
+                  onChange={(e) => setMatKind(e.target.value as (typeof KINDS)[number])}
+                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                >
+                  {KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={matUrl}
+                  onChange={(e) => setMatUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="sm:col-span-2 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                />
+                <button
+                  onClick={addMaterial}
+                  disabled={addingMaterial || !matUrl.trim()}
+                  className="btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-lg px-3 py-2 disabled:opacity-50"
+                >
+                  {addingMaterial ? "Adding…" : "Add"}
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  value={matFilename}
+                  onChange={(e) => setMatFilename(e.target.value)}
+                  placeholder="Filename / label (optional)"
+                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                />
+                <input
+                  value={matNote}
+                  onChange={(e) => setMatNote(e.target.value)}
+                  placeholder="Short note (optional)"
+                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-500">
+                Files live wherever you already host them (Drive, Dropbox, Vercel Blob, S3, etc.). Paste the share link.
+              </p>
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+          className="space-y-5"
+        >
+          <div className="glass-card rounded-2xl p-5 space-y-3">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Contact</h2>
+            <input
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              onBlur={() => booking.contactName !== contactName && saveField("contactName", contactName)}
+              placeholder="Contact name"
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+            />
+            <input
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              onBlur={() => booking.contactEmail !== contactEmail && saveField("contactEmail", contactEmail)}
+              placeholder="Email"
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+            />
+            <input
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              onBlur={() => booking.contactPhone !== contactPhone && saveField("contactPhone", contactPhone)}
+              placeholder="Phone"
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+            />
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 space-y-3">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Internal Notes</h2>
+            <textarea
+              value={messageToAgent}
+              onChange={(e) => setMessageToAgent(e.target.value)}
+              onBlur={() =>
+                booking.messageToAgent !== messageToAgent && saveField("messageToAgent", messageToAgent)
+              }
+              rows={5}
+              placeholder="Team-only notes, hand-off, follow-ups."
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
+            />
+            <p className="text-[10px] text-zinc-500">Not surfaced on public Event card.</p>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 space-y-2 text-sm">
+            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-2">Linkage</h2>
+            <p className="text-zinc-400 text-xs">Artist:</p>
+            <p className="text-zinc-200 break-words">{booking.artistName}</p>
+            {booking.inquiry && (
+              <>
+                <p className="text-zinc-400 text-xs mt-3">Source Inquiry:</p>
+                <Link
+                  href={`/admin/inquiries/${booking.inquiry.id}`}
+                  className="text-pink-300 hover:text-pink-200 break-words"
+                >
+                  {booking.inquiry.inquiryNumber} ({booking.inquiry.status})
+                </Link>
+              </>
+            )}
+            {booking.event && (
+              <>
+                <p className="text-zinc-400 text-xs mt-3">Public Event:</p>
+                <Link href={`/admin/events`} className="text-emerald-300 hover:text-emerald-200 break-words">
+                  {booking.event.title} ({booking.event.published ? "live" : "draft"})
+                </Link>
+              </>
+            )}
+          </div>
+        </motion.section>
+      </div>
+
+      {ecrOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10 bg-black/70 backdrop-blur-sm"
+          onClick={() => !ecrSubmitting && setEcrOpen(false)}
+        >
+          <div
+            className="relative max-w-lg w-full max-h-[85vh] overflow-y-auto glass-card rounded-2xl p-6 sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-display tracking-tight text-foreground">Request Event Card</h2>
+                <p className="mt-1 text-[10px] tracking-[0.18em] uppercase text-zinc-500">
+                  Owner reviews + publishes from /admin/events
+                </p>
+              </div>
+              <button
+                onClick={() => setEcrOpen(false)}
+                className="text-zinc-400 hover:text-foreground text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <ModalField label="Event Title">
+                <input
+                  value={ecrTitle}
+                  onChange={(e) => setEcrTitle(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2"
+                />
+              </ModalField>
+              <ModalField label="Event Date">
+                <input
+                  type="date"
+                  value={ecrDate}
+                  onChange={(e) => setEcrDate(e.target.value)}
+                  className="bg-black/40 border border-white/10 rounded-lg px-3 py-2"
+                />
+              </ModalField>
+              <ModalField label="Venue Name">
+                <input
+                  value={ecrVenueName}
+                  onChange={(e) => setEcrVenueName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2"
+                />
+              </ModalField>
+              <ModalField label="Venue Address">
+                <input
+                  value={ecrVenueAddress}
+                  onChange={(e) => setEcrVenueAddress(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2"
+                />
+              </ModalField>
+              <ModalField label="Ticket Link">
+                <input
+                  value={ecrTicketLink}
+                  onChange={(e) => setEcrTicketLink(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2"
+                />
+              </ModalField>
+              <ModalField label="Description">
+                <textarea
+                  value={ecrDescription}
+                  onChange={(e) => setEcrDescription(e.target.value)}
+                  rows={3}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 resize-y"
+                />
+              </ModalField>
+            </div>
+            {ecrMessage && (
+              <p
+                className={`mt-3 text-sm ${
+                  ecrMessage.includes("filed") ? "text-emerald-300" : "text-rose-300"
+                }`}
+              >
+                {ecrMessage}
+              </p>
+            )}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setEcrOpen(false)}
+                className="text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground px-3 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitEcr}
+                disabled={ecrSubmitting}
+                className="btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-full px-5 py-2 disabled:opacity-50"
+              >
+                {ecrSubmitting ? "Filing…" : "File Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function DetailRow({
+function FieldRow({
   icon: Icon,
   label,
-  value,
-  highlight,
+  children,
 }: {
-  icon: typeof Clock;
+  icon: typeof Save;
   label: string;
-  value: string;
-  highlight?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon size={11} className="text-zinc-600" />
-        <span className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">
-          {label}
-        </span>
+    <div className="flex items-start gap-3">
+      <Icon size={14} className="text-pink-300 mt-2 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1">{label}</div>
+        {children}
       </div>
-      <span
-        className={`text-sm ${highlight ? "text-foreground font-semibold" : "text-zinc-300"}`}
-      >
-        {value}
-      </span>
+    </div>
+  );
+}
+
+function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[10px] tracking-[0.18em] uppercase text-zinc-400 mb-1">{label}</label>
+      {children}
     </div>
   );
 }
