@@ -10,6 +10,16 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import type { Artist } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 
+type DevelopingArtist = {
+  slug: string;
+  name: string;
+  genre: string;
+  pitch: string;
+  image: string;
+  homeCity: string;
+  homeState: string;
+};
+
 interface BookingForm {
   artistSlug: string;
   venueName: string;
@@ -50,6 +60,8 @@ function BookingFormContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [developingArtists, setDevelopingArtists] = useState<DevelopingArtist[]>([]);
+  const [showDevelopingPopup, setShowDevelopingPopup] = useState(false);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
@@ -60,6 +72,12 @@ function BookingFormContent() {
       .then((r) => (r.ok ? r.json() : []))
       .then((rows: Artist[]) => setArtists(Array.isArray(rows) ? rows : []))
       .catch(() => setArtists([]));
+    fetch("/api/artists/developing", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: DevelopingArtist[]) =>
+        setDevelopingArtists(Array.isArray(rows) ? rows : []),
+      )
+      .catch(() => setDevelopingArtists([]));
   }, []);
 
   useEffect(() => {
@@ -96,7 +114,8 @@ function BookingFormContent() {
     }
 
     const artist = artists.find((a) => a.slug === form.artistSlug);
-    const artistName = artist?.name ?? form.artistSlug;
+    const devArtist = developingArtists.find((a) => a.slug === form.artistSlug);
+    const artistName = artist?.name ?? devArtist?.name ?? form.artistSlug;
 
     setSubmitting(true);
     try {
@@ -252,7 +271,26 @@ function BookingFormContent() {
                   {a.name} -- {a.genre}
                 </option>
               ))}
+              {/* If a Developing artist is selected via popup, surface it as a selected option so the <select> shows the right label. */}
+              {form.artistSlug &&
+                !artists.some((a) => a.slug === form.artistSlug) &&
+                developingArtists
+                  .filter((d) => d.slug === form.artistSlug)
+                  .map((d) => (
+                    <option key={d.slug} value={d.slug}>
+                      {d.name} -- {d.genre} (Developing)
+                    </option>
+                  ))}
             </select>
+            {developingArtists.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowDevelopingPopup(true)}
+                className="mt-2 text-[11px] tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200 underline underline-offset-4 transition-colors"
+              >
+                Developing Artists →
+              </button>
+            )}
           </Field>
 
           <Field label="Venue Name" required error={errors.venueName} id="field-venueName">
@@ -347,9 +385,9 @@ function BookingFormContent() {
           </Field>
 
           <Field
-            label="Booking Offer"
+            label="Booking Offer/Proposed Split"
             id="field-bookingOffer"
-            hint="Optional. If you want to lead with an opening number."
+            hint="Optional. If you want to lead with an opening number or split."
           >
             <input
               type="text"
@@ -403,6 +441,76 @@ function BookingFormContent() {
           </div>
         )}
       </div>
+
+      {showDevelopingPopup && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10"
+          onClick={() => setShowDevelopingPopup(false)}
+        >
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-hidden />
+          <div
+            className="relative max-w-2xl w-full max-h-[80vh] overflow-y-auto glass-card rounded-2xl p-6 sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-xl text-foreground font-display tracking-tight">Developing Artists</h2>
+                <p className="mt-1 text-xs tracking-[0.16em] uppercase text-zinc-500">
+                  Emerging acts available for booking inquiry
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDevelopingPopup(false)}
+                className="text-zinc-400 hover:text-foreground text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            {developingArtists.length === 0 ? (
+              <p className="text-sm text-zinc-400">No developing artists open for inquiry right now.</p>
+            ) : (
+              <ul className="space-y-3">
+                {developingArtists.map((a) => {
+                  const isSelected = form.artistSlug === a.slug;
+                  return (
+                    <li key={a.slug}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          update("artistSlug", a.slug);
+                          setShowDevelopingPopup(false);
+                        }}
+                        className={`w-full text-left rounded-xl border px-4 py-3 transition-colors ${
+                          isSelected
+                            ? "border-pink-400/60 bg-pink-500/10"
+                            : "border-white/10 bg-black/30 hover:border-pink-400/40 hover:bg-pink-500/5"
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="text-sm font-medium text-foreground">{a.name}</p>
+                          <span className="text-[10px] tracking-[0.16em] uppercase text-zinc-500">
+                            {a.genre}
+                          </span>
+                        </div>
+                        {(a.homeCity || a.homeState) && (
+                          <p className="mt-0.5 text-[11px] tracking-wide text-zinc-500">
+                            {[a.homeCity, a.homeState].filter(Boolean).join(", ")}
+                          </p>
+                        )}
+                        <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-300">{a.pitch}</p>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
