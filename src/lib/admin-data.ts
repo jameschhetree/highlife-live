@@ -3,7 +3,9 @@
 
 // ── Artist Types ──────────────────────────────────────────────
 
-export type ArtistStatus = "Testing" | "Active" | "Priority" | "Paused" | "Archived";
+// Phase 3.9 Scope 11 — "Developing" + "Left" added. "Archived" stays in type for back-compat
+// (existing rows keep their value) but is removed from the New Artist form dropdown.
+export type ArtistStatus = "Testing" | "Active" | "Priority" | "Developing" | "Paused" | "Left" | "Archived";
 export type PerformanceType =
   | "Solo Artist"
   | "Band"
