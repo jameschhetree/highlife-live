@@ -39,6 +39,7 @@ type ApplicationBody = {
   actStageName: string;
   phone: string;
   email: string;
+  actDescription?: string;
   performanceLinks?: string;
   instagram?: string;
   facebook?: string;
@@ -61,6 +62,7 @@ function normalize(body: ApplicationBody) {
     actStageName: String(body.actStageName || "").trim(),
     phone: String(body.phone || "").trim(),
     email: String(body.email || "").trim().toLowerCase(),
+    actDescription: String(body.actDescription || "").trim(),
     performanceLinks: String(body.performanceLinks || "").trim(),
     instagram: String(body.instagram || "").trim(),
     facebook: String(body.facebook || "").trim(),
@@ -278,6 +280,7 @@ export async function POST(request: NextRequest) {
       actStageName: normalized.actStageName,
       phone: normalized.phone,
       email: normalized.email,
+      actDescription: normalized.actDescription || null,
       performanceLinks: normalized.performanceLinks,
       instagram: normalized.instagram,
       facebook: normalized.facebook,

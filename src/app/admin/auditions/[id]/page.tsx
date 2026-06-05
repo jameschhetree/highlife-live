@@ -15,6 +15,7 @@ interface Audition {
   fullName: string;
   email: string;
   phone: string;
+  actDescription: string | null;
   performanceLinks: string;
   instagram: string;
   facebook: string;
@@ -182,6 +183,15 @@ export default function AuditionDetailPage() {
               )}
             </div>
           </div>
+
+          {row.actDescription && (
+            <div className="glass-card rounded-2xl p-6">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-3">Act Description</h2>
+              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                {row.actDescription}
+              </p>
+            </div>
+          )}
 
           {row.performanceLinks && (
             <div className="glass-card rounded-2xl p-6">

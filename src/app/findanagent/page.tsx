@@ -43,6 +43,7 @@ type FormState = {
   actStageName: string;
   phone: string;
   email: string;
+  actDescription: string;
   performanceLinks: string;
   instagram: string;
   facebook: string;
@@ -55,6 +56,7 @@ const EMPTY_FORM: FormState = {
   actStageName: "",
   phone: "",
   email: "",
+  actDescription: "",
   performanceLinks: "",
   instagram: "",
   facebook: "",
@@ -188,6 +190,7 @@ export default function FindAnAgentPage() {
           actStageName: form.actStageName,
           phone: form.phone,
           email: form.email,
+          actDescription: form.actDescription,
           performanceLinks: form.performanceLinks,
           instagram: form.instagram,
           facebook: form.facebook,
@@ -365,6 +368,20 @@ export default function FindAnAgentPage() {
               />
             </Field>
           </div>
+
+          <Field
+            label="Act Description"
+            id="field-actDescription"
+            hint="Optional: describe your act — vibe, set length, what makes it land for a HighLife venue."
+          >
+            <textarea
+              value={form.actDescription}
+              onChange={(e) => setField("actDescription", e.target.value)}
+              placeholder="A 60-minute high-energy hip-hop set with two backup vocalists, club-tested..."
+              rows={3}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 transition-colors resize-y"
+            />
+          </Field>
 
           <Field
             label="Performance Links"
