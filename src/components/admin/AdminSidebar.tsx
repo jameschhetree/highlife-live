@@ -48,11 +48,15 @@ const nav: NavItem[] = [
   // canViewAuditions now allows agents (scoped server-side to their assignments).
   { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
   { kind: "leaf", href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
-  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
-  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
-  { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
-  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
-  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
+  // Phase 3.9 Scope 6 — Events visible to agents (server-side scoped to assigned-artist events).
+  { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "all" },
+  // Phase 3.9 Scope 7 — Pipeline owner-only this pass; rewire to real Inquiry/Booking workflow in 5.0.
+  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "owner" },
+  // Phase 3.9 Scope 13 — placeholder/demo surfaces hidden from agents until real + scoped.
+  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "owner" },
+  { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "owner" },
+  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "owner" },
+  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "owner" },
   {
     kind: "group",
     key: "owner-hub",
@@ -61,7 +65,6 @@ const nav: NavItem[] = [
     gate: "owner",
     children: [
       { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
-      { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "owner" },
       { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
       { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
       { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },
@@ -116,7 +119,7 @@ export function AdminSidebar() {
     .filter((item) => item.kind !== "group" || item.children.length > 0);
 
   // Owner Hub group expands automatically when a child route is active
-  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/events", "/admin/auditions", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins", "/admin/settings"];
+  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins", "/admin/settings"];
   const ownerHubActive = ownerHubChildHrefs.some((h) => pathname?.startsWith(h));
   const [ownerHubOpen, setOwnerHubOpen] = useState(false);
   useEffect(() => {
