@@ -1,12 +1,11 @@
 // GET /api/admin/inquiries -- list inquiries (scoped by role)
 // Owner: all inquiries
-// Agent: only inquiries for assigned artists, with money fields stripped
+// Agent: only inquiries for assigned artists (money fields allowed per 2026-06-05 lock update)
 
 import { prisma } from "@/lib/db";
 import {
   getAdminEmailFromRequest,
   isOwnerAdminEmail,
-  stripMoneyFieldsArray,
 } from "@/lib/admin-permissions";
 import { isAgentLoginEmail } from "@/lib/admin-permissions-server";
 import type { NextRequest } from "next/server";
@@ -25,10 +24,15 @@ export async function GET(request: NextRequest) {
 
   const source = request.nextUrl.searchParams.get("source");
   const status = request.nextUrl.searchParams.get("status");
+  const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "1";
 
   const where: Record<string, unknown> = {};
   if (source) where.source = source;
-  if (status) where.status = status;
+  if (status) {
+    where.status = status;
+  } else if (!includeArchived) {
+    where.status = { not: "Archived" };
+  }
 
   if (isAgent) {
     // Get assigned artist slugs for this agent
@@ -76,9 +80,7 @@ export async function GET(request: NextRequest) {
       : null,
   }));
 
-  if (isAgent) {
-    return Response.json(stripMoneyFieldsArray(enriched as Record<string, unknown>[]));
-  }
-
+  // 2026-06-05 money-visibility lock: agents may now see offer/split on inquiries
+  // they're scoped to (already filtered above by artist assignments).
   return Response.json(enriched);
 }

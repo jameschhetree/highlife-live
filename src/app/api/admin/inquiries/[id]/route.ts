@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 const ADMIN_EDITABLE_FIELDS = new Set([
   "status",
+  "workingSubstatus",
   "adminNotes",
   "bookingOffer",
   "venueName",
@@ -25,13 +26,16 @@ const ADMIN_EDITABLE_FIELDS = new Set([
   "contactPhone",
   "eventDescription",
   "messageToAgent",
-  "eventDate", // owner-admin only — guarded below
+  "eventDate",
   "artistSlug",
   "artistName",
 ]);
 
-const AGENT_EDITABLE_FIELDS = new Set(["status", "adminNotes"]);
-const OWNER_ONLY_FIELDS = new Set(["eventDate", "artistSlug", "artistName", "bookingOffer"]);
+// 2026-06-05 lock update: agents may edit status, workingSubstatus, adminNotes, AND
+// eventDate (per brief Scope 4: "Add ability to edit event date"). Money/artist
+// identity stays owner-only.
+const AGENT_EDITABLE_FIELDS = new Set(["status", "workingSubstatus", "adminNotes", "eventDate"]);
+const OWNER_ONLY_FIELDS = new Set(["artistSlug", "artistName", "bookingOffer"]);
 
 async function loadInquiryForCaller(id: string, callerEmail: string) {
   if (!prisma) return null;
@@ -85,10 +89,7 @@ export async function GET(
     venueLoginLabel = v?.organizationName || v?.email || null;
   }
 
-  if (!isOwner) {
-    const { bookingOffer: _b, ...safe } = inq;
-    return Response.json({ ...safe, venueLoginLabel });
-  }
+  // 2026-06-05 money-visibility lock: bookingOffer now visible to scoped agents too.
   return Response.json({ ...inq, venueLoginLabel });
 }
 

@@ -19,6 +19,10 @@ import {
   Phone,
   MapPin,
   Music,
+  Archive,
+  Briefcase,
+  FileText,
+  Plus,
 } from "lucide-react";
 import { getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 
@@ -37,6 +41,7 @@ interface AdminInquiry {
   eventDescription: string;
   messageToAgent: string;
   status: string;
+  workingSubstatus: string | null;
   adminNotes: string | null;
   bookingOffer: string | null;
   venueLoginId: string | null;
@@ -55,14 +60,23 @@ interface NoteRow {
   createdAt: string;
 }
 
-const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Booked", "Lost"] as const;
+const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Working", "Contract Sent", "Booked", "Archived"] as const;
+const WORKING_SUBSTATUS_OPTIONS = ["WorkingResponsibilities", "Negotiating", "FineTuning"] as const;
+const WORKING_SUBSTATUS_LABEL: Record<string, string> = {
+  WorkingResponsibilities: "Working Responsibilities",
+  Negotiating: "Negotiating",
+  FineTuning: "Fine Tuning",
+};
 
 const statusBadge: Record<string, { color: string; bg: string; Icon: typeof Clock }> = {
-  New:      { color: "text-amber-300",   bg: "bg-amber-400/10 border-amber-400/20",   Icon: Clock },
-  Reviewed: { color: "text-sky-300",     bg: "bg-sky-400/10 border-sky-400/20",       Icon: Eye },
-  Replied:  { color: "text-violet-300",  bg: "bg-violet-400/10 border-violet-400/20", Icon: Reply },
-  Booked:   { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
-  Lost:     { color: "text-rose-300",    bg: "bg-rose-400/10 border-rose-400/20",     Icon: XCircle },
+  New:             { color: "text-amber-300",   bg: "bg-amber-400/10 border-amber-400/20",     Icon: Clock },
+  Reviewed:        { color: "text-sky-300",     bg: "bg-sky-400/10 border-sky-400/20",         Icon: Eye },
+  Replied:         { color: "text-violet-300",  bg: "bg-violet-400/10 border-violet-400/20",   Icon: Reply },
+  Working:         { color: "text-fuchsia-300", bg: "bg-fuchsia-400/10 border-fuchsia-400/20", Icon: Briefcase },
+  "Contract Sent": { color: "text-cyan-300",    bg: "bg-cyan-400/10 border-cyan-400/20",       Icon: FileText },
+  Booked:          { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
+  Archived:        { color: "text-zinc-400",    bg: "bg-zinc-400/10 border-zinc-400/20",       Icon: Archive },
+  Lost:            { color: "text-rose-300",    bg: "bg-rose-400/10 border-rose-400/20",       Icon: XCircle },
 };
 
 export default function AdminInquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -75,6 +89,8 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [adminNoteDraft, setAdminNoteDraft] = useState("");
   const [bookingOfferDraft, setBookingOfferDraft] = useState("");
+  const [eventDateDraft, setEventDateDraft] = useState("");
+  const [editingDate, setEditingDate] = useState(false);
   const [internalNoteText, setInternalNoteText] = useState("");
   const [publicNoteText, setPublicNoteText] = useState("");
   const [finalizing, setFinalizing] = useState(false);
@@ -102,6 +118,7 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
       setNotes(nts);
       setAdminNoteDraft(inq.adminNotes ?? "");
       setBookingOfferDraft(inq.bookingOffer ?? "");
+      setEventDateDraft(inq.eventDate ?? "");
     } finally {
       setLoading(false);
     }
@@ -125,8 +142,23 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
     }
   };
 
-  const updateStatus = (next: string) => patch({ status: next });
+  const updateStatus = (next: string) => {
+    const payload: Record<string, unknown> = { status: next };
+    // Clear substatus when moving away from Working
+    if (next !== "Working") payload.workingSubstatus = null;
+    return patch(payload);
+  };
+  const updateSubstatus = (next: string | null) => patch({ workingSubstatus: next });
   const saveAdminMeta = () => patch({ adminNotes: adminNoteDraft, ...(isOwnerAdmin(session) ? { bookingOffer: bookingOfferDraft } : {}) });
+  const saveEventDate = async () => {
+    await patch({ eventDate: eventDateDraft });
+    setEditingDate(false);
+  };
+  const archiveInquiry = () => {
+    if (confirm("Archive this inquiry? It will be hidden from the default list — open via the 'Show archived' toggle to restore.")) {
+      void updateStatus("Archived");
+    }
+  };
 
   const postNote = async (internal: boolean) => {
     if (!session) return;
@@ -206,7 +238,17 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="lg:col-span-2 space-y-5">
           {/* Status + quick actions */}
           <div className="glass-card rounded-2xl p-5">
-            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-3">Quick Actions</h2>
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Quick Actions</h2>
+              {inquiry.status === "Booked" && (
+                <Link
+                  href={`/admin/bookings/new?inquiryId=${inquiry.id}`}
+                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 btn-gradient font-bold"
+                >
+                  <Plus size={11} /> Add To Bookings
+                </Link>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((s) => {
                 const SBI = statusBadge[s].Icon;
@@ -229,7 +271,7 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
                 <button
                   onClick={finalize}
                   disabled={finalizing}
-                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 btn-gradient font-bold disabled:opacity-50"
+                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border border-pink-400/40 hover:border-pink-400/70 bg-pink-400/10 text-pink-200 font-bold disabled:opacity-50"
                 >
                   <CalendarPlus size={11} /> {finalizing ? "Finalizing..." : "Finalize as Event"}
                 </button>
@@ -240,42 +282,122 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
                 </Link>
               )}
             </div>
+
+            {inquiry.status === "Working" && (
+              <div className="mt-4 pt-3 border-t border-white/5">
+                <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-2">Working substatus</label>
+                <div className="flex flex-wrap gap-2">
+                  {WORKING_SUBSTATUS_OPTIONS.map((sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => updateSubstatus(sub)}
+                      className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border transition-colors ${
+                        inquiry.workingSubstatus === sub
+                          ? "border-fuchsia-400/60 bg-fuchsia-500/15 text-fuchsia-200"
+                          : "border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground"
+                      }`}
+                    >
+                      {WORKING_SUBSTATUS_LABEL[sub]}
+                    </button>
+                  ))}
+                  {inquiry.workingSubstatus && (
+                    <button
+                      onClick={() => updateSubstatus(null)}
+                      className="text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border border-white/10 hover:border-rose-400/40 text-zinc-500 hover:text-rose-300 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {inquiry.status !== "Archived" && (
+              <div className="mt-4 pt-3 border-t border-white/5">
+                <button
+                  onClick={archiveInquiry}
+                  className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border border-white/10 hover:border-zinc-400/40 text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  <Archive size={11} /> Archive inquiry
+                </button>
+              </div>
+            )}
             {savedAt && <p className="text-[10px] text-emerald-300 mt-3">Saved {savedAt.toLocaleTimeString()}</p>}
           </div>
 
-          {/* Inquiry fields (read-only here; venue partner edits via portal) */}
+          {/* Inquiry fields (event date editable; venue partner edits other fields via portal) */}
           <div className="glass-card rounded-2xl p-5 space-y-4">
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Inquiry Details</h2>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <Info icon={Music} label="Artist Requested" value={inquiry.artistName} />
-              <Info icon={Clock} label="Event Date" value={inquiry.eventDate || "—"} />
+              <div className="flex items-start gap-2.5">
+                <Clock size={14} className="text-pink-300 mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Event Date</div>
+                  {editingDate ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={eventDateDraft}
+                        onChange={(e) => setEventDateDraft(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:border-pink-400/60"
+                      />
+                      <button
+                        onClick={saveEventDate}
+                        className="text-[10px] tracking-[0.18em] uppercase text-emerald-300 hover:text-emerald-200"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingDate(false);
+                          setEventDateDraft(inquiry.eventDate ?? "");
+                        }}
+                        className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-zinc-200">{inquiry.eventDate || "—"}</span>
+                      <button
+                        onClick={() => setEditingDate(true)}
+                        className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-pink-300 transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
               <Info icon={MapPin} label="Venue" value={`${inquiry.venueName}${inquiry.venueAddress ? ` · ${inquiry.venueAddress}` : ""}`} />
               <Info icon={Mail} label="Contact" value={`${inquiry.contactName} · ${inquiry.contactEmail}`} />
               <Info icon={Phone} label="Phone" value={inquiry.contactPhone || "—"} />
-              {ownerAdmin && inquiry.bookingOffer && (
-                <Info icon={Mail} label="Opening Offer" value={inquiry.bookingOffer} />
+              {inquiry.bookingOffer && (
+                <Info icon={Mail} label="Booking Offer/Proposed Split" value={inquiry.bookingOffer} />
               )}
             </div>
             <div className="pt-3 border-t border-white/5">
               <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1">Event Description</div>
-              <p className="text-sm text-zinc-200 whitespace-pre-wrap">{inquiry.eventDescription || "—"}</p>
+              <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{inquiry.eventDescription || "—"}</p>
             </div>
             <div>
               <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1">Message from Venue</div>
-              <p className="text-sm text-zinc-200 whitespace-pre-wrap">{inquiry.messageToAgent || "—"}</p>
+              <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{inquiry.messageToAgent || "—"}</p>
             </div>
           </div>
 
-          {/* Admin meta (private adminNotes + bookingOffer) */}
+          {/* Admin meta (private adminNotes; booking offer is owner-editable, agents read-only above) */}
           <div className="glass-card rounded-2xl p-5 space-y-3">
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 inline-flex items-center gap-2"><EyeOff size={12} /> Admin-only metadata</h2>
             {ownerAdmin && (
               <div>
-                <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-1.5">Opening Offer (venue never sees this)</label>
+                <label className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 block mb-1.5">Booking Offer/Proposed Split (venue never sees this)</label>
                 <input
                   value={bookingOfferDraft}
                   onChange={(e) => setBookingOfferDraft(e.target.value)}
-                  placeholder="$12,000 + travel"
+                  placeholder="$12,000 + travel  ·  80/20 door"
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
                 />
               </div>
@@ -376,9 +498,9 @@ function Info({ icon: Icon, label, value }: { icon: typeof Clock; label: string;
   return (
     <div className="flex items-start gap-2.5">
       <Icon size={14} className="text-pink-300 mt-0.5 shrink-0" />
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
-        <div className="text-zinc-200 truncate">{value}</div>
+        <div className="text-zinc-200 break-words">{value}</div>
       </div>
     </div>
   );
