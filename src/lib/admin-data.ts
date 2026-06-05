@@ -95,16 +95,21 @@ export type VenueType =
   | "Promoter"
   | "Cultural Center"
   | "Church/Event Hall"
+  | "Amphitheater"
+  | "Stadium"
   | "Other";
 
 export type VenueSource = "Manual" | "CSV Import" | "Public Research" | "Authorized API" | "Referral";
 export type ReviewStatus = "Needs Review" | "Verified" | "Do Not Contact" | "Duplicate";
+// Phase 3.9 Scope 8 — "Not a Fit" removed from UI dropdown (kept here as legacy value so
+// existing rows still typecheck); "Recent Flop" added.
 export type RelationshipStatus =
   | "Cold"
   | "Warm"
   | "Active Relationship"
   | "Booked Before"
   | "Not a Fit"
+  | "Recent Flop"
   | "Do Not Contact";
 
 export interface AdminVenue {
@@ -120,6 +125,7 @@ export interface AdminVenue {
   city: string;
   state: string;
   region: string;
+  zipCode?: string;
   venueType: VenueType;
   capacity: number;
   typicalGenres: string[];

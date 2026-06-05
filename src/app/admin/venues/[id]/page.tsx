@@ -26,10 +26,10 @@ import type { ReviewStatus, RelationshipStatus, AdminVenue, VenueType } from "@/
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Other"];
+const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Amphitheater", "Stadium", "Other"];
 const reviewStatuses: ReviewStatus[] = ["Needs Review", "Verified", "Do Not Contact", "Duplicate"];
-const relationStatuses: RelationshipStatus[] = ["Cold", "Warm", "Active Relationship", "Booked Before", "Not a Fit", "Do Not Contact"];
-const regions = ["Washington, DC", "Baltimore, MD", "Prince George's County, MD", "Montgomery County, MD", "Northern Virginia"];
+// Phase 3.9 Scope 8 — "Not a Fit" removed from form options; "Recent Flop" added.
+const relationStatusesForForm: RelationshipStatus[] = ["Cold", "Warm", "Active Relationship", "Booked Before", "Recent Flop", "Do Not Contact"];
 
 const reviewColor: Record<ReviewStatus, string> = {
   "Needs Review": "text-amber-300 bg-amber-400/10 border-amber-400/20",
@@ -44,8 +44,29 @@ const relationColor: Record<RelationshipStatus, string> = {
   "Active Relationship": "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
   "Booked Before": "text-pink-300 bg-pink-400/10 border-pink-400/20",
   "Not a Fit": "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
+  "Recent Flop": "text-orange-400 bg-orange-400/10 border-orange-400/20",
   "Do Not Contact": "text-red-400 bg-red-400/10 border-red-400/20",
 };
+
+type TimelineRow = {
+  id: string;
+  kind: string;
+  refId: string | null;
+  body: string;
+  authorEmail: string;
+  createdAt: string;
+};
+
+function authorLabel(email: string): string {
+  if (!email) return "system";
+  const at = email.indexOf("@");
+  return at > 0 ? email.slice(0, at) : email;
+}
+
+function ensureUrl(s: string): string {
+  if (!s) return "";
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
+}
 
 export default function VenueDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -55,6 +76,9 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editForm, setEditForm] = useState<Partial<AdminVenue>>({});
   const [showDelete, setShowDelete] = useState(false);
+  const [timeline, setTimeline] = useState<TimelineRow[]>([]);
+  const [noteText, setNoteText] = useState("");
+  const [posting, setPosting] = useState(false);
 
   // Venue contact access gate (Phase 3.6 / Workflow C)
   const [accessState, setAccessState] = useState<{
@@ -99,6 +123,40 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
       cancelled = true;
     };
   }, [id]);
+
+  // Load timeline whenever access is loaded.
+  useEffect(() => {
+    if (!accessState.loaded) return;
+    const session = getAdminSession();
+    if (!session) return;
+    fetch(`/api/admin/venues/${id}/timeline`, {
+      headers: { "x-admin-email": session.email },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => setTimeline(Array.isArray(rows) ? rows : []))
+      .catch(() => setTimeline([]));
+  }, [id, accessState.loaded]);
+
+  async function postNote() {
+    const session = getAdminSession();
+    if (!session || !noteText.trim()) return;
+    setPosting(true);
+    try {
+      const res = await fetch(`/api/admin/venues/${id}/timeline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ body: noteText.trim(), kind: "note" }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setTimeline((prev) => [created, ...prev]);
+        setNoteText("");
+      }
+    } finally {
+      setPosting(false);
+    }
+  }
 
   async function handleRequestAccess() {
     const session = getAdminSession();
@@ -186,12 +244,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }} className="flex flex-wrap gap-2">
           <button className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
             <Megaphone size={14} /> Add to Campaign
-          </button>
-          <button className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2">
-            <Plus size={14} /> Match Artists
-          </button>
-          <button className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2">
-            <Plus size={14} /> Add Note
           </button>
           {venue.reviewStatus !== "Do Not Contact" && (
             <button
@@ -285,9 +337,18 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                     <Globe size={14} className="text-pink-300 mt-0.5 shrink-0" />
                     <div>
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Website</div>
-                      <div className="text-sm text-pink-300 inline-flex items-center gap-1">
-                        {venue.website} <ExternalLink size={10} />
-                      </div>
+                      {venue.website ? (
+                        <a
+                          href={ensureUrl(venue.website)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-pink-300 hover:text-pink-200 inline-flex items-center gap-1 break-all"
+                        >
+                          {venue.website} <ExternalLink size={10} />
+                        </a>
+                      ) : (
+                        <div className="text-sm text-zinc-500">—</div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-start gap-3 sm:col-span-2">
@@ -346,8 +407,43 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-3">Notes</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">{venue.notes}</p>
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-3">Notes & Timeline</h2>
+              {venue.notes && (
+                <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap break-words mb-4">{venue.notes}</p>
+              )}
+              <div className="space-y-2 mb-4">
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={2}
+                  placeholder="Add a quick note (visible to owners + scoped agents)"
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
+                />
+                <button
+                  onClick={postNote}
+                  disabled={posting || !noteText.trim()}
+                  className="inline-flex items-center gap-1.5 btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-full px-4 py-1.5 disabled:opacity-50"
+                >
+                  <Plus size={11} /> {posting ? "Posting…" : "Add Note"}
+                </button>
+              </div>
+              {timeline.length === 0 ? (
+                <p className="text-xs text-zinc-500 italic">No timeline activity yet.</p>
+              ) : (
+                <ul className="space-y-2 max-h-[420px] overflow-y-auto">
+                  {timeline.map((t) => (
+                    <li key={t.id} className="p-3 rounded-lg border border-white/8 bg-black/30">
+                      <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1 flex items-center justify-between gap-2">
+                        <span>
+                          {t.kind === "note" ? authorLabel(t.authorEmail) : t.kind}
+                        </span>
+                        <span>{new Date(t.createdAt).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{t.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </motion.div>
           </div>
 
@@ -395,9 +491,9 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         <FieldText label="Phone" value={editForm.phone ?? ""} onChange={(v) => patch("phone", v)} />
         <FieldSelect label="Venue Type" value={editForm.venueType ?? "Club"} onChange={(v) => patch("venueType", v)} options={venueTypes} />
         <FieldNumber label="Capacity" value={editForm.capacity ?? 0} onChange={(v) => patch("capacity", v)} />
-        <FieldSelect label="Region" value={editForm.region ?? "Washington, DC"} onChange={(v) => patch("region", v)} options={regions} />
+        <FieldText label="Zip Code" value={editForm.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
         <FieldSelect label="Review Status" value={editForm.reviewStatus ?? "Needs Review"} onChange={(v) => patch("reviewStatus", v)} options={reviewStatuses} />
-        <FieldSelect label="Relationship" value={editForm.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatuses} />
+        <FieldSelect label="Relationship" value={editForm.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatusesForForm} />
         <FieldTextArea label="Notes" value={editForm.notes ?? ""} onChange={(v) => patch("notes", v)} />
         <button onClick={handleSave} className="w-full btn-gradient px-4 py-3 rounded-xl text-sm font-semibold mt-2">
           Save Changes

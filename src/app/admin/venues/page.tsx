@@ -11,10 +11,12 @@ import type { VenueType, ReviewStatus, RelationshipStatus, AdminVenue } from "@/
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-const regions = ["All Regions", "Washington, DC", "Baltimore, MD", "Prince George's County, MD", "Montgomery County, MD", "Northern Virginia"];
-const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Other"];
+const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Amphitheater", "Stadium", "Other"];
 const reviewStatuses: ReviewStatus[] = ["Needs Review", "Verified", "Do Not Contact", "Duplicate"];
-const relationStatuses: RelationshipStatus[] = ["Cold", "Warm", "Active Relationship", "Booked Before", "Not a Fit", "Do Not Contact"];
+// "Not a Fit" removed from UI dropdown (Phase 3.9 Scope 8). Existing rows still display.
+const relationStatusesForForm: RelationshipStatus[] = ["Cold", "Warm", "Active Relationship", "Booked Before", "Recent Flop", "Do Not Contact"];
+
+type SortKey = "name" | "capacity" | "status" | "relationship" | "type";
 
 const reviewColor: Record<ReviewStatus, string> = {
   "Needs Review": "text-amber-300 bg-amber-400/10 border-amber-400/20",
@@ -29,6 +31,7 @@ const relationColor: Record<RelationshipStatus, string> = {
   "Active Relationship": "text-emerald-300",
   "Booked Before": "text-pink-300",
   "Not a Fit": "text-zinc-500",
+  "Recent Flop": "text-orange-400",
   "Do Not Contact": "text-red-400",
 };
 
@@ -43,7 +46,8 @@ const defaultVenue: Partial<AdminVenue> = {
   address: "",
   city: "",
   state: "",
-  region: "Washington, DC",
+  region: "",
+  zipCode: "",
   venueType: "Club",
   capacity: 0,
   typicalGenres: [],
@@ -64,8 +68,9 @@ const defaultVenue: Partial<AdminVenue> = {
 export default function VenuesPage() {
   const venues = useVenues();
   const [search, setSearch] = useState("");
-  const [regionFilter, setRegionFilter] = useState("All Regions");
   const [typeFilter, setTypeFilter] = useState("All Types");
+  const [showDnc, setShowDnc] = useState(false);
+  const [sortBy, setSortBy] = useState<SortKey>("name");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState<Partial<AdminVenue>>(defaultVenue);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -93,18 +98,25 @@ export default function VenuesPage() {
     };
   }, []);
 
-  const filtered = venues.filter((v) => {
-    const q = search.toLowerCase();
-    // Search across contact name is owner-only — agents shouldn't be able to
-    // discover hidden contact data via guess-typing.
-    const matchesSearch =
-      v.name.toLowerCase().includes(q) ||
-      v.city.toLowerCase().includes(q) ||
-      (permState.isOwnerAdmin && v.contactPerson.toLowerCase().includes(q));
-    const matchesRegion = regionFilter === "All Regions" || v.region === regionFilter;
-    const matchesType = typeFilter === "All Types" || v.venueType === typeFilter;
-    return matchesSearch && matchesRegion && matchesType;
-  });
+  const filtered = venues
+    .filter((v) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        v.name.toLowerCase().includes(q) ||
+        v.city.toLowerCase().includes(q) ||
+        (permState.isOwnerAdmin && v.contactPerson.toLowerCase().includes(q));
+      const matchesType = typeFilter === "All Types" || v.venueType === typeFilter;
+      const matchesDnc =
+        showDnc || (v.reviewStatus !== "Do Not Contact" && v.relationshipStatus !== "Do Not Contact");
+      return matchesSearch && matchesType && matchesDnc;
+    })
+    .sort((a, b) => {
+      if (sortBy === "capacity") return (b.capacity ?? 0) - (a.capacity ?? 0);
+      if (sortBy === "status") return a.reviewStatus.localeCompare(b.reviewStatus);
+      if (sortBy === "relationship") return a.relationshipStatus.localeCompare(b.relationshipStatus);
+      if (sortBy === "type") return a.venueType.localeCompare(b.venueType);
+      return a.name.localeCompare(b.name);
+    });
 
   function openNew() {
     setEditingId(null);
@@ -190,6 +202,16 @@ export default function VenuesPage() {
         <div className="flex items-center justify-between">
           <h1 className="font-display uppercase text-3xl tracking-tight">Venues</h1>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowDnc((v) => !v)}
+              className={`px-3 py-2 rounded-xl border text-[10px] tracking-[0.18em] uppercase transition-colors inline-flex items-center gap-1.5 ${
+                showDnc
+                  ? "border-red-400/40 bg-red-400/10 text-red-300"
+                  : "border-white/10 bg-black/40 text-zinc-300 hover:text-foreground hover:border-white/25"
+              }`}
+            >
+              {showDnc ? "DNC: shown" : "Show DNC"}
+            </button>
             {/* Owner-only data ingest controls (Phase 3.7 D). Agents see neither. */}
             {permState.loaded && permState.isOwnerAdmin && (
               <>
@@ -232,15 +254,6 @@ export default function VenuesPage() {
             />
           </div>
           <select
-            value={regionFilter}
-            onChange={(e) => setRegionFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/40 appearance-none cursor-pointer"
-          >
-            {regions.map((r) => (
-              <option key={r} value={r} className="bg-zinc-900">{r}</option>
-            ))}
-          </select>
-          <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/40 appearance-none cursor-pointer"
@@ -249,6 +262,17 @@ export default function VenuesPage() {
             {venueTypes.map((t) => (
               <option key={t} value={t} className="bg-zinc-900">{t}</option>
             ))}
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortKey)}
+            className="px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/40 appearance-none cursor-pointer"
+          >
+            <option value="name" className="bg-zinc-900">Sort: Name</option>
+            <option value="capacity" className="bg-zinc-900">Sort: Capacity</option>
+            <option value="status" className="bg-zinc-900">Sort: Status</option>
+            <option value="relationship" className="bg-zinc-900">Sort: Relationship</option>
+            <option value="type" className="bg-zinc-900">Sort: Type</option>
           </select>
         </div>
 
@@ -268,7 +292,7 @@ export default function VenuesPage() {
                 <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
                   <th className="text-left font-normal px-4 py-3">Venue</th>
                   <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Type</th>
-                  <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Region</th>
+                  <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Zip / Region</th>
                   <th className="text-left font-normal px-4 py-3 hidden xl:table-cell">Capacity</th>
                   <th className="text-left font-normal px-4 py-3">Status</th>
                   <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Relationship</th>
@@ -305,7 +329,7 @@ export default function VenuesPage() {
                     <td className="px-4 py-3.5 hidden md:table-cell">
                       <span className="chip text-[9px]">{venue.venueType}</span>
                     </td>
-                    <td className="px-4 py-3.5 text-zinc-400 hidden lg:table-cell">{venue.region}</td>
+                    <td className="px-4 py-3.5 text-zinc-400 hidden lg:table-cell">{venue.zipCode || venue.region || "—"}</td>
                     <td className="px-4 py-3.5 text-zinc-400 hidden xl:table-cell">
                       {venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"}
                     </td>
@@ -363,13 +387,13 @@ export default function VenuesPage() {
           <FieldText label="City" value={editingVenue.city ?? ""} onChange={(v) => patch("city", v)} />
           <FieldText label="State" value={editingVenue.state ?? ""} onChange={(v) => patch("state", v)} />
         </div>
-        <FieldSelect label="Region" value={editingVenue.region ?? "Washington, DC"} onChange={(v) => patch("region", v)} options={regions.filter((r) => r !== "All Regions")} />
+        <FieldText label="Zip Code" value={editingVenue.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
         <FieldSelect label="Venue Type" value={editingVenue.venueType ?? "Club"} onChange={(v) => patch("venueType", v)} options={venueTypes} />
         <FieldNumber label="Capacity" value={editingVenue.capacity ?? 0} onChange={(v) => patch("capacity", v)} />
         <FieldTags label="Typical Genres" value={editingVenue.typicalGenres ?? []} onChange={(v) => patch("typicalGenres", v)} />
         <FieldText label="Booking Email" value={editingVenue.bookingEmail ?? ""} onChange={(v) => patch("bookingEmail", v)} type="email" />
         <FieldSelect label="Review Status" value={editingVenue.reviewStatus ?? "Needs Review"} onChange={(v) => patch("reviewStatus", v)} options={reviewStatuses} />
-        <FieldSelect label="Relationship" value={editingVenue.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatuses} />
+        <FieldSelect label="Relationship" value={editingVenue.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatusesForForm} />
         <FieldNumber label="Contact Confidence (1-10)" value={editingVenue.contactConfidence ?? 5} onChange={(v) => patch("contactConfidence", v)} />
         <FieldTags label="Tags" value={editingVenue.tags ?? []} onChange={(v) => patch("tags", v)} />
         <FieldTextArea label="Notes" value={editingVenue.notes ?? ""} onChange={(v) => patch("notes", v)} />
