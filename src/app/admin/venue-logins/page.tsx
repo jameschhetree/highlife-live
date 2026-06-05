@@ -78,6 +78,7 @@ export default function VenueLoginsPage() {
 
   // Show/hide archived requests (Phase 3.7 A)
   const [showArchived, setShowArchived] = useState(false);
+  const [showConverted, setShowConverted] = useState(false);
 
   // Inline edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -292,7 +293,12 @@ export default function VenueLoginsPage() {
 
   const newCount = requests.filter((r) => r.status === "New").length;
   const archivedCount = requests.filter((r) => r.status === "Archived").length;
-  const visibleRequests = showArchived ? requests : requests.filter((r) => r.status !== "Archived");
+  const convertedCount = requests.filter((r) => r.status === "Converted").length;
+  const visibleRequests = requests.filter((r) => {
+    if (!showArchived && r.status === "Archived") return false;
+    if (!showConverted && r.status === "Converted") return false;
+    return true;
+  });
   const isLoading = tab === "requests" ? requestsLoading : loginsLoading;
   const visibleLogins = logins.filter((l) => !removedIds.has(l.id));
 
@@ -370,11 +376,22 @@ export default function VenueLoginsPage() {
         {tab === "requests" && (
           <>
             <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-              {visibleRequests.length} {showArchived ? "" : "active "}request{visibleRequests.length === 1 ? "" : "s"}{archivedCount > 0 ? ` · ${archivedCount} archived` : ""}
+              {visibleRequests.length} request{visibleRequests.length === 1 ? "" : "s"}
+              {convertedCount > 0 ? ` · ${convertedCount} converted` : ""}
+              {archivedCount > 0 ? ` · ${archivedCount} archived` : ""}
             </p>
 
-            {archivedCount > 0 && (
-              <div className="mb-3">
+            <div className="mb-3 flex items-center gap-2 flex-wrap">
+              {convertedCount > 0 && (
+                <button
+                  onClick={() => setShowConverted((s) => !s)}
+                  className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  {showConverted ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showConverted ? `Hide converted (${convertedCount})` : `Show converted (${convertedCount})`}
+                </button>
+              )}
+              {archivedCount > 0 && (
                 <button
                   onClick={() => setShowArchived((s) => !s)}
                   className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
@@ -382,8 +399,8 @@ export default function VenueLoginsPage() {
                   {showArchived ? <EyeOff size={11} /> : <Eye size={11} />}
                   {showArchived ? `Hide archived (${archivedCount})` : `Show archived (${archivedCount})`}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
             {visibleRequests.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
@@ -440,6 +457,10 @@ export default function VenueLoginsPage() {
                                 req.matchedVenueId ? (
                                   <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-emerald-300/90 border border-emerald-400/30 bg-emerald-400/10 rounded-full px-2 py-0.5">
                                     <Check size={9} /> In venue list
+                                  </span>
+                                ) : req.status === "Archived" ? (
+                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-zinc-500 border border-white/8 bg-black/30 rounded-full px-2 py-0.5">
+                                    Archived — unarchive first
                                   </span>
                                 ) : (
                                   <button

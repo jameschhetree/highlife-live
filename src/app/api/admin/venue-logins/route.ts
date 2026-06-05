@@ -60,6 +60,38 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await hashPassword(password);
 
+  // Phase 3.9 Scope 9 — auto-link to Venue by organizationName (case-insensitive)
+  // OR by email-domain match against Venue.email when no name hit. Best-effort only;
+  // owners can edit the link manually later. Never errors out the create on failure.
+  let linkedVenueId: string | null = null;
+  try {
+    if (organizationName) {
+      const m = await prisma.venue.findFirst({
+        where: { name: { equals: organizationName, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (m) linkedVenueId = m.id;
+    }
+    if (!linkedVenueId && email.includes("@")) {
+      const domain = email.split("@")[1];
+      if (domain) {
+        const m = await prisma.venue.findFirst({
+          where: {
+            OR: [
+              { email: { endsWith: `@${domain}`, mode: "insensitive" } },
+              { bookingEmail: { endsWith: `@${domain}`, mode: "insensitive" } },
+              { talentBuyerEmail: { endsWith: `@${domain}`, mode: "insensitive" } },
+            ],
+          },
+          select: { id: true },
+        });
+        if (m) linkedVenueId = m.id;
+      }
+    }
+  } catch (err) {
+    console.error("[venue-login auto-link]", err);
+  }
+
   const created = await prisma.venueLogin.create({
     data: {
       email,
@@ -69,6 +101,7 @@ export async function POST(request: NextRequest) {
       accountType,
       isActive: true,
       sourceRequestId: body.sourceRequestId || null,
+      venueId: linkedVenueId,
     },
   });
 
