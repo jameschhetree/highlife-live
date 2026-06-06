@@ -413,12 +413,16 @@ export default function EventsPage() {
                   </div>
                 </div>
 
-                {drawerEvent.showDescription !== false && drawerEvent.description && (
+                {drawerEvent.showDescription !== false && (
                   <div>
                     <h3 className="text-[10px] tracking-[0.22em] uppercase text-zinc-400 mb-2">About</h3>
-                    <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap break-words">
-                      {drawerEvent.description}
-                    </p>
+                    {drawerEvent.description ? (
+                      <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap break-words">
+                        {drawerEvent.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-zinc-500 italic">More details coming soon.</p>
+                    )}
                   </div>
                 )}
 

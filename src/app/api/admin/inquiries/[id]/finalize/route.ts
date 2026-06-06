@@ -63,6 +63,10 @@ export async function POST(
       ticketUrl: body.ticketUrl ?? null,
       isPast: false,
       published: body.published ?? true,
+      // Phase 3.9 — carry the inquiry's narrative through to the public Event card
+      // so the /events drawer is never empty when an event is created via finalize.
+      description: inq.eventDescription || null,
+      address: inq.venueAddress || null,
     },
   });
 
