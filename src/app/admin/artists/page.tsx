@@ -72,6 +72,18 @@ export default function ArtistsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ArtistStatus | "All">("All");
   const [showTestingDeveloping, setShowTestingDeveloping] = useState(true);
+
+  // If user disables the toggle while Testing/Developing was selected, reset to All
+  // so the list isn't stuck on a status the user can no longer see (Dok 2026-06-05).
+  useEffect(() => {
+    if (!showTestingDeveloping && (filter === "Testing" || filter === "Developing")) {
+      setFilter("All");
+    }
+  }, [showTestingDeveloping, filter]);
+
+  const visibleFilterStatuses = filterStatuses.filter((s) =>
+    showTestingDeveloping ? true : s !== "Testing" && s !== "Developing",
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingArtist, setEditingArtist] = useState<Partial<AdminArtist>>(defaultArtist);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -174,7 +186,7 @@ export default function ArtistsPage() {
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {filterStatuses.map((s) => (
+            {visibleFilterStatuses.map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
