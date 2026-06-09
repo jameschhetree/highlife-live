@@ -28,8 +28,11 @@ import {
   ChevronDown,
   ChevronRight,
   Gauge,
+  CalendarRange,
 } from "lucide-react";
 import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { PortalTransition } from "@/components/PortalTransition";
+import { ExternalLink } from "lucide-react";
 
 type Gate = "all" | "owner" | "auditions" | "venue-logins";
 type NavLeaf = { kind: "leaf"; href: string; label: string; icon: typeof LayoutDashboard; gate: Gate };
@@ -41,13 +44,19 @@ const nav: NavItem[] = [
   { kind: "leaf", href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare, gate: "all" },
   { kind: "leaf", href: "/admin/bookings", label: "Bookings", icon: Inbox, gate: "all" },
   { kind: "leaf", href: "/admin/artists", label: "Artists", icon: Users, gate: "all" },
+  // Phase 3.7 C — Auditions promoted out of Owner Hub so agents see it in main nav.
+  // canViewAuditions now allows agents (scoped server-side to their assignments).
+  { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
   { kind: "leaf", href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
-  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "all" },
-  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "all" },
-  { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "all" },
-  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "all" },
-  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "all" },
-  { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "all" },
+  // Phase 3.9 Scope 6 — Events visible to agents (server-side scoped to assigned-artist events).
+  { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "all" },
+  // Phase 3.9 Scope 7 — Pipeline owner-only this pass; rewire to real Inquiry/Booking workflow in 5.0.
+  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "owner" },
+  // Phase 3.9 Scope 13 — placeholder/demo surfaces hidden from agents until real + scoped.
+  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "owner" },
+  { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "owner" },
+  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "owner" },
+  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "owner" },
   {
     kind: "group",
     key: "owner-hub",
@@ -56,10 +65,10 @@ const nav: NavItem[] = [
     gate: "owner",
     children: [
       { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
-      { kind: "leaf", href: "/admin/auditions", label: "Auditions", icon: Mic, gate: "auditions" },
       { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
       { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
       { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },
+      { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "owner" },
     ],
   },
 ];
@@ -110,7 +119,7 @@ export function AdminSidebar() {
     .filter((item) => item.kind !== "group" || item.children.length > 0);
 
   // Owner Hub group expands automatically when a child route is active
-  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/auditions", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins"];
+  const ownerHubChildHrefs = ["/admin/owner-special", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins", "/admin/settings"];
   const ownerHubActive = ownerHubChildHrefs.some((h) => pathname?.startsWith(h));
   const [ownerHubOpen, setOwnerHubOpen] = useState(false);
   useEffect(() => {
@@ -121,6 +130,9 @@ export function AdminSidebar() {
     const Icon = leaf.icon;
     const active =
       leaf.href === "/admin" ? pathname === "/admin" : pathname?.startsWith(leaf.href);
+    // Agents see "My Artists" instead of "Artists" — same page, scoped view.
+    const displayLabel =
+      leaf.href === "/admin/artists" && !isOwnerAdmin(session) ? "My Artists" : leaf.label;
     return (
       <li key={leaf.href}>
         <Link
@@ -133,7 +145,7 @@ export function AdminSidebar() {
           }`}
         >
           <Icon size={16} strokeWidth={1.6} />
-          <span className="tracking-wide">{leaf.label}</span>
+          <span className="tracking-wide">{displayLabel}</span>
         </Link>
       </li>
     );
@@ -197,7 +209,19 @@ export function AdminSidebar() {
 
         <nav className="flex-1 overflow-y-auto py-4">{navList()}</nav>
 
-        <div className="border-t border-white/8 p-3">
+        <div className="border-t border-white/8 p-3 space-y-0.5">
+          <PortalTransition to="/" direction="leaving">
+            {(start) => (
+              <button
+                type="button"
+                onClick={start}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
+              >
+                <ExternalLink size={16} strokeWidth={1.6} />
+                <span className="tracking-wide">Public Site</span>
+              </button>
+            )}
+          </PortalTransition>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
@@ -282,7 +306,19 @@ export function AdminSidebar() {
 
               <nav className="flex-1 overflow-y-auto py-4">{navList(() => setMobileOpen(false))}</nav>
 
-              <div className="border-t border-white/8 p-3">
+              <div className="border-t border-white/8 p-3 space-y-0.5">
+                <PortalTransition to="/" direction="leaving">
+                  {(start) => (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileOpen(false); start(); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-zinc-400 hover:text-foreground hover:bg-white/4 transition-colors"
+                    >
+                      <ExternalLink size={16} strokeWidth={1.6} />
+                      <span className="tracking-wide">Public Site</span>
+                    </button>
+                  )}
+                </PortalTransition>
                 <button
                   onClick={() => {
                     setMobileOpen(false);

@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { artists } from "@/lib/data";
+import type { Artist } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
 
@@ -18,6 +19,14 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const [artists, setArtists] = useState<Artist[]>([]);
+
+  useEffect(() => {
+    fetch("/api/artists", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Artist[]) => setArtists(Array.isArray(rows) ? rows : []))
+      .catch(() => setArtists([]));
+  }, []);
 
   return (
     <div>
@@ -40,13 +49,16 @@ export default function HomePage() {
             transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="glass-card rounded-[28px] sm:rounded-[36px] px-6 sm:px-10 lg:px-14 py-10 sm:py-14 lg:py-16 text-center"
           >
-            {/* Status pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 backdrop-blur mb-7">
+            {/* Status pill (mascot retired 2026-06-02 — see MASCOT-RIP.md) */}
+            <Link
+              href="/book"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 border border-white/10 hover:border-pink-400/40 backdrop-blur transition-colors group mb-7"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-              <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 font-medium">
-                Now Booking 2026
+              <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300 group-hover:text-foreground font-medium transition-colors">
+                Now Booking 2026 &amp; 2027
               </span>
-            </div>
+            </Link>
 
             <motion.h1
               className="font-display uppercase leading-[0.92] tracking-[-0.01em] text-[clamp(2.75rem,9vw,7.5rem)] mb-6"
@@ -156,17 +168,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Artist marquee */}
-      <section className="border-y border-border/30 py-4 overflow-hidden bg-charcoal/50">
-        <div className="animate-marquee flex whitespace-nowrap">
-          {[...artists, ...artists].map((artist, i) => (
-            <span key={i} className="mx-8 text-sm tracking-[0.2em] uppercase text-muted">
-              {artist.name}
-              <span className="mx-8 text-border/50">/</span>
-            </span>
-          ))}
-        </div>
-      </section>
+      {/* Artist marquee — pulled from live DB roster. Hidden when no artists yet. */}
+      {artists.length > 0 && (
+        <section className="border-y border-border/30 py-4 overflow-hidden bg-charcoal/50">
+          <div className="animate-marquee flex whitespace-nowrap">
+            {[...artists, ...artists].map((artist, i) => (
+              <span key={i} className="mx-8 text-sm tracking-[0.2em] uppercase text-muted">
+                {artist.name}
+                <span className="mx-8 text-border/50">/</span>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* About */}
       <section className="py-24 lg:py-32">

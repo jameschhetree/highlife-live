@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
+import { PortalTransition } from "@/components/PortalTransition";
 
 const navLinks = [
   { href: "/roster", label: "Roster" },
@@ -95,13 +96,18 @@ export function Header() {
 
           {/* Right Side */}
           <div className="flex items-center gap-3 sm:gap-5">
-            {/* Agent Login text-link */}
-            <Link
-              href="/admin/login"
-              className="hidden sm:inline text-xs tracking-[0.18em] uppercase text-white/85 hover:text-white underline underline-offset-4 decoration-white/40 hover:decoration-white/80 transition-colors"
-            >
-              Agent Login
-            </Link>
+            {/* Agent Login text-link — routes through portal-transition overlay */}
+            <PortalTransition to="/admin/login" direction="entering">
+              {(start) => (
+                <button
+                  type="button"
+                  onClick={start}
+                  className="hidden sm:inline text-xs tracking-[0.18em] uppercase text-white/85 hover:text-white underline underline-offset-4 decoration-white/40 hover:decoration-white/80 transition-colors bg-transparent border-none cursor-pointer p-0"
+                >
+                  Agent Login
+                </button>
+              )}
+            </PortalTransition>
 
             {/* Partner Login button -- animated glow border, not the rainbow gradient */}
             <Link
@@ -164,13 +170,17 @@ export function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.3 }}
               >
-                <Link
-                  href="/admin/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-xl font-display tracking-[0.15em] uppercase text-white/85 underline underline-offset-4 decoration-white/40"
-                >
-                  Agent Login
-                </Link>
+                <PortalTransition to="/admin/login" direction="entering">
+                  {(start) => (
+                    <button
+                      type="button"
+                      onClick={() => { setMobileOpen(false); start(); }}
+                      className="text-xl font-display tracking-[0.15em] uppercase text-white/85 underline underline-offset-4 decoration-white/40 bg-transparent border-none cursor-pointer"
+                    >
+                      Agent Login
+                    </button>
+                  )}
+                </PortalTransition>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

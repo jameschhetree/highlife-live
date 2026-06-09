@@ -17,13 +17,18 @@ import type { ArtistStatus, AdminArtist } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-const statuses: ArtistStatus[] = ["Testing", "Active", "Priority", "Paused", "Archived"];
+// Phase 3.9 Scope 11 — "Archived" removed from form dropdown (legacy rows still display).
+// "Developing" + "Left" added.
+const formStatuses: ArtistStatus[] = ["Testing", "Active", "Priority", "Developing", "Paused", "Left"];
+const filterStatuses: (ArtistStatus | "All")[] = ["All", "Testing", "Active", "Priority", "Developing", "Paused", "Left", "Archived"];
 
 const statusColor: Record<ArtistStatus, string> = {
   Testing: "text-amber-300 bg-amber-400/10 border-amber-400/20",
   Active: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
   Priority: "text-pink-300 bg-pink-400/10 border-pink-400/20",
+  Developing: "text-violet-300 bg-violet-400/10 border-violet-400/20",
   Paused: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
+  Left: "text-orange-400 bg-orange-400/10 border-orange-400/20",
   Archived: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
 };
 
@@ -66,6 +71,19 @@ export default function ArtistsPage() {
   const [accessChecked, setAccessChecked] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ArtistStatus | "All">("All");
+  const [showTestingDeveloping, setShowTestingDeveloping] = useState(true);
+
+  // If user disables the toggle while Testing/Developing was selected, reset to All
+  // so the list isn't stuck on a status the user can no longer see (Dok 2026-06-05).
+  useEffect(() => {
+    if (!showTestingDeveloping && (filter === "Testing" || filter === "Developing")) {
+      setFilter("All");
+    }
+  }, [showTestingDeveloping, filter]);
+
+  const visibleFilterStatuses = filterStatuses.filter((s) =>
+    showTestingDeveloping ? true : s !== "Testing" && s !== "Developing",
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingArtist, setEditingArtist] = useState<Partial<AdminArtist>>(defaultArtist);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,7 +103,9 @@ export default function ArtistsPage() {
       a.primaryGenre.toLowerCase().includes(search.toLowerCase()) ||
       a.homeCity.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "All" || a.status === filter;
-    return matchesSearch && matchesFilter;
+    const matchesTestingDev =
+      showTestingDeveloping || (a.status !== "Testing" && a.status !== "Developing");
+    return matchesSearch && matchesFilter && matchesTestingDev;
   });
 
   function openNew() {
@@ -138,10 +158,10 @@ export default function ArtistsPage() {
     <div className="min-h-screen text-foreground">
       <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
         <p className="text-[10px] tracking-[0.3em] uppercase text-zinc-500 mb-1">
-          HighLife Live · Artist Roster
+          HighLife Live · {agentView ? "Your Assigned Roster" : "Artist Roster"}
         </p>
         <div className="flex items-center justify-between">
-          <h1 className="font-display uppercase text-3xl tracking-tight">Artists</h1>
+          <h1 className="font-display uppercase text-3xl tracking-tight">{agentView ? "My Artists" : "Artists"}</h1>
           {canManage && (
             <button
               onClick={openNew}
@@ -166,13 +186,7 @@ export default function ArtistsPage() {
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setFilter("All")}
-              className={`chip cursor-pointer ${filter === "All" ? "!bg-white/12 !text-foreground !border-white/20" : ""}`}
-            >
-              All
-            </button>
-            {statuses.map((s) => (
+            {visibleFilterStatuses.map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -181,6 +195,15 @@ export default function ArtistsPage() {
                 {s}
               </button>
             ))}
+            <button
+              onClick={() => setShowTestingDeveloping((v) => !v)}
+              className={`chip cursor-pointer ${
+                showTestingDeveloping ? "" : "!bg-amber-400/10 !text-amber-200 !border-amber-400/30"
+              }`}
+              title="Toggle showing Testing + Developing artists"
+            >
+              {showTestingDeveloping ? "Hide Testing+Developing" : "Show Testing+Developing"}
+            </button>
           </div>
         </div>
 
@@ -269,7 +292,7 @@ export default function ArtistsPage() {
         title={editingId ? "Edit Artist" : "New Artist"}
       >
         <FieldText label="Name" value={editingArtist.name ?? ""} onChange={(v) => patch("name", v)} placeholder="Artist name" />
-        <FieldSelect label="Status" value={editingArtist.status ?? "Testing"} onChange={(v) => patch("status", v)} options={statuses} />
+        <FieldSelect label="Status" value={editingArtist.status ?? "Testing"} onChange={(v) => patch("status", v)} options={formStatuses} />
         <FieldText label="Legal Name" value={editingArtist.legalName ?? ""} onChange={(v) => patch("legalName", v)} />
         <FieldText label="Email" value={editingArtist.email ?? ""} onChange={(v) => patch("email", v)} type="email" />
         <FieldText label="Phone" value={editingArtist.phone ?? ""} onChange={(v) => patch("phone", v)} />

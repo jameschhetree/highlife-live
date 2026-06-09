@@ -13,7 +13,9 @@ import {
   Plus,
   XCircle,
   Eye,
+  EyeOff,
   Reply,
+  Archive,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { isAuthenticated, logout, getUser } from "@/lib/auth";
@@ -78,6 +80,8 @@ export default function PortalPage() {
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
   const [userInquiries, setUserInquiries] = useState<InquiryRecord[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [showHidden, setShowHidden] = useState(false);
   const [userName, setUserName] = useState("Partner");
 
   useEffect(() => {
@@ -90,12 +94,46 @@ export default function PortalPage() {
     if (user?.name) setUserName(user.name);
 
     // Fetch this venue partner's inquiries — server derives identity from signed cookie.
-    fetch("/api/inquiries", { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setUserInquiries(Array.isArray(data) ? data : []))
-      .catch(() => setUserInquiries([]))
+    Promise.all([
+      fetch("/api/inquiries", { credentials: "include" }).then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/partner/hidden-inquiries", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => [] as string[]),
+    ])
+      .then(([rows, hidden]) => {
+        setUserInquiries(Array.isArray(rows) ? rows : []);
+        setHiddenIds(new Set(Array.isArray(hidden) ? hidden : []));
+      })
+      .catch(() => {
+        setUserInquiries([]);
+        setHiddenIds(new Set());
+      })
       .finally(() => setChecking(false));
   }, [router]);
+
+  const hideInquiry = async (inquiryId: string) => {
+    const res = await fetch("/api/partner/hidden-inquiries", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inquiryId }),
+    });
+    if (res.ok) setHiddenIds((prev) => new Set(prev).add(inquiryId));
+  };
+
+  const unhideInquiry = async (inquiryId: string) => {
+    const res = await fetch(`/api/partner/hidden-inquiries?inquiryId=${inquiryId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (res.ok) {
+      setHiddenIds((prev) => {
+        const next = new Set(prev);
+        next.delete(inquiryId);
+        return next;
+      });
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -159,9 +197,18 @@ export default function PortalPage() {
         {/* User-submitted inquiries */}
         <ScrollReveal delay={0.1}>
           <div className="mb-12">
-            <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-5">
-              Your Inquiries
-            </h2>
+            <div className="flex items-baseline justify-between gap-3 mb-5">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400">Your Inquiries</h2>
+              {hiddenIds.size > 0 && (
+                <button
+                  onClick={() => setShowHidden((v) => !v)}
+                  className="text-[10px] tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground inline-flex items-center gap-1.5"
+                >
+                  {showHidden ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showHidden ? `Hide hidden (${hiddenIds.size})` : `Show hidden (${hiddenIds.size})`}
+                </button>
+              )}
+            </div>
             {userInquiries.length === 0 ? (
               <div className="glass-card rounded-2xl p-8 text-center">
                 <p className="text-sm text-zinc-400 mb-5">
@@ -177,39 +224,58 @@ export default function PortalPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userInquiries.map((inq) => {
-                  const config = statusConfig[inq.status] || defaultStatus;
-                  const Icon = config.icon;
-                  return (
-                    <motion.div
-                      key={inq.id}
-                      whileHover={{ y: -2 }}
-                      className={`glass-card rounded-2xl p-5 border ${config.bg}`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 font-mono">
-                          {inq.inquiryNumber}
-                        </span>
-                        <Icon size={14} className={config.color} />
+                {userInquiries
+                  .filter((inq) => showHidden || !hiddenIds.has(inq.id))
+                  .map((inq) => {
+                    const config = statusConfig[inq.status] || defaultStatus;
+                    const Icon = config.icon;
+                    const isHidden = hiddenIds.has(inq.id);
+                    return (
+                      <div key={inq.id} className="block group relative">
+                        <Link href={`/portal/inquiries/${inq.id}`} className="block">
+                          <motion.div
+                            whileHover={{ y: -2 }}
+                            className={`glass-card rounded-2xl p-5 border ${config.bg} h-full hover:border-pink-400/40 transition-colors ${isHidden ? "opacity-50" : ""}`}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 font-mono">
+                                {inq.inquiryNumber}
+                              </span>
+                              <Icon size={14} className={config.color} />
+                            </div>
+                            <h3 className="text-sm font-medium mb-1 group-hover:text-pink-300 transition-colors break-words">{inq.artistName}</h3>
+                            <p className="text-xs text-zinc-500 mb-3 break-words">
+                              {inq.venueName} · {inq.eventDate || new Date(inq.submittedAt).toLocaleDateString()}
+                            </p>
+                            {inq.eventDescription && (
+                              <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
+                                {inq.eventDescription}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}>
+                                {inq.status}
+                              </span>
+                              <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 group-hover:text-pink-300 transition-colors inline-flex items-center gap-1">
+                                View / Edit <ArrowRight size={11} />
+                              </span>
+                            </div>
+                          </motion.div>
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            isHidden ? unhideInquiry(inq.id) : hideInquiry(inq.id);
+                          }}
+                          className="absolute top-3 right-3 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-pink-300 inline-flex items-center gap-1 bg-black/40 border border-white/10 hover:border-pink-400/40 rounded-full px-2 py-0.5"
+                          title={isHidden ? "Unhide from portal" : "Hide from portal (does not delete)"}
+                        >
+                          {isHidden ? <Eye size={10} /> : <Archive size={10} />}
+                          {isHidden ? "Unhide" : "Hide"}
+                        </button>
                       </div>
-                      <h3 className="text-sm font-medium mb-1">{inq.artistName}</h3>
-                      <p className="text-xs text-zinc-500 mb-3">
-                        {inq.venueName} ·{" "}
-                        {inq.eventDate || new Date(inq.submittedAt).toLocaleDateString()}
-                      </p>
-                      {inq.eventDescription && (
-                        <p className="text-xs text-zinc-400 leading-relaxed mb-4 line-clamp-2">
-                          {inq.eventDescription}
-                        </p>
-                      )}
-                      <span
-                        className={`text-[10px] tracking-[0.2em] uppercase font-semibold ${config.color}`}
-                      >
-                        {inq.status}
-                      </span>
-                    </motion.div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
           </div>

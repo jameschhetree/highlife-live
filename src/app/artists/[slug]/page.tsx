@@ -17,7 +17,7 @@ import {
   Lock,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { artists } from "@/lib/data";
+import type { Artist } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 
 const dummyTracks = [
@@ -37,13 +37,35 @@ const galleryImages = [
 export default function ArtistDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const artist = artists.find((a) => a.slug === slug);
+  const [artist, setArtist] = useState<Artist | null>(null);
+  const [loading, setLoading] = useState(true);
   const [playingTrack, setPlayingTrack] = useState<number | null>(null);
   const [authed, setAuthed] = useState(false);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
   }, []);
+
+  // Phase 3.7 — pull from DB via /api/artists; match by slug.
+  useEffect(() => {
+    if (!slug) return;
+    fetch("/api/artists", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: Artist[]) => {
+        const found = Array.isArray(rows) ? rows.find((a) => a.slug === slug) : null;
+        setArtist(found ?? null);
+      })
+      .catch(() => setArtist(null))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-radial-atmosphere pt-32 pb-24 flex items-center justify-center">
+        <span className="text-xs tracking-[0.18em] uppercase text-silver">Loading...</span>
+      </div>
+    );
+  }
 
   if (!artist) {
     return (

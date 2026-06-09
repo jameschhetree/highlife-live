@@ -35,6 +35,9 @@ interface PartnerRequest {
   extraNotes: string;
   status: string;
   submittedAt: string;
+  // Populated by GET /api/admin/venue-logins/requests for the "in venue list?" UI.
+  matchedVenueId: string | null;
+  matchedVenueName: string | null;
 }
 
 interface VenueLoginRow {
@@ -72,6 +75,10 @@ export default function VenueLoginsPage() {
 
   // Undo state (client-side soft delete)
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+
+  // Show/hide archived requests (Phase 3.7 A)
+  const [showArchived, setShowArchived] = useState(false);
+  const [showConverted, setShowConverted] = useState(false);
 
   // Inline edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -145,6 +152,34 @@ export default function VenueLoginsPage() {
     fetchRequests();
   };
 
+  const deleteRequest = async (id: string) => {
+    if (!session) return;
+    if (!confirm("Permanently delete this request? This cannot be undone. (For spam or mistakes — use Archive for normal cleanup.)")) {
+      return;
+    }
+    await fetch(`/api/admin/venue-logins/requests?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
+    });
+    fetchRequests();
+  };
+
+  const [addingToVenuesId, setAddingToVenuesId] = useState<string | null>(null);
+  const addToVenues = async (id: string) => {
+    if (!session) return;
+    setAddingToVenuesId(id);
+    try {
+      await fetch(`/api/admin/venue-logins/requests/${id}/add-to-venues`, {
+        method: "POST",
+        headers: { "x-admin-email": session.email },
+      });
+      // Re-fetch so the row picks up matchedVenueId from the server
+      await fetchRequests();
+    } finally {
+      setAddingToVenuesId(null);
+    }
+  };
+
   const openCreateFromRequest = (req: PartnerRequest) => {
     setCreateFrom(req);
     setCreateForm({
@@ -163,6 +198,8 @@ export default function VenueLoginsPage() {
     setShowCreateModal(true);
   };
 
+  const [alsoCreateVenue, setAlsoCreateVenue] = useState(true);
+
   const handleCreate = async () => {
     if (!session || !createForm.email || !createForm.password || !createForm.displayName) return;
     setCreateLoading(true);
@@ -176,6 +213,13 @@ export default function VenueLoginsPage() {
         }),
       });
       if (res.ok) {
+        // If admin opted in AND request has no existing venue match, also create the venue row
+        if (createFrom && alsoCreateVenue && !createFrom.matchedVenueId && createForm.accountType === "Venue") {
+          await fetch(`/api/admin/venue-logins/requests/${createFrom.id}/add-to-venues`, {
+            method: "POST",
+            headers: { "x-admin-email": session.email },
+          });
+        }
         setShowCreateModal(false);
         fetchLogins();
         if (createFrom) fetchRequests();
@@ -248,6 +292,13 @@ export default function VenueLoginsPage() {
   };
 
   const newCount = requests.filter((r) => r.status === "New").length;
+  const archivedCount = requests.filter((r) => r.status === "Archived").length;
+  const convertedCount = requests.filter((r) => r.status === "Converted").length;
+  const visibleRequests = requests.filter((r) => {
+    if (!showArchived && r.status === "Archived") return false;
+    if (!showConverted && r.status === "Converted") return false;
+    return true;
+  });
   const isLoading = tab === "requests" ? requestsLoading : loginsLoading;
   const visibleLogins = logins.filter((l) => !removedIds.has(l.id));
 
@@ -325,10 +376,33 @@ export default function VenueLoginsPage() {
         {tab === "requests" && (
           <>
             <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-              {requests.length} request{requests.length === 1 ? "" : "s"}
+              {visibleRequests.length} request{visibleRequests.length === 1 ? "" : "s"}
+              {convertedCount > 0 ? ` · ${convertedCount} converted` : ""}
+              {archivedCount > 0 ? ` · ${archivedCount} archived` : ""}
             </p>
 
-            {requests.length === 0 ? (
+            <div className="mb-3 flex items-center gap-2 flex-wrap">
+              {convertedCount > 0 && (
+                <button
+                  onClick={() => setShowConverted((s) => !s)}
+                  className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  {showConverted ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showConverted ? `Hide converted (${convertedCount})` : `Show converted (${convertedCount})`}
+                </button>
+              )}
+              {archivedCount > 0 && (
+                <button
+                  onClick={() => setShowArchived((s) => !s)}
+                  className="text-[10px] tracking-[0.18em] uppercase px-3 py-1.5 rounded-full border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  {showArchived ? <EyeOff size={11} /> : <Eye size={11} />}
+                  {showArchived ? `Hide archived (${archivedCount})` : `Show archived (${archivedCount})`}
+                </button>
+              )}
+            </div>
+
+            {visibleRequests.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <Building2 size={28} strokeWidth={1.5} className="mx-auto mb-4 text-zinc-600" />
                 <p className="text-sm text-zinc-400">
@@ -354,7 +428,7 @@ export default function VenueLoginsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {requests.map((req, i) => {
+                      {visibleRequests.map((req, i) => {
                         const sc = STATUS_COLOR[req.status] ?? STATUS_COLOR.New;
                         const phones = [req.workPhone, req.mobilePhone].filter(Boolean).join(" / ");
                         return (
@@ -378,6 +452,26 @@ export default function VenueLoginsPage() {
                               <span className="text-zinc-200 font-medium text-[12px]">{req.organizationName}</span>
                               {req.address && (
                                 <span className="block text-[10px] text-zinc-500 mt-0.5">{req.address}</span>
+                              )}
+                              {req.accountType === "Venue" && (
+                                req.matchedVenueId ? (
+                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-emerald-300/90 border border-emerald-400/30 bg-emerald-400/10 rounded-full px-2 py-0.5">
+                                    <Check size={9} /> In venue list
+                                  </span>
+                                ) : req.status === "Archived" ? (
+                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-zinc-500 border border-white/8 bg-black/30 rounded-full px-2 py-0.5">
+                                    Archived — unarchive first
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => addToVenues(req.id)}
+                                    disabled={addingToVenuesId === req.id}
+                                    className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-amber-300 hover:text-amber-200 border border-amber-400/30 hover:border-amber-400/60 bg-amber-400/10 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
+                                    title="Add this venue to the master venue list (autofills from request)"
+                                  >
+                                    + {addingToVenuesId === req.id ? "Adding..." : "Add to venue list"}
+                                  </button>
+                                )
                               )}
                             </td>
                             <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
@@ -424,6 +518,23 @@ export default function VenueLoginsPage() {
                                     Archive
                                   </button>
                                 )}
+                                {/* Archive button available on any non-archived status; Delete is nuclear and always available */}
+                                {req.status !== "Archived" && req.status !== "Rejected" && (
+                                  <button
+                                    onClick={() => updateRequestStatus(req.id, "Archived")}
+                                    className="p-1.5 rounded-lg border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-400 hover:text-zinc-200 transition-colors"
+                                    title="Archive"
+                                  >
+                                    <Undo2 size={12} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteRequest(req.id)}
+                                  className="p-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 text-red-300 hover:text-red-200 transition-colors"
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
                               </div>
                             </td>
                           </motion.tr>
@@ -738,6 +849,20 @@ export default function VenueLoginsPage() {
                     placeholder="The Grand Venue"
                   />
                 </div>
+                {createFrom && createForm.accountType === "Venue" && !createFrom.matchedVenueId && (
+                  <label className="flex items-start gap-2 text-[11px] text-zinc-300 cursor-pointer select-none border border-amber-400/20 bg-amber-400/5 rounded-xl px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={alsoCreateVenue}
+                      onChange={(e) => setAlsoCreateVenue(e.target.checked)}
+                      className="mt-0.5 accent-amber-400"
+                    />
+                    <span>
+                      Also add <strong className="text-amber-300">{createForm.organizationName || "this venue"}</strong> to the master venue list (autofills address, contact, email from this request — keeps Find an Artist / opportunities flow tidy).
+                    </span>
+                  </label>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowCreateModal(false)}

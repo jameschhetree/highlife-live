@@ -83,6 +83,18 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  // Phase 3.9 Scope 8 — agent venue access auto-grant.
+  // When a partner-venue submits an inquiry for an artist assigned to an agent,
+  // and the partner venue login is linked to a Venue record, grant that agent
+  // access to the venue's contact info (no-op if already granted).
+  if (source === "venue_partner" && sessionVenueId) {
+    try {
+      await autoGrantAgentVenueAccess(inquiry.id, sessionVenueId, inquiry.artistName);
+    } catch (err) {
+      console.error("[Inquiry auto-grant] Failed:", err);
+    }
+  }
+
   // Send notification emails to owners
   try {
     await sendOwnerNotification(inquiry);
@@ -100,6 +112,59 @@ export async function POST(request: NextRequest) {
   }
 
   return Response.json({ id: inquiry.id, inquiryNumber: inquiry.inquiryNumber }, { status: 201 });
+}
+
+async function autoGrantAgentVenueAccess(
+  inquiryId: string,
+  venueLoginId: string,
+  artistName: string,
+) {
+  if (!prisma) return;
+  // Resolve linked Venue id on the partner login
+  const venueLogin = await prisma.venueLogin.findUnique({
+    where: { id: venueLoginId },
+    select: { venueId: true },
+  });
+  if (!venueLogin?.venueId) return;
+
+  // Find the Artist record by name
+  const artist = await prisma.artist.findFirst({
+    where: { name: artistName },
+    select: { id: true },
+  });
+  if (!artist) return;
+
+  // Find all agents assigned to this artist
+  const assignments = await prisma.agentArtistAssignment.findMany({
+    where: { artistId: artist.id },
+    select: { agentLoginId: true },
+  });
+  if (assignments.length === 0) return;
+
+  // Upsert grants — VenueContactGrant has @@unique([agentLoginId, venueId])
+  for (const a of assignments) {
+    await prisma.venueContactGrant
+      .upsert({
+        where: {
+          agentLoginId_venueId: {
+            agentLoginId: a.agentLoginId,
+            venueId: venueLogin.venueId,
+          },
+        },
+        create: {
+          agentLoginId: a.agentLoginId,
+          venueId: venueLogin.venueId,
+          grantedBy: "system",
+        },
+        update: {}, // no-op if exists
+      })
+      .catch((err) => {
+        console.error("[auto-grant upsert]", err);
+      });
+  }
+  console.log(
+    `[auto-grant] inquiry=${inquiryId} venue=${venueLogin.venueId} → ${assignments.length} agent grant(s)`,
+  );
 }
 
 async function sendOwnerNotification(inquiry: {

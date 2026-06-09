@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -11,7 +12,9 @@ import {
   Reply,
   CheckCircle,
   XCircle,
-  ArrowRight,
+  Archive,
+  FileText,
+  Briefcase,
 } from "lucide-react";
 import { getAdminSession, type AdminSession } from "@/lib/admin-auth";
 
@@ -31,14 +34,17 @@ interface InquiryRow {
   submittedAt: string;
 }
 
-const statuses = ["All", "New", "Reviewed", "Replied", "Booked", "Lost"] as const;
+const statuses = ["All", "New", "Reviewed", "Replied", "Working", "Contract Sent", "Booked", "Archived"] as const;
 const sources = ["All", "public", "venue_partner"] as const;
 
 const statusColor: Record<string, string> = {
   New: "text-amber-300 bg-amber-400/10 border-amber-400/20",
   Reviewed: "text-sky-300 bg-sky-400/10 border-sky-400/20",
   Replied: "text-violet-300 bg-violet-400/10 border-violet-400/20",
+  Working: "text-fuchsia-300 bg-fuchsia-400/10 border-fuchsia-400/20",
+  "Contract Sent": "text-cyan-300 bg-cyan-400/10 border-cyan-400/20",
   Booked: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
+  Archived: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
   Lost: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
 };
 
@@ -46,9 +52,20 @@ const statusIcon: Record<string, typeof Clock> = {
   New: Clock,
   Reviewed: Eye,
   Replied: Reply,
+  Working: Briefcase,
+  "Contract Sent": FileText,
   Booked: CheckCircle,
+  Archived: Archive,
   Lost: XCircle,
 };
+
+// Format YYYY-MM-DD → MM/DD/YY per brief Scope 4.
+function formatInquiryDate(d: string): string {
+  if (!d) return "-";
+  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[2]}/${m[3]}/${m[1].slice(2)}`;
+  return d;
+}
 
 const sourceLabel: Record<string, string> = {
   public: "Public",
@@ -61,12 +78,14 @@ const sourceColor: Record<string, string> = {
 };
 
 export default function AdminInquiriesPage() {
+  const router = useRouter();
   const [session, setSession] = useState<AdminSession | null>(null);
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [sourceFilter, setSourceFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     setSession(getAdminSession());
@@ -78,6 +97,7 @@ export default function AdminInquiriesPage() {
     const params = new URLSearchParams();
     if (sourceFilter !== "All") params.set("source", sourceFilter);
     if (filter !== "All") params.set("status", filter);
+    if (showArchived) params.set("includeArchived", "1");
     fetch(`/api/admin/inquiries?${params}`, {
       headers: { "x-admin-email": session.email },
     })
@@ -89,7 +109,7 @@ export default function AdminInquiriesPage() {
 
   useEffect(() => {
     if (session) fetchInquiries();
-  }, [session, filter, sourceFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session, filter, sourceFilter, showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newCount = inquiries.filter((i) => i.status === "New").length;
 
@@ -122,13 +142,27 @@ export default function AdminInquiriesPage() {
               </span>
             )}
           </div>
-          <button
-            onClick={fetchInquiries}
-            className="p-2.5 rounded-xl border border-white/8 hover:border-white/20 bg-white/4 hover:bg-white/8 text-zinc-400 hover:text-foreground transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw size={14} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[10px] tracking-[0.18em] uppercase transition-colors ${
+                showArchived
+                  ? "border-zinc-400/40 bg-zinc-400/10 text-zinc-200"
+                  : "border-white/8 hover:border-white/20 bg-white/4 hover:bg-white/8 text-zinc-400 hover:text-foreground"
+              }`}
+              title={showArchived ? "Hide archived inquiries" : "Show archived inquiries"}
+            >
+              <Archive size={12} />
+              {showArchived ? "Archived: shown" : "Show archived"}
+            </button>
+            <button
+              onClick={fetchInquiries}
+              className="p-2.5 rounded-xl border border-white/8 hover:border-white/20 bg-white/4 hover:bg-white/8 text-zinc-400 hover:text-foreground transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -208,7 +242,8 @@ export default function AdminInquiriesPage() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: i * 0.02 }}
-                      className="border-b border-white/4 hover:bg-white/[0.02] transition-colors"
+                      onClick={() => router.push(`/admin/inquiries/${inq.id}`)}
+                      className="border-b border-white/4 hover:bg-white/[0.04] transition-colors cursor-pointer"
                     >
                       <td className="py-3 px-2.5 sm:px-4">
                         <span className="text-[11px] text-zinc-300 font-mono">{inq.inquiryNumber}</span>
@@ -219,7 +254,7 @@ export default function AdminInquiriesPage() {
                         <div className="text-zinc-300">{inq.contactName}</div>
                         <div className="text-[11px] text-zinc-500">{inq.contactEmail}</div>
                       </td>
-                      <td className="py-3 px-2.5 sm:px-4 text-zinc-300 hidden lg:table-cell">{inq.eventDate || "-"}</td>
+                      <td className="py-3 px-2.5 sm:px-4 text-zinc-300 hidden lg:table-cell">{formatInquiryDate(inq.eventDate)}</td>
                       <td className="py-3 px-2.5 sm:px-4 text-zinc-300 hidden xl:table-cell">{inq.bookingOffer || "-"}</td>
                       <td className="py-3 px-2.5 sm:px-4">
                         <span className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.18em] uppercase font-semibold border rounded-full px-2.5 py-0.5 ${statusColor[inq.status] || "text-zinc-400"}`}>

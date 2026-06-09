@@ -1,13 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArtistCard } from "@/components/ArtistCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { artists, categories } from "@/lib/data";
+import type { Artist } from "@/lib/data";
 
+// Phase 3.7 — Dok 2026-06-03: 'i need artists in the admin portal to show up
+// on the roster page, link that.' /api/artists serves active+non-demo Artist rows
+// from the DB. Categories now derived from the live data; All chip is always shown.
 export default function RosterPage() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/artists", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: Artist[]) => setArtists(Array.isArray(data) ? data : []))
+      .catch(() => setArtists([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Build the category filter list from the live data so categories without
+  // any artists don't show empty chips, and new categories appear automatically.
+  const categories = useMemo(() => {
+    const set = new Set<string>(["All"]);
+    for (const a of artists) if (a.category) set.add(a.category);
+    return Array.from(set);
+  }, [artists]);
 
   const filtered =
     activeFilter === "All"
@@ -63,7 +84,11 @@ export default function RosterPage() {
           {filtered.length === 0 && (
             <div className="glass-card rounded-2xl text-center py-24">
               <p className="text-zinc-400 text-sm">
-                No artists found in this category.
+                {loading
+                  ? "Loading roster..."
+                  : artists.length === 0
+                  ? "The roster is currently being assembled. Check back soon."
+                  : "No artists found in this category."}
               </p>
             </div>
           )}

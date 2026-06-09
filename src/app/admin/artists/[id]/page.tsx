@@ -27,13 +27,16 @@ import type { ArtistStatus, AdminArtist } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-const statuses: ArtistStatus[] = ["Testing", "Active", "Priority", "Paused", "Archived"];
+// Phase 3.9 Scope 11 — Archived removed from edit form; Developing + Left added.
+const statuses: ArtistStatus[] = ["Testing", "Active", "Priority", "Developing", "Paused", "Left"];
 
 const statusColor: Record<ArtistStatus, string> = {
   Testing: "text-amber-300 bg-amber-400/10 border-amber-400/20",
   Active: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
   Priority: "text-pink-300 bg-pink-400/10 border-pink-400/20",
+  Developing: "text-violet-300 bg-violet-400/10 border-violet-400/20",
   Paused: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
+  Left: "text-orange-400 bg-orange-400/10 border-orange-400/20",
   Archived: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
 };
 
@@ -168,7 +171,18 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
           <button className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2">
             <FileImage size={14} /> Generate EPK
           </button>
-          <button className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2">
+          <button
+            onClick={() => {
+              const note = prompt("Add a quick internal note for this artist:");
+              if (!note || !note.trim()) return;
+              const ts = new Date().toLocaleString();
+              const prev = (editForm.internalNotes ?? artist.internalNotes) || "";
+              const next = prev ? `${prev}\n\n[${ts}] ${note.trim()}` : `[${ts}] ${note.trim()}`;
+              updateArtist(id, { internalNotes: next });
+              triggerStoreUpdate();
+            }}
+            className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2"
+          >
             <Plus size={14} /> Add Note
           </button>
         </motion.div>
@@ -207,7 +221,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   ["Travel", artist.travelWillingness],
                   ["Clean/Explicit", artist.cleanExplicit],
                   ["Age Appeal", artist.ageDemoAppeal],
-                  ["Target Venues", artist.targetVenueTypes.join(", ")],
+                  // Phase 3.9 Scope 11 — "Target Venues" removed per Liam directive.
                 ].map(([label, value]) => (
                   <div key={label as string}>
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
@@ -353,10 +367,13 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
       <EditDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Edit Artist">
         <FieldText label="Name" value={editForm.name ?? ""} onChange={(v) => patch("name", v)} />
         <FieldSelect label="Status" value={editForm.status ?? "Testing"} onChange={(v) => patch("status", v)} options={statuses} />
+        <FieldText label="Profile Photo URL" value={editForm.image ?? ""} onChange={(v) => patch("image", v)} placeholder="https://..." />
         <FieldText label="Legal Name" value={editForm.legalName ?? ""} onChange={(v) => patch("legalName", v)} />
         <FieldText label="Email" value={editForm.email ?? ""} onChange={(v) => patch("email", v)} type="email" />
         <FieldText label="Phone" value={editForm.phone ?? ""} onChange={(v) => patch("phone", v)} />
+        <FieldText label="Manager Contact" value={editForm.managerContact ?? ""} onChange={(v) => patch("managerContact", v)} />
         <FieldText label="Primary Genre" value={editForm.primaryGenre ?? ""} onChange={(v) => patch("primaryGenre", v)} />
+        <FieldTags label="Secondary Genres" value={editForm.secondaryGenres ?? []} onChange={(v) => patch("secondaryGenres", v)} />
         <FieldText label="Booking Fee Range" value={editForm.bookingFeeRange ?? ""} onChange={(v) => patch("bookingFeeRange", v)} />
         <FieldTextArea label="Bio" value={editForm.bio ?? ""} onChange={(v) => patch("bio", v)} rows={4} />
         <FieldTextArea label="Short Pitch" value={editForm.shortPitch ?? ""} onChange={(v) => patch("shortPitch", v)} />

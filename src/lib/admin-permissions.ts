@@ -1,5 +1,7 @@
 export const OWNER_ADMIN_EMAILS = ["jaco@highlifedmv.com", "liam@highlifedmv.com"] as const;
-export const AGENT_ADMIN_EMAIL = "agent@highlifedmv.com";
+// 2026-06-03 — Dok directive: only jaco + liam are hardcoded logins. The legacy
+// agent@highlifedmv.com test login is removed. Agent identity is now exclusively
+// determined by the AgentLogin DB table — see isAgentLoginEmail() below.
 
 // Money fields that must be stripped from agent-facing API responses
 export const MONEY_FIELDS = [
@@ -32,16 +34,9 @@ export function isOwnerAdminEmail(email: string | null | undefined): boolean {
   return OWNER_ADMIN_EMAILS.includes(normalizeAdminEmail(email) as (typeof OWNER_ADMIN_EMAILS)[number]);
 }
 
-export function isAgentAdminEmail(email: string | null | undefined): boolean {
-  // Legacy static agent email OR any dynamic agent login email
-  return normalizeAdminEmail(email) === AGENT_ADMIN_EMAIL;
-}
-
-export function isAnyAdminEmail(email: string | null | undefined): boolean {
-  return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
-}
-
-export function canViewAuditionsEmail(email: string | null | undefined): boolean {
+// Mutating an audition base record (delete, free-form edits) stays owner-only.
+// Status changes go through the standard PATCH path and are gated inside the route.
+export function canManageAuditionsEmail(email: string | null | undefined): boolean {
   return isOwnerAdminEmail(email);
 }
 
@@ -53,9 +48,9 @@ export function canManageArtistsEmail(email: string | null | undefined): boolean
   return isOwnerAdminEmail(email);
 }
 
-export function canAccessAdminArtistApiEmail(email: string | null | undefined): boolean {
-  return isOwnerAdminEmail(email) || isAgentAdminEmail(email);
-}
+// NOTE: isAgentLoginEmail / canViewAuditionsEmail / canAccessAdminArtistApiEmail /
+// isAnyAdminEmail are async DB-backed checks and live in admin-permissions-server.ts
+// so this file stays client-safe (no Prisma imports leak into client bundles).
 
 /** Strip money fields from an object for agent-scoped responses */
 export function stripMoneyFields<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -91,10 +86,15 @@ export function canViewArtistEmail(
 }
 
 export function filterArtistsForEmail<T extends ArtistAccessRecord>(
-  email: string | null | undefined,
+  _email: string | null | undefined,
   artists: T[]
 ): T[] {
-  if (isOwnerAdminEmail(email)) return artists;
-  // Agent filtering is now DB-backed
-  return [];
+  // Phase 3.8 fix (Murd QA finding 6): used to return [] for non-owners on the
+  // assumption the legacy isAgentVisibleArtist would filter. After we moved
+  // visibility to DB-backed AgentArtistAssignment, the server-side API
+  // (/api/admin/artists) already scopes the list before it reaches this filter.
+  // Returning [] here was double-filtering the already-scoped result, so agents
+  // saw no artists on /admin/artists even when they had assignments.
+  // Pass-through is correct now — server is the single source of truth.
+  return artists;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
@@ -14,6 +14,8 @@ import { useResearchQueue, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateResearchContact, deleteResearchContact } from "@/lib/admin-store";
 import type { ResearchAction } from "@/lib/admin-data";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
 
 const actionColor: Record<ResearchAction, string> = {
   Pending: "text-amber-300 bg-amber-400/10 border-amber-400/20",
@@ -27,6 +29,24 @@ export default function ResearchPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ResearchAction | "All">("All");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  // Phase 3.8 — Research Queue holds raw contact data (emails, source URLs)
+  // that's owner-only. Staged for agents until Phase 5.5 defines an agent-safe
+  // assignment-scoped contact view.
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="Research Queue"
+        description="The research queue surfaces raw contact data (emails, source URLs, owner notes) that agents shouldn't see unfiltered. Agent-scoped contact access ships in Phase 5.5 alongside the venue-contact-grant flow expansion."
+      />
+    );
+  }
 
   const filtered = contacts.filter((c) => {
     const matchesSearch =

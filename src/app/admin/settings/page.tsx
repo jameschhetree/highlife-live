@@ -1,21 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Settings,
-  Users,
-  Shield,
-  Key,
-  Mail,
-  AlertTriangle,
-  Trash,
-  X,
-  Check,
-  RotateCcw,
-} from "lucide-react";
-import { clearAllData, resetDemoData } from "@/lib/admin-store";
-import { triggerStoreUpdate } from "@/hooks/useAdminStore";
+import { motion } from "framer-motion";
+import { Settings, Users, Shield, Key, Mail, AlertTriangle } from "lucide-react";
 
 const teamMembers = [
   { name: "James Carter", email: "james@highlifedmv.com", role: "Owner/Admin", status: "Active" },
@@ -25,7 +11,7 @@ const teamMembers = [
 ];
 
 const roles = [
-  { name: "Owner/Admin", perms: "Full access: CRUD all data, approve campaigns, manage team, API keys, settings, delete demo data" },
+  { name: "Owner/Admin", perms: "Full access: CRUD all data, approve campaigns, manage team, API keys, settings" },
   { name: "Manager", perms: "Edit artists/venues, approve campaigns, view reports, manage team" },
   { name: "Booker", perms: "Manage contacts, draft campaigns, move pipeline deals, add notes, request approval" },
   { name: "Researcher", perms: "Add venue/contact leads, mark needs-review, add source URLs, clean data" },
@@ -38,25 +24,10 @@ const suppressionList = [
   { email: "bounced@invalid.com", reason: "Hard bounce", addedDate: "2026-05-15" },
 ];
 
+// 2026-06-03 — Dok directive: 'remove delete demo data button completely... make it empty
+// so we can start to populate'. Danger Zone block + Re-seed button + modal removed.
+// API endpoints kept but no longer reachable from the UI.
 export default function SettingsPage() {
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [dataCleared, setDataCleared] = useState(false);
-
-  function handleDeleteDemoData() {
-    clearAllData();
-    triggerStoreUpdate();
-    setShowDeleteModal(false);
-    setDeleteConfirm("");
-    setDataCleared(true);
-  }
-
-  function handleResetDemoData() {
-    resetDemoData();
-    triggerStoreUpdate();
-    setDataCleared(false);
-  }
-
   return (
     <div className="min-h-screen text-foreground">
       <div className="border-b border-white/8 px-4 sm:px-6 lg:px-10 py-6">
@@ -302,124 +273,10 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Danger Zone — Delete Demo Data */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}
-          className="glass-card rounded-2xl p-5 border border-red-500/20"
-        >
-          <h2 className="text-[11px] tracking-[0.22em] uppercase text-red-400 mb-3 flex items-center gap-2">
-            <Trash size={14} /> Danger Zone
-          </h2>
-          <p className="text-sm text-zinc-400 mb-4">
-            Delete all demo/seed data from the system. Only use this when you are ready to replace demo records with real data. You can re-seed with demo data afterwards.
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="px-4 py-2 rounded-xl border border-red-500/30 hover:border-red-500/60 bg-red-500/5 hover:bg-red-500/10 text-sm text-red-400 hover:text-red-300 transition-colors inline-flex items-center gap-2"
-            >
-              <Trash size={14} /> Delete All Demo Data
-            </button>
-            {dataCleared && (
-              <button
-                onClick={handleResetDemoData}
-                className="px-4 py-2 rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 text-sm text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center gap-2"
-              >
-                <RotateCcw size={14} /> Re-seed Demo Data
-              </button>
-            )}
-          </div>
-        </motion.div>
-
         <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 pt-4 border-t border-white/5">
-          Demo data — replace before launching outreach
+          Settings · clean slate, populate via the admin portal
         </p>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="relative glass-card rounded-2xl p-6 max-w-md w-full border border-red-500/20"
-            >
-              <button
-                onClick={() => { setShowDeleteModal(false); setDeleteConfirm(""); }}
-                className="absolute top-4 right-4 text-zinc-500 hover:text-foreground transition-colors"
-              >
-                <X size={16} />
-              </button>
-
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <AlertTriangle size={18} className="text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-display uppercase tracking-tight">Delete Demo Data</h3>
-                  <p className="text-[11px] text-zinc-500">This action cannot be undone</p>
-                </div>
-              </div>
-
-              <p className="text-sm text-zinc-400 mb-4">
-                Are you sure? This will permanently delete all seed/demo records including:
-              </p>
-              <ul className="text-sm text-zinc-500 space-y-1 mb-4 pl-4">
-                <li>- 8 demo artists</li>
-                <li>- 12 demo venues</li>
-                <li>- 5 demo campaigns</li>
-                <li>- 10 demo opportunities</li>
-                <li>- 8 demo EPKs</li>
-                <li>- 8 demo research contacts</li>
-              </ul>
-
-              <div className="mb-4">
-                <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1.5">
-                  Type DELETE to confirm
-                </label>
-                <input
-                  type="text"
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value)}
-                  placeholder="DELETE"
-                  className="w-full px-3 py-2 rounded-xl bg-white/4 border border-red-500/20 text-sm text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-red-500/40"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { setShowDeleteModal(false); setDeleteConfirm(""); }}
-                  className="flex-1 py-2.5 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-400 hover:text-foreground transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={deleteConfirm !== "DELETE"}
-                  onClick={handleDeleteDemoData}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors ${
-                    deleteConfirm === "DELETE"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "bg-red-500/20 text-red-500/40 cursor-not-allowed"
-                  }`}
-                >
-                  <Trash size={14} /> Delete Demo Data
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

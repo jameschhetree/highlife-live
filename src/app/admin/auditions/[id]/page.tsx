@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trash2, ExternalLink, Mail, Phone, Music } from "lucide-react";
-import { canViewAuditions, getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { canViewAuditions, getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 
 interface Audition {
   id: string;
@@ -15,6 +15,7 @@ interface Audition {
   fullName: string;
   email: string;
   phone: string;
+  actDescription: string | null;
   performanceLinks: string;
   instagram: string;
   facebook: string;
@@ -24,7 +25,9 @@ interface Audition {
   submittedAt: string;
 }
 
-const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Booked", "Lost"];
+// Phase 3.9 Scope 10 — status set: New, Reviewed, Replied, Submitted, Archived, Marked For Deletion.
+// "Booked" retired (no audition is itself a booking — those move into Bookings via convert-to-artist).
+const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Submitted", "Archived", "Marked For Deletion"];
 
 export default function AuditionDetailPage() {
   const params = useParams();
@@ -77,6 +80,27 @@ export default function AuditionDetailPage() {
       headers: { "x-admin-email": session.email },
     });
     router.push("/admin/auditions");
+  };
+
+  const convertToArtist = async () => {
+    if (!session || !row) return;
+    if (!confirm(`Convert "${row.actStageName}" into an Artist record? Owner can edit the resulting artist immediately after.`)) return;
+    const res = await fetch(`/api/admin/auditions/${id}/convert-to-artist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      const j = await res.json();
+      if (j.artist?.id) {
+        router.push(`/admin/artists/${j.artist.id}`);
+      } else {
+        router.push("/admin/artists");
+      }
+    } else {
+      const j = await res.json().catch(() => null);
+      alert(j?.error || "Could not convert audition.");
+    }
   };
 
   if (loading) {
@@ -136,10 +160,20 @@ export default function AuditionDetailPage() {
                 </option>
               ))}
             </select>
+            {isOwnerAdmin(session) && (
+              <button
+                onClick={convertToArtist}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-400/30 hover:border-emerald-400/60 bg-emerald-400/10 text-emerald-300 hover:text-emerald-200 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+                title="Convert to Artist"
+              >
+                Convert → Artist
+              </button>
+            )}
+            {/* Agents may delete only their assigned auditions (server-enforced). */}
             <button
               onClick={remove}
               className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
-              title="Delete audition"
+              title={isOwnerAdmin(session) ? "Delete audition" : "Delete assigned audition"}
             >
               <Trash2 size={14} />
             </button>
@@ -157,12 +191,10 @@ export default function AuditionDetailPage() {
           <div className="glass-card rounded-2xl p-6">
             <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-4">Contact</h2>
             <div className="space-y-3">
-              <a
-                href={`mailto:${row.email}`}
-                className="flex items-center gap-3 text-sm text-zinc-200 hover:text-foreground"
-              >
+              {/* Phase 3.8 — mailto neutralized per Liam (no email-client links). */}
+              <div className="flex items-center gap-3 text-sm text-zinc-200 select-all">
                 <Mail size={14} className="text-zinc-500" /> {row.email}
-              </a>
+              </div>
               <a
                 href={`tel:${row.phone.replace(/[^\d+]/g, "")}`}
                 className="flex items-center gap-3 text-sm text-zinc-200 hover:text-foreground"
@@ -181,6 +213,15 @@ export default function AuditionDetailPage() {
               )}
             </div>
           </div>
+
+          {row.actDescription && (
+            <div className="glass-card rounded-2xl p-6">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-400 mb-3">Act Description</h2>
+              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                {row.actDescription}
+              </p>
+            </div>
+          )}
 
           {row.performanceLinks && (
             <div className="glass-card rounded-2xl p-6">

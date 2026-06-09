@@ -25,113 +25,118 @@ model User {
 // ── Artists ─────────────────────────────────────────────────
 
 model Artist {
-  id                 String   @id @default(cuid())
-  name               String
-  status             String   @default("Testing") // Testing, Active, Priority, Paused, Archived
-  legalName          String   @default("")
-  email              String   @default("")
-  phone              String   @default("")
-  managerContact     String   @default("")
-  homeCity           String   @default("")
-  homeState          String   @default("")
-  primaryMarket      String   @default("")
-  primaryGenre       String   @default("")
-  secondaryGenres    String[] @default([])
-  performanceType    String   @default("Solo Artist")
-  typicalSetLength   String   @default("")
-  bookingFeeRange    String   @default("")
-  travelWillingness  String   @default("")
-  targetVenueTypes   String[] @default([])
-  ageDemoAppeal      String   @default("")
-  cleanExplicit      String   @default("")
-  bio                String   @default("")
-  shortPitch         String   @default("")
-  longPitch          String   @default("")
-  pressQuotes        String[] @default([])
-  highlights         String[] @default([])
-  internalNotes      String   @default("")
-  reliabilityNotes   String   @default("")
-  bestFitVenueNotes  String   @default("")
-  image              String   @default("")
+  id                String   @id @default(cuid())
+  name              String
+  status            String   @default("Testing") // Testing, Active, Priority, Paused, Archived
+  legalName         String   @default("")
+  email             String   @default("")
+  phone             String   @default("")
+  managerContact    String   @default("")
+  homeCity          String   @default("")
+  homeState         String   @default("")
+  primaryMarket     String   @default("")
+  primaryGenre      String   @default("")
+  secondaryGenres   String[] @default([])
+  performanceType   String   @default("Solo Artist")
+  typicalSetLength  String   @default("")
+  bookingFeeRange   String   @default("")
+  travelWillingness String   @default("")
+  targetVenueTypes  String[] @default([])
+  ageDemoAppeal     String   @default("")
+  cleanExplicit     String   @default("")
+  bio               String   @default("")
+  shortPitch        String   @default("")
+  longPitch         String   @default("")
+  pressQuotes       String[] @default([])
+  highlights        String[] @default([])
+  internalNotes     String   @default("")
+  reliabilityNotes  String   @default("")
+  bestFitVenueNotes String   @default("")
+  image             String   @default("")
 
   // Socials (flattened from ArtistSocials interface)
-  socialInstagram    String   @default("")
-  socialTiktok       String   @default("")
-  socialYoutube      String   @default("")
-  socialSpotify      String   @default("")
-  socialAppleMusic   String   @default("")
-  socialSoundcloud   String   @default("")
-  socialWebsite      String   @default("")
-  socialLinktree     String   @default("")
+  socialInstagram  String @default("")
+  socialTiktok     String @default("")
+  socialYoutube    String @default("")
+  socialSpotify    String @default("")
+  socialAppleMusic String @default("")
+  socialSoundcloud String @default("")
+  socialWebsite    String @default("")
+  socialLinktree   String @default("")
 
   // Scoring (flattened from ArtistScoring interface)
-  scorePotential       Float @default(5)
-  scoreLivePerformance Float @default(5)
-  scoreMarketability   Float @default(5)
-  scoreReliability     Float @default(5)
-  scoreBookingPriority Float @default(5)
-  scoreOverall         Float @default(5)
+  scorePotential       Float  @default(5)
+  scoreLivePerformance Float  @default(5)
+  scoreMarketability   Float  @default(5)
+  scoreReliability     Float  @default(5)
+  scoreBookingPriority Float  @default(5)
+  scoreOverall         Float  @default(5)
   scoreNotes           String @default("")
 
   isDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  socialStats  ArtistSocialStat[]
-  campaigns    Campaign[]
+  socialStats   ArtistSocialStat[]
+  campaigns     Campaign[]
   opportunities Opportunity[]
-  epks         EPK[]
+  epks          EPK[]
+  bookings      Booking[]
 }
 
 model ArtistSocialStat {
-  id                     String   @id @default(cuid())
-  artistId               String
-  artist                 Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  instagramFollowers     Int      @default(0)
-  tiktokFollowers        Int      @default(0)
-  youtubeSubscribers     Int      @default(0)
-  spotifyMonthlyListeners Int     @default(0)
-  avgEngagement          String   @default("0%")
-  estimatedTotalAudience Int      @default(0)
-  snapshotDate           DateTime @default(now())
+  id                      String   @id @default(cuid())
+  artistId                String
+  artist                  Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  instagramFollowers      Int      @default(0)
+  tiktokFollowers         Int      @default(0)
+  youtubeSubscribers      Int      @default(0)
+  spotifyMonthlyListeners Int      @default(0)
+  avgEngagement           String   @default("0%")
+  estimatedTotalAudience  Int      @default(0)
+  snapshotDate            DateTime @default(now())
 }
 
 // ── Venues ──────────────────────────────────────────────────
 
 model Venue {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   name               String
-  contactPerson      String   @default("")
-  contactTitle       String   @default("")
-  email              String   @default("")
-  phone              String   @default("")
-  website            String   @default("")
-  instagram          String   @default("")
-  address            String   @default("")
-  city               String   @default("")
-  state              String   @default("")
-  region             String   @default("")
-  venueType          String   @default("Other")
-  capacity           Int      @default(0)
-  typicalGenres      String[] @default([])
-  bookingEmail       String   @default("")
-  talentBuyerEmail   String   @default("")
-  source             String   @default("Manual") // Manual, CSV Import, Public Research, Authorized API, Referral
-  sourceUrl          String   @default("")
-  sourceDate         String   @default("")
-  contactConfidence  Int      @default(5)
-  reviewStatus       String   @default("Needs Review") // Needs Review, Verified, Do Not Contact, Duplicate
-  notes              String   @default("")
-  tags               String[] @default([])
+  contactPerson      String    @default("")
+  contactTitle       String    @default("")
+  email              String    @default("")
+  phone              String    @default("")
+  website            String    @default("")
+  instagram          String    @default("")
+  address            String    @default("")
+  city               String    @default("")
+  state              String    @default("")
+  region             String    @default("")
+  zipCode            String    @default("")
+  venueType          String    @default("Other")
+  capacity           Int       @default(0)
+  typicalGenres      String[]  @default([])
+  bookingEmail       String    @default("")
+  talentBuyerEmail   String    @default("")
+  source             String    @default("Manual") // Manual, CSV Import, Public Research, Authorized API, Referral
+  sourceUrl          String    @default("")
+  sourceDate         String    @default("")
+  contactConfidence  Int       @default(5)
+  reviewStatus       String    @default("Needs Review") // Needs Review, Verified, Do Not Contact, Duplicate
+  notes              String    @default("")
+  tags               String[]  @default([])
   lastContacted      DateTime?
   nextFollowUp       DateTime?
-  relationshipStatus String   @default("Cold")
+  relationshipStatus String    @default("Cold")
 
   isDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  opportunities Opportunity[]
+  opportunities  Opportunity[]
+  bookings       Booking[]
+  venueLogins    VenueLogin[]
+  timelineEvents VenueTimelineEvent[]
 }
 
 // ── Contacts ────────────────────────────────────────────────
@@ -159,37 +164,37 @@ model Contact {
 // ── Campaigns ───────────────────────────────────────────────
 
 model Campaign {
-  id                String   @id @default(cuid())
-  name              String
-  artistId          String
-  artist            Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  targetMarket      String   @default("")
-  targetSegment     String   @default("")
-  status            String   @default("Draft")
-  outreachPlatform  String   @default("None/Manual")
-  objective         String   @default("Book Show")
-  contactCount      Int      @default(0)
-  emailSequence     Json     @default("[]") // JSON array of CampaignEmail objects
-  owner             String   @default("")
-  createdDate       String   @default("")
-  approvedBy        String?
-  sentDate          String?
-  notes             String   @default("")
-  isDemo            Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  artistId         String
+  artist           Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  targetMarket     String   @default("")
+  targetSegment    String   @default("")
+  status           String   @default("Draft")
+  outreachPlatform String   @default("None/Manual")
+  objective        String   @default("Book Show")
+  contactCount     Int      @default(0)
+  emailSequence    Json     @default("[]") // JSON array of CampaignEmail objects
+  owner            String   @default("")
+  createdDate      String   @default("")
+  approvedBy       String?
+  sentDate         String?
+  notes            String   @default("")
+  isDemo           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  contacts     CampaignContact[]
+  contacts      CampaignContact[]
   opportunities Opportunity[]
 }
 
 model CampaignContact {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contactId  String
-  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  status     String   @default("Pending") // Pending, Sent, Opened, Replied, Bounced
+  contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status     String    @default("Pending") // Pending, Sent, Opened, Replied, Bounced
   sentAt     DateTime?
   openedAt   DateTime?
   repliedAt  DateTime?
@@ -200,38 +205,38 @@ model CampaignContact {
 // ── Opportunities ───────────────────────────────────────────
 
 model Opportunity {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   artistId     String
-  artist       Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artist       Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
   venueId      String
-  venue        Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue        Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
   campaignId   String?
   campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   eventDate    DateTime?
-  proposedFee  Float    @default(0)
-  expectedFee  Float    @default(0)
+  proposedFee  Float     @default(0)
+  expectedFee  Float     @default(0)
   confirmedFee Float?
-  status       String   @default("Lead")
-  probability  Int      @default(10)
-  nextTask     String   @default("")
-  owner        String   @default("")
-  notes        String   @default("")
-  isDemo       Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status       String    @default("Lead")
+  probability  Int       @default(10)
+  nextTask     String    @default("")
+  owner        String    @default("")
+  notes        String    @default("")
+  isDemo       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 // ── EPKs ────────────────────────────────────────────────────
 
 model EPK {
-  id          String   @id @default(cuid())
-  artistId    String
-  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  status      String   @default("Draft") // Draft, Approved, Published, Archived
-  publishUrl  String?
-  isDemo      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  artistId   String
+  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  status     String   @default("Draft") // Draft, Approved, Published, Archived
+  publishUrl String?
+  isDemo     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 // ── Suppression List ────────────────────────────────────────
@@ -261,10 +266,39 @@ model Booking {
   messageToAgent   String   @db.Text
   source           String   @default("public") // "public" | "authenticated"
   submittedAt      DateTime @default(now())
-  status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
+  status           String   @default("New") // legacy — hidden from UI + stripped from API list responses post-3.9
   adminNotes       String?  @db.Text
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Phase 3.9 additive
+  eventTitle             String?
+  eventDescriptionPublic String? @db.Text
+  finalOffer             String?
+  ticketUrl              String?
+  ticketsSold            Int     @default(0)
+
+  inquiryId String?
+  inquiry   Inquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+
+  eventId String? @unique
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  artistId String?
+  artist   Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
+
+  venueId String?
+  venue   Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+
+  agentLoginId String?
+  agentLogin   AgentLogin? @relation(fields: [agentLoginId], references: [id], onDelete: SetNull)
+
+  materials         BookingMaterial[]
+  eventCardRequests EventCardRequest[]
+
+  @@index([artistId])
+  @@index([venueId])
+  @@index([inquiryId])
 }
 
 // ── External Agent Applications ────────────────────────────
@@ -285,6 +319,7 @@ model AgentApplication {
   submitterIpHash     String   @default("")
   userAgent           String   @default("")
   status              String   @default("New")
+  actDescription      String?  @db.Text
   submittedAt         DateTime @default(now())
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -296,36 +331,36 @@ model AgentApplication {
 // ── Import Batches ──────────────────────────────────────────
 
 model ImportBatch {
-  id            String   @id @default(cuid())
-  type          String   // "venues" | "artists" | "contacts"
-  fileName      String   @default("")
-  rowCount      Int      @default(0)
-  addedCount    Int      @default(0)
-  dupeCount     Int      @default(0)
-  importedBy    String   @default("")
-  createdAt     DateTime @default(now())
+  id         String   @id @default(cuid())
+  type       String // "venues" | "artists" | "contacts"
+  fileName   String   @default("")
+  rowCount   Int      @default(0)
+  addedCount Int      @default(0)
+  dupeCount  Int      @default(0)
+  importedBy String   @default("")
+  createdAt  DateTime @default(now())
 }
 
 // ── Partner Login Requests ──────────────────────────────────
 
 model PartnerLoginRequest {
-  id                String   @id @default(cuid())
-  accountType       String   // "Venue" | "Promoter"
-  organizationName  String   // Venue Name or Promotion Name
-  address           String   @default("")
-  role              String   // Owner, Talent Buyer, Promoter, Venue Manager, Event Coordinator, Other
-  contactName       String
-  workPhone         String   @default("")
-  mobilePhone       String   @default("")
-  workEmail         String
+  id                  String   @id @default(cuid())
+  accountType         String // "Venue" | "Promoter"
+  organizationName    String // Venue Name or Promotion Name
+  address             String   @default("")
+  role                String // Owner, Talent Buyer, Promoter, Venue Manager, Event Coordinator, Other
+  contactName         String
+  workPhone           String   @default("")
+  mobilePhone         String   @default("")
+  workEmail           String
   requestedLoginEmail String
-  howHeard          String   @default("")
-  preferredGenre    String   @default("")
-  extraNotes        String   @default("") @db.Text
-  status            String   @default("New") // New, Approved, Rejected, Converted, Archived
-  submittedAt       DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  howHeard            String   @default("")
+  preferredGenre      String   @default("")
+  extraNotes          String   @default("") @db.Text
+  status              String   @default("New") // New, Approved, Rejected, Converted, Archived
+  submittedAt         DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@index([status, submittedAt])
 }
@@ -335,14 +370,18 @@ model PartnerLoginRequest {
 model VenueLogin {
   id               String   @id @default(cuid())
   email            String   @unique
-  passwordHash     String   // bcrypt or similar hash
+  passwordHash     String // bcrypt or similar hash
   displayName      String
   organizationName String   @default("")
   accountType      String   @default("Venue") // "Venue" | "Promoter"
   isActive         Boolean  @default(true)
-  sourceRequestId  String?  // optional link to PartnerLoginRequest.id
+  sourceRequestId  String? // optional link to PartnerLoginRequest.id
+  venueId          String?
+  venue            Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  partnerInquiriesHidden PartnerInquiryHidden[]
 }
 
 // ── Inquiries (Workstream 5) ────────────────────────────────
@@ -351,7 +390,7 @@ model Inquiry {
   id               String   @id @default(cuid())
   inquiryNumber    String   @unique // Human-readable e.g. "HL-10001"
   source           String   @default("public") // "public" | "venue_partner"
-  venueLoginId     String?  // link to VenueLogin if venue_partner source
+  venueLoginId     String? // link to VenueLogin if venue_partner source
   artistSlug       String
   artistName       String
   venueName        String
@@ -362,62 +401,158 @@ model Inquiry {
   contactPhone     String
   eventDescription String   @default("") @db.Text
   messageToAgent   String   @default("") @db.Text
-  status           String   @default("New") // New, Reviewed, Replied, Booked, Lost
+  status           String   @default("New") // New, Working, Contract Sent, Booked, Archived, Lost (legacy: Reviewed, Replied)
+  workingSubstatus String? // WorkingResponsibilities | Negotiating | FineTuning
   adminNotes       String?  @db.Text
-  bookingOffer     String?  // optional opening offer (e.g. "$12,000"). Stripped from agent-facing responses.
+  bookingOffer     String? // optional opening offer (e.g. "$12,000"). Stripped from agent-facing responses.
+  convertedEventId String? // populated when admin finalizes the inquiry as an event
   submittedAt      DateTime @default(now())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  notes                  InquiryNote[]
+  bookings               Booking[]
+  eventCardRequests      EventCardRequest[]
+  partnerInquiriesHidden PartnerInquiryHidden[]
 
   @@index([source, submittedAt])
   @@index([venueLoginId])
   @@index([contactEmail])
 }
 
+// ── Inquiry Notes (Phase 3.6 — Workflow B) ─────────────────
+// Threaded notes between the venue partner and the admin team on a specific inquiry.
+// authorType discriminates: "venue" notes are visible to venue + admin; "admin" notes
+// are visible to venue + admin too (admin can post a private note via authorType="internal"
+// which the venue portal will filter out).
+
+model InquiryNote {
+  id          String   @id @default(cuid())
+  inquiryId   String
+  inquiry     Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  authorType  String // "venue" | "admin" | "internal"
+  authorEmail String
+  authorName  String   @default("")
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([inquiryId, createdAt])
+}
+
 // ── Agent Logins (Workstream 6) ────────────────────────────
 
 model AgentLogin {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  name          String
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  artistAssignments AgentArtistAssignment[]
-  auditionAssignments AuditionAssignment[]
+  artistAssignments    AgentArtistAssignment[]
+  auditionAssignments  AuditionAssignment[]
+  venueContactRequests VenueContactAccessRequest[]
+  venueContactGrants   VenueContactGrant[]
+  bookings             Booking[]
+  eventCardRequests    EventCardRequest[]
 }
 
 model AgentArtistAssignment {
   id           String     @id @default(cuid())
   agentLoginId String
   agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
-  artistId     String     // references Artist.id
+  artistId     String // references Artist.id
   createdAt    DateTime   @default(now())
 
   @@unique([agentLoginId, artistId])
   @@index([artistId])
 }
 
+// ── Venue Contact Access (Phase 3.6) ───────────────────────
+// Agent must request access to a venue's contact data; super-admin approves.
+// Grants are append-only — revoke = delete row.
+
+model VenueContactAccessRequest {
+  id           String     @id @default(cuid())
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  venueId      String // references Venue.id (no FK so a venue delete doesn't nuke audit trail)
+  status       String     @default("Pending") // Pending, Approved, Denied
+  requestedAt  DateTime   @default(now())
+  decidedAt    DateTime?
+  decidedBy    String? // User.id or "system"
+  reason       String     @default("") @db.Text
+
+  @@unique([agentLoginId, venueId, status])
+  @@index([status, requestedAt])
+  @@index([venueId])
+}
+
+model VenueContactGrant {
+  id           String     @id @default(cuid())
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  venueId      String // references Venue.id
+  grantedAt    DateTime   @default(now())
+  grantedBy    String // User.id of the super-admin who granted
+
+  @@unique([agentLoginId, venueId])
+  @@index([venueId])
+}
+
 // ── Audition Assignments (Workstream 6A) ───────────────────
 
 model AuditionAssignment {
-  id              String     @id @default(cuid())
-  auditionId      String     // references AgentApplication.id
-  agentLoginId    String
-  agentLogin      AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
-  notes           String     @default("") @db.Text
-  status          String     @default("Assigned") // Assigned, In Progress, Done
-  assignedAt      DateTime   @default(now())
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  auditionId   String // references AgentApplication.id
+  agentLoginId String
+  agentLogin   AgentLogin @relation(fields: [agentLoginId], references: [id], onDelete: Cascade)
+  notes        String     @default("") @db.Text
+  status       String     @default("Assigned") // Assigned, In Progress, Done
+  assignedAt   DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@unique([auditionId, agentLoginId])
   @@index([agentLoginId])
 }
 
 // ── Email Subscribers (Workstream 8) ───────────────────────
+
+// ── Public Events (owner-managed) ─────────────────────────
+
+model Event {
+  id              String    @id @default(cuid())
+  title           String
+  date            String // human-readable date string (e.g. "August 2, 2026")
+  startAt         DateTime? // optional ISO date for sorting/filtering
+  city            String
+  venue           String
+  featuredArtists String[] // legacy free-form artist names — kept for back-compat, new writes populate alongside featuredArtistIds + externalArtists
+  ticketStatus    String    @default("Available") // Available | Limited | Sold Out
+  ticketUrl       String?
+  isPast          Boolean   @default(false)
+  published       Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Phase 3.9 additive — public event card fields
+  description         String?  @db.Text
+  showDescription     Boolean  @default(true)
+  address             String?
+  showAddress         Boolean  @default(true)
+  customBannerEnabled Boolean  @default(false)
+  bannerUrl           String?
+  featuredArtistIds   String[] @default([]) // Artist.id references (not enforced FK — multi-select with optional external mix)
+  externalArtists     String[] @default([]) // free-text non-DB names
+
+  // Booking ↔ Event inverse — FK owned by Booking.eventId. Single relation, no relation-name needed.
+  booking Booking?
+
+  @@index([published, startAt])
+  @@index([isPast])
+}
 
 model EmailSubscriber {
   id           String   @id @default(cuid())
@@ -426,12 +561,75 @@ model EmailSubscriber {
   createdAt    DateTime @default(now())
 }
 
+// ── Phase 3.9 Additive Models ───────────────────────────────
+
+model EventCardRequest {
+  id                      String     @id @default(cuid())
+  requestedByAgentLoginId String
+  requestedByAgent        AgentLogin @relation(fields: [requestedByAgentLoginId], references: [id], onDelete: Cascade)
+  bookingId               String?
+  booking                 Booking?   @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  inquiryId               String?
+  inquiry                 Inquiry?   @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
+  artistIds               String[]   @default([])
+  eventTitle              String
+  eventDate               String
+  venueName               String
+  venueAddress            String?
+  ticketLink              String?
+  description             String?    @db.Text
+  status                  String     @default("Pending") // Pending | Reviewed | Created | Archived
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([requestedByAgentLoginId])
+}
+
+model BookingMaterial {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind      String // banner | flier | video | contract | other
+  url       String
+  filename  String   @default("")
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+model VenueTimelineEvent {
+  id          String   @id @default(cuid())
+  venueId     String
+  venue       Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  kind        String // note | inquiry | event | booking | email | other
+  refId       String? // optional string-FK to the related record id (no DB FK so kind can vary)
+  body        String   @db.Text
+  authorEmail String
+  createdAt   DateTime @default(now())
+
+  @@index([venueId, createdAt])
+}
+
+model PartnerInquiryHidden {
+  id           String     @id @default(cuid())
+  venueLoginId String
+  venueLogin   VenueLogin @relation(fields: [venueLoginId], references: [id], onDelete: Cascade)
+  inquiryId    String
+  inquiry      Inquiry    @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([venueLoginId, inquiryId])
+  @@index([venueLoginId])
+}
+
 // ── Audit Log ───────────────────────────────────────────────
 
 model AuditLog {
   id         String   @id @default(cuid())
-  action     String   // "create" | "update" | "delete" | "import" | "approve" | etc.
-  entityType String   // "artist" | "venue" | "campaign" | etc.
+  action     String // "create" | "update" | "delete" | "import" | "approve" | etc.
+  entityType String // "artist" | "venue" | "campaign" | etc.
   entityId   String
   userId     String   @default("")
   details    Json?

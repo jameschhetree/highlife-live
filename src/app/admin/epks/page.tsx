@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Edit, Plus, Trash2 } from "lucide-react";
 import { useEpks, useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { deleteEpk } from "@/lib/admin-store";
 import type { EpkStatus } from "@/lib/admin-data";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
+import { StagedActionModal } from "@/components/admin/StagedActionModal";
+import { FileImage } from "lucide-react";
 
 const statusColor: Record<EpkStatus, string> = {
   Draft: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
@@ -22,6 +26,22 @@ export default function EpksPage() {
   const artists = useArtists();
   const [filter, setFilter] = useState<EpkStatus | "All">("All");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="EPKs"
+        description="EPK generation is owner-only today. Agent-facing EPK approvals + the generation pipeline ship in Phase 5.5 after the artist-conversion workflow lands."
+      />
+    );
+  }
 
   const filtered = epks.filter((e) => filter === "All" || e.status === filter);
 
@@ -40,7 +60,10 @@ export default function EpksPage() {
         </p>
         <div className="flex items-center justify-between">
           <h1 className="font-display uppercase text-3xl tracking-tight">EPKs</h1>
-          <button className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
+          <button
+            onClick={() => setGenerateOpen(true)}
+            className="btn-gradient px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+          >
             <Plus size={14} /> Generate EPK
           </button>
         </div>
@@ -148,6 +171,24 @@ export default function EpksPage() {
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <StagedActionModal
+        open={generateOpen}
+        onClose={() => setGenerateOpen(false)}
+        title="EPK generator coming soon"
+        targetPhase="Phase 5.5"
+        icon={<FileImage size={16} className="text-pink-200" />}
+        body={
+          <>
+            <p>
+              Automatic EPK generation — assembling artist bio, press quotes, social stats, performance highlights, and pulling cover art — ships in Phase 5.5.
+            </p>
+            <p className="mt-2 text-xs text-zinc-400">
+              No AI drafting is wired yet. For now, EPK rows can be created and edited manually via the artist detail screen.
+            </p>
+          </>
+        }
       />
     </div>
   );

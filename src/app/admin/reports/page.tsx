@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -8,6 +9,9 @@ import {
   Mail,
   DollarSign,
 } from "lucide-react";
+import { DemoAnalyticsBanner } from "@/components/admin/DemoAnalyticsBadge";
+import { AgentStagedNotice } from "@/components/admin/AgentStagedNotice";
+import { getAdminSession, isAgentAdmin, type AdminSession } from "@/lib/admin-auth";
 
 // Demo report data
 const replyRateByGenre = [
@@ -160,6 +164,24 @@ function LineChartSVG({
 }
 
 export default function ReportsPage() {
+  // Phase 3.9 Scope 13 — agents must not see demo analytics. Sidebar hides this
+  // link; this guard catches direct URL access.
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [accessChecked, setAccessChecked] = useState(false);
+  useEffect(() => {
+    setSession(getAdminSession());
+    setAccessChecked(true);
+  }, []);
+  if (accessChecked && isAgentAdmin(session)) {
+    return (
+      <AgentStagedNotice
+        pageTitle="Reports"
+        targetPhase="Phase 5.0"
+        description="Analytics across the platform are owner-only this pass. Your scoped activity surfaces (Dashboard, Inquiries, Bookings, Auditions) already roll up your work."
+      />
+    );
+  }
+
   const totalSent = replyRateByGenre.reduce((s, r) => s + r.sent, 0);
   const totalReplies = replyRateByGenre.reduce((s, r) => s + r.replies, 0);
   const overallReplyRate = ((totalReplies / totalSent) * 100).toFixed(1);
@@ -183,6 +205,8 @@ export default function ReportsPage() {
       </div>
 
       <div className="px-4 sm:px-6 lg:px-10 py-8 space-y-8">
+        <DemoAnalyticsBanner />
+
         {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map((s, i) => {

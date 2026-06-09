@@ -59,6 +59,19 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   const forbidden = forbidIfNotOwner(request);
   if (forbidden) return forbidden;
   const { id } = await ctx.params;
+  // Phase 3.9 Scope 9 — if this VenueLogin was created from a PartnerLoginRequest,
+  // re-open that request as "New" so it doesn't silently vanish from the queue.
+  const existing = await prisma.venueLogin.findUnique({
+    where: { id },
+    select: { sourceRequestId: true },
+  });
   await prisma.venueLogin.delete({ where: { id } });
+  if (existing?.sourceRequestId) {
+    await prisma.partnerLoginRequest
+      .update({ where: { id: existing.sourceRequestId }, data: { status: "New" } })
+      .catch(() => {
+        /* request may not exist anymore */
+      });
+  }
   return Response.json({ ok: true });
 }

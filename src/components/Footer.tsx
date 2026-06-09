@@ -60,12 +60,11 @@ export function Footer() {
               talent that moves rooms.
             </p>
             <div className="mt-6">
-              <a
-                href="mailto:info@highlifelive.com"
-                className="text-sm text-silver hover:text-foreground transition-colors"
-              >
+              {/* Phase 3.8 — Liam directive: no email-client links yet (Phase 4.5+).
+                  Address displayed as plain text for now. */}
+              <span className="text-sm text-silver select-all">
                 info@highlifelive.com
-              </a>
+              </span>
             </div>
           </div>
 
