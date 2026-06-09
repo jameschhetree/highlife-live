@@ -9,10 +9,16 @@ import { Menu, X } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
 import { PortalTransition } from "@/components/PortalTransition";
 
-const navLinks = [
+// Phase 3.9 / 2026-06-08 — env-gated nav. Shop appears only on demo builds
+// (NEXT_PUBLIC_BUILD_TARGET=demo). Production hides Shop until it's real.
+// Env var is set per Vercel environment: "prod" on Production, "demo" on Preview.
+const isDemoBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === "demo";
+
+const navLinks: { href: string; label: string }[] = [
   { href: "/roster", label: "Roster" },
   { href: "/events", label: "Events" },
   { href: "/book", label: "Book" },
+  ...(isDemoBuild ? [{ href: "/shop", label: "Shop" }] : []),
 ];
 
 export function Header() {
