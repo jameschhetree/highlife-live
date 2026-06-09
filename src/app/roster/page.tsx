@@ -53,24 +53,26 @@ export default function RosterPage() {
             </div>
           </ScrollReveal>
 
-          {/* Filters */}
-          <ScrollReveal delay={0.1}>
-            <div className="glass-card rounded-2xl p-2.5 mb-10 inline-flex flex-wrap gap-1.5">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveFilter(cat)}
-                  className={`text-[10px] tracking-[0.18em] uppercase px-4 py-2 rounded-full transition-colors ${
-                    activeFilter === cat
-                      ? "bg-foreground text-background"
-                      : "text-silver hover:text-foreground hover:bg-white/5"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </ScrollReveal>
+          {/* Filters — hidden on prod builds per Dok 2026-06-08. Demo keeps the selector. */}
+          {process.env.NEXT_PUBLIC_BUILD_TARGET === "demo" && (
+            <ScrollReveal delay={0.1}>
+              <div className="glass-card rounded-2xl p-2.5 mb-10 inline-flex flex-wrap gap-1.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveFilter(cat)}
+                    className={`text-[10px] tracking-[0.18em] uppercase px-4 py-2 rounded-full transition-colors ${
+                      activeFilter === cat
+                        ? "bg-foreground text-background"
+                        : "text-silver hover:text-foreground hover:bg-white/5"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </ScrollReveal>
+          )}
 
           {/* Grid */}
           <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
