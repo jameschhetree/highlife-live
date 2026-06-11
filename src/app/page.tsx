@@ -6,8 +6,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { GsapHeroText } from "@/components/GsapHeroText";
-import { GsapScrollFade } from "@/components/GsapScrollFade";
 import { GsapParallaxImage } from "@/components/GsapParallaxImage";
 import type { Artist } from "@/lib/data";
 
@@ -63,10 +61,15 @@ export default function HomePage() {
               </span>
             </Link>
 
-            <GsapHeroText
-              lines={["Highlife", "Live"]}
+            <motion.h1
               className="font-display uppercase leading-[0.92] tracking-[-0.01em] text-[clamp(2.75rem,9vw,7.5rem)] mb-6"
-            />
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
+            >
+              <span className="text-gradient-hero block">Highlife</span>
+              <span className="text-gradient-hero block">Live</span>
+            </motion.h1>
 
             <motion.p
               className="text-silver text-base sm:text-lg max-w-2xl mx-auto mb-9 leading-relaxed"

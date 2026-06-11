@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArtistCard } from "@/components/ArtistCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
-import { GsapHeroText } from "@/components/GsapHeroText";
 import type { Artist } from "@/lib/data";
 
 // Phase 3.7 — Dok 2026-06-03: 'i need artists in the admin portal to show up
@@ -44,15 +43,9 @@ export default function RosterPage() {
           <ScrollReveal>
             <div className="mb-14">
               <span className="chip mb-6">Entertainment Roster</span>
-              <GsapHeroText
-                lines={[
-                  [
-                    { text: "The " },
-                    { text: "Roster", gradient: true },
-                  ],
-                ]}
-                className="font-display uppercase text-5xl md:text-7xl tracking-tight leading-[0.95] mb-5"
-              />
+              <h1 className="font-display uppercase text-5xl md:text-7xl tracking-tight leading-[0.95] mb-5">
+                The <span className="text-gradient-hero">Roster</span>
+              </h1>
               <p className="text-silver max-w-xl leading-relaxed text-base">
                 Curated talent built for unforgettable rooms. Browse our roster,
                 filter by genre, and request a booking.
