@@ -162,7 +162,7 @@ async function sendAssignmentEmail(
   `;
 
   await resend.emails.send({
-    from: "HighLife Live <bookings@highlifedmv.com>",
+    from: "HighLife Live <admin@highlifelive.com>",
     to: [agent.email],
     subject: `New assignment: ${audition.actStageName}`,
     html,
