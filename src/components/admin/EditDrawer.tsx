@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -168,13 +169,25 @@ export function FieldTags({
   onChange: (v: string[]) => void;
   placeholder?: string;
 }) {
+  const [draft, setDraft] = React.useState(value.join(", "));
+  const prevValue = React.useRef(value);
+
+  // Sync draft when parent value changes externally (e.g. form reset)
+  React.useEffect(() => {
+    if (prevValue.current !== value) {
+      setDraft(value.join(", "));
+      prevValue.current = value;
+    }
+  }, [value]);
+
   return (
     <div>
       <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 block mb-1">{label}</label>
       <input
         type="text"
-        value={value.join(", ")}
-        onChange={(e) => onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => onChange(draft.split(",").map((s) => s.trim()).filter(Boolean))}
         placeholder={placeholder || "Comma-separated values"}
         className="w-full px-3 py-2 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/40"
       />
