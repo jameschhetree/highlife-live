@@ -1,7 +1,6 @@
-// POST /api/admin/agent-auth -- verify a DB-backed AgentLogin against email + password.
-// Returns the session payload the client should hand to setAdminSession().
-// NOTE: The primary login route is now /api/admin/login which handles all roles.
-// This route is kept for backward compatibility.
+// POST /api/admin/login -- unified admin authentication.
+// Verifies credentials against the AgentLogin table (all roles: agent, admin, owner).
+// Replaces the old client-side ADMIN_USERS hardcoded password check.
 
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
@@ -20,24 +19,26 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: false, error: "Email and password required." }, { status: 400 });
   }
 
-  const agent = await prisma.agentLogin.findUnique({ where: { email } });
-  if (!agent || !agent.isActive) {
+  const user = await prisma.agentLogin.findUnique({ where: { email } });
+  if (!user || !user.isActive) {
     return Response.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
   }
 
-  const ok = await verifyPassword(password, agent.passwordHash);
+  const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
     return Response.json({ ok: false, error: "Invalid credentials." }, { status: 401 });
   }
 
-  const sessionRole = agent.role === "agent" ? "agent" : "admin";
+  // Map DB role to session role. "owner" and "admin" both get "admin" session role
+  // for backward compatibility with existing permission checks.
+  const sessionRole = user.role === "agent" ? "agent" : "admin";
 
   return Response.json({
     ok: true,
-    email: agent.email,
-    displayName: agent.name,
+    email: user.email,
+    displayName: user.name,
     role: sessionRole,
-    dbRole: agent.role,
-    agentLoginId: agent.id,
+    dbRole: user.role,
+    agentLoginId: user.id,
   });
 }

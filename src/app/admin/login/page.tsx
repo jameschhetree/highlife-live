@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Lock, ArrowRight } from "lucide-react";
-import { adminLogin, setAdminSession } from "@/lib/admin-auth";
+import { adminLoginServer } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -19,34 +19,11 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
 
-    // 1. Static owner/agent list (jaco@, liam@, agent@)
-    const staticHit = adminLogin(email, password);
-    if (staticHit) {
+    // All authentication goes through the server-side API route
+    const session = await adminLoginServer(email, password);
+    if (session) {
       router.push("/admin");
       return;
-    }
-
-    // 2. DB-backed AgentLogin fallback
-    try {
-      const res = await fetch("/api/admin/agent-auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setAdminSession({
-          email: data.email,
-          displayName: data.displayName,
-          role: "agent",
-          agentLoginId: data.agentLoginId,
-          loggedInAt: new Date().toISOString(),
-        });
-        router.push("/admin");
-        return;
-      }
-    } catch {
-      // network error — fall through to invalid credentials
     }
 
     setError("Invalid credentials");

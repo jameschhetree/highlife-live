@@ -553,6 +553,7 @@ model AgentLogin {
   email        String   @unique
   passwordHash String
   name         String
+  role         String   @default("agent") // "agent" | "admin" | "owner"
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

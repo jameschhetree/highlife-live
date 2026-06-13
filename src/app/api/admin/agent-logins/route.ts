@@ -8,6 +8,8 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const VALID_ROLES = ["agent", "admin", "owner"] as const;
+
 export async function GET(request: NextRequest) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
   if (!isOwnerAdminEmail(getAdminEmailFromRequest(request))) {
@@ -37,15 +39,21 @@ export async function POST(request: NextRequest) {
     email?: string;
     password?: string;
     name?: string;
+    role?: string;
     artistIds?: string[];
   };
 
   const email = (body.email ?? "").trim().toLowerCase();
   const password = (body.password ?? "").trim();
   const name = (body.name ?? "").trim();
+  const role = (body.role ?? "agent") as string;
 
   if (!email || !password || !name) {
     return Response.json({ error: "Email, password, and name are required." }, { status: 400 });
+  }
+
+  if (!VALID_ROLES.includes(role as typeof VALID_ROLES[number])) {
+    return Response.json({ error: "Role must be one of: agent, admin, owner." }, { status: 400 });
   }
 
   const existing = await prisma.agentLogin.findUnique({ where: { email } });
@@ -60,6 +68,7 @@ export async function POST(request: NextRequest) {
       email,
       passwordHash,
       name,
+      role,
       isActive: true,
       artistAssignments: body.artistIds?.length
         ? {
