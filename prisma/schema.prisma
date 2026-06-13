@@ -731,6 +731,22 @@ model PartnerInquiryHidden {
   @@index([venueLoginId])
 }
 
+// ── Generic Notes (unified threaded notes for any entity) ───
+
+model Note {
+  id          String   @id @default(cuid())
+  entityType  String // "artist" | "venue" | "inquiry"
+  entityId    String
+  authorType  String // "admin" | "agent" | "venue" | "internal"
+  authorEmail String
+  authorName  String   @default("")
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, entityId])
+}
+
 // ── Audit Log ───────────────────────────────────────────────
 
 model AuditLog {

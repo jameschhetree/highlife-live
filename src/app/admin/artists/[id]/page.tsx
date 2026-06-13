@@ -26,6 +26,7 @@ import {
 import type { ArtistStatus, AdminArtist } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import NotesThread from "@/components/admin/notes-thread";
 
 // Phase 3.9 Scope 11 — Archived removed from edit form; Developing + Left added.
 const statuses: ArtistStatus[] = ["Testing", "Active", "Priority", "Developing", "Paused", "Left"];
@@ -281,6 +282,10 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                 <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 mb-1">Best-Fit Venues</div>
                 <p className="text-sm text-zinc-400">{artist.bestFitVenueNotes}</p>
               </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}>
+              <NotesThread entityType="artist" entityId={id} />
             </motion.div>
           </div>
 
