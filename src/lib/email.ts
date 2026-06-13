@@ -108,8 +108,9 @@ export async function sendEmail(args: SendArgs): Promise<string> {
 
 /** Pre-configured From addresses, switchable in one place when business decisions change. */
 export const SENDERS = {
-  publicConfirmation: "HighLife Live <info@highlifelive.com>",
+  publicConfirmation: "HighLife Live <no-reply@highlifelive.com>",
   ownerAlert: "HighLife Live <info@highlifelive.com>",
-  agentNotification: "HighLife Live <info@highlifelive.com>",
+  agentNotification: "HighLife Live <admin@highlifelive.com>",
+  auditions: "HighLife Live <auditions@highlifelive.com>",
   internalBookings: "HighLife Live <bookings@highlifedmv.com>", // legacy / fallback
 } as const;

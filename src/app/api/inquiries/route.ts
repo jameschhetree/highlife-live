@@ -102,13 +102,11 @@ export async function POST(request: NextRequest) {
     console.error("[Inquiry email] Failed:", err);
   }
 
-  // Send confirmation email to submitter (public only)
-  if (source === "public") {
-    try {
-      await sendConfirmationEmail(inquiry);
-    } catch (err) {
-      console.error("[Inquiry confirmation email] Failed:", err);
-    }
+  // Send confirmation email to all submitters (public and venue_partner)
+  try {
+    await sendConfirmationEmail(inquiry);
+  } catch (err) {
+    console.error("[Inquiry confirmation email] Failed:", err);
   }
 
   return Response.json({ id: inquiry.id, inquiryNumber: inquiry.inquiryNumber }, { status: 201 });
@@ -198,9 +196,34 @@ async function sendOwnerNotification(inquiry: {
       <p style="margin-top: 20px; font-size: 11px; color: #52525b;">HighLife Live &middot; Inquiry Pipeline</p>
     </div>
   `;
+
+  // Build recipient list: owners + inquiries inbox + assigned agent(s) for this artist
+  const recipients = ["liam@highlifedmv.com", "jaco@highlifedmv.com", "inquiries@highlifelive.com"];
+  if (prisma) {
+    try {
+      const artist = await prisma.artist.findFirst({
+        where: { name: inquiry.artistName },
+        select: { id: true },
+      });
+      if (artist) {
+        const assignments = await prisma.agentArtistAssignment.findMany({
+          where: { artistId: artist.id },
+          include: { agentLogin: { select: { email: true } } },
+        });
+        for (const a of assignments) {
+          if (a.agentLogin.email && !recipients.includes(a.agentLogin.email)) {
+            recipients.push(a.agentLogin.email);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[Inquiry email] Failed to resolve agent emails:", err);
+    }
+  }
+
   await sendEmail({
     from: SENDERS.ownerAlert,
-    to: ["liam@highlifedmv.com", "jaco@highlifedmv.com"],
+    to: recipients,
     subject: `New inquiry ${inquiry.inquiryNumber}: ${inquiry.artistName} for ${inquiry.venueName}`,
     html,
   });
@@ -233,7 +256,7 @@ async function sendConfirmationEmail(inquiry: {
     </div>
   `;
   await sendEmail({
-    from: SENDERS.publicConfirmation,
+    from: "HighLife Live <no-reply@highlifelive.com>",
     to: inquiry.contactEmail,
     subject: `Inquiry ${inquiry.inquiryNumber} received - HighLife Live`,
     html,

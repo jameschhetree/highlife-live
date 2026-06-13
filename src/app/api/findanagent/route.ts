@@ -147,7 +147,7 @@ async function sendConfirmationEmail(application: {
   const resend = new Resend(apiKey);
 
   await resend.emails.send({
-    from: "HighLife Live <bookings@highlifedmv.com>",
+    from: "HighLife Live <auditions@highlifelive.com>",
     to: [application.email],
     subject: "We received your HighLife Live audition",
     html: `
@@ -202,7 +202,7 @@ async function sendInternalAlert(application: {
       : "<p>None</p>";
 
   await resend.emails.send({
-    from: "HighLife Live <bookings@highlifedmv.com>",
+    from: "HighLife Live <auditions@highlifelive.com>",
     to: ["liam@highlifedmv.com"],
     subject: `New audition: ${application.actStageName}`,
     html: `
