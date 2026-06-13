@@ -4,7 +4,6 @@
 
 import type {
   Artist as PrismaArtist,
-  ArtistSocialStat,
   Venue as PrismaVenue,
   Campaign as PrismaCampaign,
   Opportunity as PrismaOpportunity,
@@ -24,19 +23,9 @@ import type {
 
 // ── Artists ─────────────────────────────────────────────────
 
-type PrismaArtistWithStats = PrismaArtist & {
-  socialStats?: ArtistSocialStat[];
-};
-
 export function dbArtistToAdmin(
-  a: PrismaArtistWithStats
+  a: PrismaArtist
 ): AdminArtist {
-  const latestStat = a.socialStats?.sort(
-    (x, y) =>
-      new Date(y.snapshotDate).getTime() -
-      new Date(x.snapshotDate).getTime()
-  )[0];
-
   return {
     id: a.id,
     name: a.name,
@@ -45,9 +34,6 @@ export function dbArtistToAdmin(
     email: a.email,
     phone: a.phone,
     managerContact: a.managerContact,
-    homeCity: a.homeCity,
-    homeState: a.homeState,
-    primaryMarket: a.primaryMarket,
     primaryGenre: a.primaryGenre,
     secondaryGenres: a.secondaryGenres,
     performanceType: a.performanceType as AdminArtist["performanceType"],
@@ -59,12 +45,8 @@ export function dbArtistToAdmin(
     cleanExplicit: a.cleanExplicit,
     bio: a.bio,
     shortPitch: a.shortPitch,
-    longPitch: a.longPitch,
     pressQuotes: a.pressQuotes,
-    highlights: a.highlights,
     internalNotes: a.internalNotes,
-    reliabilityNotes: a.reliabilityNotes,
-    bestFitVenueNotes: a.bestFitVenueNotes,
     image: a.image,
     socials: {
       instagram: a.socialInstagram || undefined,
@@ -75,26 +57,6 @@ export function dbArtistToAdmin(
       soundcloud: a.socialSoundcloud || undefined,
       website: a.socialWebsite || undefined,
       linktree: a.socialLinktree || undefined,
-    },
-    stats: {
-      instagramFollowers: latestStat?.instagramFollowers ?? 0,
-      tiktokFollowers: latestStat?.tiktokFollowers ?? 0,
-      youtubeSubscribers: latestStat?.youtubeSubscribers ?? 0,
-      spotifyMonthlyListeners: latestStat?.spotifyMonthlyListeners ?? 0,
-      avgEngagement: latestStat?.avgEngagement ?? "0%",
-      estimatedTotalAudience: latestStat?.estimatedTotalAudience ?? 0,
-      lastRefreshed: latestStat
-        ? latestStat.snapshotDate.toISOString().slice(0, 10)
-        : "",
-    },
-    scoring: {
-      potential: a.scorePotential,
-      livePerformance: a.scoreLivePerformance,
-      marketability: a.scoreMarketability,
-      reliability: a.scoreReliability,
-      bookingPriority: a.scoreBookingPriority,
-      overall: a.scoreOverall,
-      notes: a.scoreNotes,
     },
     isDemo: a.isDemo as true,
   };
@@ -110,9 +72,6 @@ export function adminArtistToDbInput(a: Partial<AdminArtist>) {
   if (a.email !== undefined) data.email = a.email;
   if (a.phone !== undefined) data.phone = a.phone;
   if (a.managerContact !== undefined) data.managerContact = a.managerContact;
-  if (a.homeCity !== undefined) data.homeCity = a.homeCity;
-  if (a.homeState !== undefined) data.homeState = a.homeState;
-  if (a.primaryMarket !== undefined) data.primaryMarket = a.primaryMarket;
   if (a.primaryGenre !== undefined) data.primaryGenre = a.primaryGenre;
   if (a.secondaryGenres !== undefined) data.secondaryGenres = a.secondaryGenres;
   if (a.performanceType !== undefined) data.performanceType = a.performanceType;
@@ -124,12 +83,8 @@ export function adminArtistToDbInput(a: Partial<AdminArtist>) {
   if (a.cleanExplicit !== undefined) data.cleanExplicit = a.cleanExplicit;
   if (a.bio !== undefined) data.bio = a.bio;
   if (a.shortPitch !== undefined) data.shortPitch = a.shortPitch;
-  if (a.longPitch !== undefined) data.longPitch = a.longPitch;
   if (a.pressQuotes !== undefined) data.pressQuotes = a.pressQuotes;
-  if (a.highlights !== undefined) data.highlights = a.highlights;
   if (a.internalNotes !== undefined) data.internalNotes = a.internalNotes;
-  if (a.reliabilityNotes !== undefined) data.reliabilityNotes = a.reliabilityNotes;
-  if (a.bestFitVenueNotes !== undefined) data.bestFitVenueNotes = a.bestFitVenueNotes;
   if (a.image !== undefined) data.image = a.image;
   if (a.isDemo !== undefined) data.isDemo = a.isDemo;
 
@@ -143,17 +98,6 @@ export function adminArtistToDbInput(a: Partial<AdminArtist>) {
     data.socialSoundcloud = a.socials.soundcloud ?? "";
     data.socialWebsite = a.socials.website ?? "";
     data.socialLinktree = a.socials.linktree ?? "";
-  }
-
-  // Flatten scoring
-  if (a.scoring) {
-    data.scorePotential = a.scoring.potential;
-    data.scoreLivePerformance = a.scoring.livePerformance;
-    data.scoreMarketability = a.scoring.marketability;
-    data.scoreReliability = a.scoring.reliability;
-    data.scoreBookingPriority = a.scoring.bookingPriority;
-    data.scoreOverall = a.scoring.overall;
-    data.scoreNotes = a.scoring.notes;
   }
 
   return data;

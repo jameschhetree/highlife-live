@@ -32,9 +32,6 @@ model Artist {
   email             String   @default("")
   phone             String   @default("")
   managerContact    String   @default("")
-  homeCity          String   @default("")
-  homeState         String   @default("")
-  primaryMarket     String   @default("")
   primaryGenre      String   @default("")
   secondaryGenres   String[] @default([])
   performanceType   String   @default("Solo Artist")
@@ -46,12 +43,8 @@ model Artist {
   cleanExplicit     String   @default("")
   bio               String   @default("")
   shortPitch        String   @default("")
-  longPitch         String   @default("")
   pressQuotes       String[] @default([])
-  highlights        String[] @default([])
   internalNotes     String   @default("")
-  reliabilityNotes  String   @default("")
-  bestFitVenueNotes String   @default("")
   image             String   @default("")
 
   // Socials (flattened from ArtistSocials interface)
@@ -64,37 +57,42 @@ model Artist {
   socialWebsite    String @default("")
   socialLinktree   String @default("")
 
-  // Scoring (flattened from ArtistScoring interface)
-  scorePotential       Float  @default(5)
-  scoreLivePerformance Float  @default(5)
-  scoreMarketability   Float  @default(5)
-  scoreReliability     Float  @default(5)
-  scoreBookingPriority Float  @default(5)
-  scoreOverall         Float  @default(5)
-  scoreNotes           String @default("")
-
   isDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  socialStats   ArtistSocialStat[]
   campaigns     Campaign[]
   opportunities Opportunity[]
   epks          EPK[]
   bookings      Booking[]
+  assets        ArtistAsset[]
+  links         ArtistLink[]
 }
 
-model ArtistSocialStat {
-  id                      String   @id @default(cuid())
-  artistId                String
-  artist                  Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  instagramFollowers      Int      @default(0)
-  tiktokFollowers         Int      @default(0)
-  youtubeSubscribers      Int      @default(0)
-  spotifyMonthlyListeners Int      @default(0)
-  avgEngagement           String   @default("0%")
-  estimatedTotalAudience  Int      @default(0)
-  snapshotDate            DateTime @default(now())
+model ArtistAsset {
+  id        String   @id @default(cuid())
+  artistId  String
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  kind      String   // profile_photo, press_photo, logo, music_link, video, stage_plot, tech_rider, hospitality_rider
+  blobUrl   String
+  filename  String   @default("")
+  mimeType  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([artistId, kind])
+}
+
+model ArtistLink {
+  id        String   @id @default(cuid())
+  artistId  String
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([artistId])
 }
 
 // ── Venues ──────────────────────────────────────────────────

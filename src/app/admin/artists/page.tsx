@@ -39,9 +39,6 @@ const defaultArtist: Partial<AdminArtist> = {
   email: "",
   phone: "",
   managerContact: "",
-  homeCity: "",
-  homeState: "",
-  primaryMarket: "",
   primaryGenre: "",
   secondaryGenres: [],
   performanceType: "Solo Artist",
@@ -53,15 +50,9 @@ const defaultArtist: Partial<AdminArtist> = {
   cleanExplicit: "",
   bio: "",
   shortPitch: "",
-  longPitch: "",
   pressQuotes: [],
-  highlights: [],
   internalNotes: "",
-  reliabilityNotes: "",
-  bestFitVenueNotes: "",
   socials: {},
-  stats: { instagramFollowers: 0, tiktokFollowers: 0, youtubeSubscribers: 0, spotifyMonthlyListeners: 0, avgEngagement: "0%", estimatedTotalAudience: 0, lastRefreshed: new Date().toISOString().slice(0, 10) },
-  scoring: { potential: 5, livePerformance: 5, marketability: 5, reliability: 5, bookingPriority: 5, overall: 5, notes: "" },
   image: "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400&q=80",
 };
 
@@ -100,8 +91,7 @@ export default function ArtistsPage() {
   const filtered = visibleArtists.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.primaryGenre.toLowerCase().includes(search.toLowerCase()) ||
-      a.homeCity.toLowerCase().includes(search.toLowerCase());
+      a.primaryGenre.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "All" || a.status === filter;
     const matchesTestingDev =
       showTestingDeveloping || (a.status !== "Testing" && a.status !== "Developing");
@@ -179,7 +169,7 @@ export default function ArtistsPage() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
               type="text"
-              placeholder="Search artists by name, genre, or city..."
+              placeholder="Search artists by name or genre..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-500/40"
@@ -244,21 +234,12 @@ export default function ArtistsPage() {
 
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div>
-                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">Market</div>
-                      <div className="text-xs text-zinc-300">{artist.primaryMarket}</div>
+                      <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">Type</div>
+                      <div className="text-xs text-zinc-300">{artist.performanceType}</div>
                     </div>
                     <div>
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">Fee Range</div>
                       <div className="text-xs text-zinc-300">{artist.bookingFeeRange}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-white/6">
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">
-                      Score: <span className="text-pink-300 font-medium">{artist.scoring.overall}</span>/10
-                    </div>
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600">
-                      {(artist.stats.estimatedTotalAudience / 1000).toFixed(0)}K audience
                     </div>
                   </div>
                 </Link>
@@ -297,11 +278,6 @@ export default function ArtistsPage() {
         <FieldText label="Email" value={editingArtist.email ?? ""} onChange={(v) => patch("email", v)} type="email" />
         <FieldText label="Phone" value={editingArtist.phone ?? ""} onChange={(v) => patch("phone", v)} />
         <FieldText label="Manager Contact" value={editingArtist.managerContact ?? ""} onChange={(v) => patch("managerContact", v)} />
-        <div className="grid grid-cols-2 gap-3">
-          <FieldText label="Home City" value={editingArtist.homeCity ?? ""} onChange={(v) => patch("homeCity", v)} />
-          <FieldText label="Home State" value={editingArtist.homeState ?? ""} onChange={(v) => patch("homeState", v)} />
-        </div>
-        <FieldText label="Primary Market" value={editingArtist.primaryMarket ?? ""} onChange={(v) => patch("primaryMarket", v)} />
         <FieldText label="Primary Genre" value={editingArtist.primaryGenre ?? ""} onChange={(v) => patch("primaryGenre", v)} />
         <FieldTags label="Secondary Genres" value={editingArtist.secondaryGenres ?? []} onChange={(v) => patch("secondaryGenres", v)} />
         <FieldSelect

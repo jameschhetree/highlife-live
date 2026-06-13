@@ -29,8 +29,6 @@ export async function GET() {
       shortPitch: true,
       bio: true,
       image: true,
-      homeCity: true,
-      homeState: true,
     },
   });
 
@@ -41,8 +39,6 @@ export async function GET() {
       genre: r.primaryGenre || "Live Performance",
       pitch: r.shortPitch || (r.bio ? r.bio.slice(0, 220) : "Emerging HighLife artist available for booking inquiry."),
       image: r.image || "",
-      homeCity: r.homeCity || "",
-      homeState: r.homeState || "",
     })),
   );
 }

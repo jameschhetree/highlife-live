@@ -24,7 +24,6 @@ export async function GET(
   const { id } = await params;
   const row = await prisma.artist.findUnique({
     where: { id },
-    include: { socialStats: true },
   });
   if (!row) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -53,7 +52,6 @@ export async function PATCH(
   const updated = await prisma.artist.update({
     where: { id },
     data: data as Prisma.ArtistUpdateInput,
-    include: { socialStats: true },
   });
   return Response.json(dbArtistToAdmin(updated));
 }
