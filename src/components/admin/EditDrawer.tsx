@@ -170,15 +170,33 @@ export function FieldTags({
   placeholder?: string;
 }) {
   const [draft, setDraft] = React.useState(value.join(", "));
-  const prevValue = React.useRef(value);
+  const suppressSync = React.useRef(false);
 
   // Sync draft when parent value changes externally (e.g. form reset)
   React.useEffect(() => {
-    if (prevValue.current !== value) {
-      setDraft(value.join(", "));
-      prevValue.current = value;
+    if (suppressSync.current) {
+      suppressSync.current = false;
+      return;
     }
+    setDraft(value.join(", "));
   }, [value]);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const text = e.target.value;
+    setDraft(text);
+    // Keep parent state updated so saves mid-typing aren't lost,
+    // but suppress the useEffect re-sync so the draft isn't clobbered.
+    suppressSync.current = true;
+    onChange(text.split(",").map((s) => s.trim()).filter(Boolean));
+  }
+
+  function handleBlur() {
+    // Normalize: trim, dedupe empties, and re-sync the display.
+    const parsed = draft.split(",").map((s) => s.trim()).filter(Boolean);
+    setDraft(parsed.join(", "));
+    suppressSync.current = true;
+    onChange(parsed);
+  }
 
   return (
     <div>
@@ -186,8 +204,8 @@ export function FieldTags({
       <input
         type="text"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => onChange(draft.split(",").map((s) => s.trim()).filter(Boolean))}
+        onChange={handleChange}
+        onBlur={handleBlur}
         placeholder={placeholder || "Comma-separated values"}
         className="w-full px-3 py-2 rounded-xl bg-white/4 border border-white/8 text-sm text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-pink-500/40"
       />
