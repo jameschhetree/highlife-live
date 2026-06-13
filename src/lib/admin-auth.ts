@@ -11,42 +11,48 @@ import {
 
 const ADMIN_KEY = "highlife_admin";
 
-interface AdminUser {
-  email: string;
-  password: string;
-  displayName: string;
-}
-
-// 2026-06-03 — Dok directive: 'only two hard coded logins should be jaco@highlifedmv.com
-// and liam@highlifedmv.com'. The legacy agent@highlifedmv.com test login is removed.
-// Real agents authenticate via the DB-backed /api/admin/agent-auth path.
-const ADMIN_USERS: ReadonlyArray<AdminUser> = [
-  { email: "jaco@highlifedmv.com", password: "Jaco.iv1", displayName: "Jaco" },
-  { email: "liam@highlifedmv.com", password: "DokMurda1", displayName: "Liam" },
-];
-
 export interface AdminSession {
   email: string;
   displayName: string;
   role: "admin" | "agent";
+  dbRole?: "owner" | "admin" | "agent";
   loggedInAt: string;
-  agentLoginId?: string; // populated for DB-backed agent logins
+  agentLoginId?: string;
 }
 
-export function adminLogin(emailOrUsername: string, password: string): AdminSession | null {
+/**
+ * Authenticate via the server-side /api/admin/login endpoint.
+ * Returns an AdminSession on success, null on failure.
+ */
+export async function adminLoginServer(
+  emailOrUsername: string,
+  password: string
+): Promise<AdminSession | null> {
   const email = emailOrUsername.trim().toLowerCase();
-  const match = ADMIN_USERS.find((u) => u.email === email && u.password === password);
-  if (!match) return null;
-  const session: AdminSession = {
-    email: match.email,
-    displayName: match.displayName,
-    role: isOwnerAdminEmail(match.email) ? "admin" : "agent",
-    loggedInAt: new Date().toISOString(),
-  };
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
+  try {
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return null;
+
+    const session: AdminSession = {
+      email: data.email,
+      displayName: data.displayName,
+      role: data.role,
+      dbRole: data.dbRole,
+      agentLoginId: data.agentLoginId,
+      loggedInAt: new Date().toISOString(),
+    };
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(ADMIN_KEY, JSON.stringify(session));
+    }
+    return session;
+  } catch {
+    return null;
   }
-  return session;
 }
 
 export function setAdminSession(session: AdminSession): void {
@@ -77,6 +83,8 @@ export function isAdminAuthed(): boolean {
 }
 
 export function isOwnerAdmin(session: AdminSession | null = getAdminSession()): boolean {
+  // Check dbRole first (set by new server-side auth), fall back to email check
+  if (session?.dbRole === "owner") return true;
   return isOwnerAdminEmail(session?.email);
 }
 
@@ -84,11 +92,11 @@ export function isAgentAdmin(session: AdminSession | null = getAdminSession()): 
   return session?.role === "agent";
 }
 
-// Client-side audition visibility — owners always, agents always (server filters
+// Client-side audition visibility -- owners always, agents always (server filters
 // scope to assignments). Server still enforces auth properly via canViewAuditionsEmail.
 export function canViewAuditions(session: AdminSession | null = getAdminSession()): boolean {
   if (!session) return false;
-  return isOwnerAdminEmail(session.email) || session.role === "agent";
+  return isOwnerAdmin(session) || session.role === "agent";
 }
 
 export function canManageArtists(session: AdminSession | null = getAdminSession()): boolean {

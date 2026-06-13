@@ -5,11 +5,18 @@ const COOKIE_NAME = "hl_venue_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function getSecret(): string {
-  return (
-    process.env.VENUE_SESSION_SECRET ||
-    process.env.RESEND_API_KEY ||
-    "highlife-dev-secret-do-not-use-in-prod"
-  );
+  const secret = process.env.VENUE_SESSION_SECRET;
+  if (secret) return secret;
+
+  // In production, VENUE_SESSION_SECRET must be set -- no fallbacks.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "VENUE_SESSION_SECRET is required in production. Set it in your environment variables."
+    );
+  }
+
+  // Dev-only fallback so local development works without env config.
+  return "highlife-dev-secret-do-not-use-in-prod";
 }
 
 function sign(payload: string): string {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Trash2, RefreshCw, Search, UserCog, X, Check, KeyRound, Eye, EyeOff, Building2, Clock, ShieldCheck, Music } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Search, UserCog, X, Check, KeyRound, Eye, EyeOff, Building2, Clock, ShieldCheck, Music, Shield } from "lucide-react";
 import { getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 import { useRouter } from "next/navigation";
 
@@ -15,6 +15,7 @@ interface AgentLogin {
   id: string;
   email: string;
   name: string;
+  role: "agent" | "admin" | "owner";
   isActive: boolean;
   createdAt: string;
   artistAssignments: ArtistAssignment[];
@@ -298,6 +299,18 @@ export default function AgentLoginsPage() {
     }
   };
 
+  const changeRole = async (row: AgentLogin, newRole: string) => {
+    const res = await fetch(`/api/admin/agent-logins/${row.id}`, {
+      method: "PATCH",
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, ...updated } : r)));
+    }
+  };
+
   const remove = async (row: AgentLogin) => {
     if (!confirm(`Delete agent login for ${row.email}? This cannot be undone.`)) return;
     const res = await fetch(`/api/admin/agent-logins/${row.id}`, {
@@ -402,6 +415,17 @@ export default function AgentLoginsPage() {
                     >
                       {row.isActive ? "Active" : "Inactive"}
                     </span>
+                    <span
+                      className={`text-[9px] tracking-[0.18em] uppercase rounded-full px-2 py-0.5 border ${
+                        row.role === "owner"
+                          ? "text-pink-300 border-pink-400/30 bg-pink-400/10"
+                          : row.role === "admin"
+                          ? "text-violet-300 border-violet-400/30 bg-violet-400/10"
+                          : "text-sky-300 border-sky-400/30 bg-sky-400/10"
+                      }`}
+                    >
+                      {row.role}
+                    </span>
                   </div>
                   <p className="text-xs text-zinc-400 break-all">{row.email}</p>
                   <p className="text-[10px] text-zinc-500 mt-2">
@@ -474,6 +498,21 @@ export default function AgentLoginsPage() {
                   >
                     <Building2 size={11} /> Venue Access
                   </button>
+                  {session?.dbRole === "owner" && (
+                    <div className="inline-flex items-center gap-1.5">
+                      <Shield size={11} className="text-zinc-500" />
+                      <select
+                        value={row.role}
+                        onChange={(e) => changeRole(row, e.target.value)}
+                        className="text-[10px] tracking-[0.12em] uppercase px-2 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/60 text-zinc-200 transition-colors cursor-pointer focus:outline-none focus:border-pink-400/60"
+                        title="Change role"
+                      >
+                        <option value="agent">Agent</option>
+                        <option value="admin">Admin</option>
+                        <option value="owner">Owner</option>
+                      </select>
+                    </div>
+                  )}
                   <button
                     onClick={() => remove(row)}
                     className="p-2 rounded-lg border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"

@@ -8,6 +8,8 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const VALID_ROLES = ["agent", "admin", "owner"] as const;
+
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -28,6 +30,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     email?: string;
     password?: string;
     isActive?: boolean;
+    role?: string;
     artistIds?: string[];
   };
 
@@ -37,6 +40,9 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (typeof body.isActive === "boolean") data.isActive = body.isActive;
   if (typeof body.password === "string" && body.password.trim()) {
     data.passwordHash = await hashPassword(body.password.trim());
+  }
+  if (typeof body.role === "string" && VALID_ROLES.includes(body.role as typeof VALID_ROLES[number])) {
+    data.role = body.role;
   }
 
   const row = await prisma.agentLogin.update({ where: { id }, data });
