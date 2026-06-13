@@ -21,6 +21,16 @@ const nextConfig: NextConfig = {
         destination: "/findanartist",
         permanent: true,
       },
+      {
+        source: "/auditions",
+        destination: "/findanagent",
+        permanent: false,
+      },
+      {
+        source: "/auditions/:path*",
+        destination: "/findanagent/:path*",
+        permanent: false,
+      },
     ];
   },
 };
