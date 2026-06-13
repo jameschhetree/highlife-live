@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Lock,
+  FileText,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Artist } from "@/lib/data";
@@ -34,19 +35,26 @@ const galleryImages = [
   "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80",
 ];
 
+// EPK status shape returned from /api/admin/epks or inline DB check
+type EpkStatus = { hasActiveEpk: boolean; slug: string };
+
 export default function ArtistDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [playingTrack, setPlayingTrack] = useState<number | null>(null);
+  // NOTE: Venue auth uses the VenueLogin system via isAuthenticated().
+  // This checks localStorage for a venue/promoter session token set during partner login.
+  // If no venue auth session exists, restricted fields are hidden from public visitors.
   const [authed, setAuthed] = useState(false);
+  const [epkStatus, setEpkStatus] = useState<EpkStatus | null>(null);
 
   useEffect(() => {
     setAuthed(isAuthenticated());
   }, []);
 
-  // Phase 3.7 — pull from DB via /api/artists; match by slug.
+  // Pull artist from DB via /api/artists; match by slug.
   useEffect(() => {
     if (!slug) return;
     fetch("/api/artists", { cache: "no-store" })
@@ -57,6 +65,20 @@ export default function ArtistDetailPage() {
       })
       .catch(() => setArtist(null))
       .finally(() => setLoading(false));
+  }, [slug]);
+
+  // Check if artist has an active EPK (Published status)
+  useEffect(() => {
+    if (!slug) return;
+    // Try to fetch EPK status -- this is a lightweight check
+    fetch(`/api/artists/epk-status?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.hasActiveEpk) {
+          setEpkStatus(data);
+        }
+      })
+      .catch(() => { /* EPK check is optional -- fail silently */ });
   }, [slug]);
 
   if (loading) {
@@ -76,7 +98,7 @@ export default function ArtistDetailPage() {
             href="/roster"
             className="text-xs tracking-[0.18em] uppercase text-silver hover:text-foreground"
           >
-            ← Back to Roster
+            Back to Roster
           </Link>
         </div>
       </div>
@@ -136,52 +158,63 @@ export default function ArtistDetailPage() {
             </h1>
 
             <div className="flex items-center gap-4 mb-8 text-sm text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <MapPin size={13} strokeWidth={1.5} />
-                {artist.city}
-              </span>
-              <span className="text-border">|</span>
-              <span className="flex items-center gap-1.5">
-                <Plane size={13} strokeWidth={1.5} />
-                {artist.travelAvailability}
-              </span>
+              {artist.city && (
+                <>
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={13} strokeWidth={1.5} />
+                    {artist.city}
+                  </span>
+                  <span className="text-border">|</span>
+                </>
+              )}
+              {/* Travel availability -- visible only to authenticated venue partners */}
+              {authed && artist.travelAvailability && (
+                <span className="flex items-center gap-1.5">
+                  <Plane size={13} strokeWidth={1.5} />
+                  {artist.travelAvailability}
+                </span>
+              )}
             </div>
 
             <p className="text-silver leading-relaxed mb-8">{artist.bio}</p>
 
-            {/* Performance Types */}
-            <div className="mb-8">
-              <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
-                Performance Types
+            {/* Performance Types -- visible only to authenticated venue partners */}
+            {authed && artist.performanceTypes.length > 0 && (
+              <div className="mb-8">
+                <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
+                  Performance Types
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {artist.performanceTypes.map((type) => (
+                    <span key={type} className="chip">
+                      {type}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {artist.performanceTypes.map((type) => (
-                  <span key={type} className="chip">
-                    {type}
-                  </span>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Past Events */}
-            <div className="mb-8">
-              <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
-                Past Events
+            {artist.pastEvents.length > 0 && (
+              <div className="mb-8">
+                <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
+                  Past Events
+                </div>
+                <div className="flex flex-col gap-2">
+                  {artist.pastEvents.map((evt) => (
+                    <span
+                      key={evt}
+                      className="flex items-center gap-2 text-sm text-zinc-300"
+                    >
+                      <Calendar size={12} strokeWidth={1.5} className="text-pink-300" />
+                      {evt}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                {artist.pastEvents.map((evt) => (
-                  <span
-                    key={evt}
-                    className="flex items-center gap-2 text-sm text-zinc-300"
-                  >
-                    <Calendar size={12} strokeWidth={1.5} className="text-pink-300" />
-                    {evt}
-                  </span>
-                ))}
-              </div>
-            </div>
+            )}
 
-            {/* CTAs — gated */}
+            {/* CTAs */}
             <div className="flex flex-wrap gap-3">
               {authed ? (
                 <Link
@@ -209,6 +242,16 @@ export default function ArtistDetailPage() {
                 <Download size={13} />
                 Press Kit
               </button>
+              {/* EPK link -- shown when artist has an active/published EPK */}
+              {epkStatus?.hasActiveEpk && (
+                <Link
+                  href={`/epk/${epkStatus.slug || slug}`}
+                  className="flex items-center gap-2 px-6 py-3.5 border border-pink-500/20 hover:border-pink-500/40 bg-pink-500/5 text-xs tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200 rounded-full transition-colors"
+                >
+                  <FileText size={13} />
+                  View EPK
+                </Link>
+              )}
             </div>
 
             {!authed && (

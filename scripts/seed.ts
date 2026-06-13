@@ -58,9 +58,6 @@ async function main() {
         email: a.email,
         phone: a.phone,
         managerContact: a.managerContact,
-        homeCity: a.homeCity,
-        homeState: a.homeState,
-        primaryMarket: a.primaryMarket,
         primaryGenre: a.primaryGenre,
         secondaryGenres: a.secondaryGenres,
         performanceType: a.performanceType,
@@ -72,12 +69,8 @@ async function main() {
         cleanExplicit: a.cleanExplicit,
         bio: a.bio,
         shortPitch: a.shortPitch,
-        longPitch: a.longPitch,
         pressQuotes: a.pressQuotes,
-        highlights: a.highlights,
         internalNotes: a.internalNotes,
-        reliabilityNotes: a.reliabilityNotes,
-        bestFitVenueNotes: a.bestFitVenueNotes,
         image: a.image,
         isDemo: true,
         // Flatten socials
@@ -89,28 +82,6 @@ async function main() {
         socialSoundcloud: a.socials.soundcloud ?? "",
         socialWebsite: a.socials.website ?? "",
         socialLinktree: a.socials.linktree ?? "",
-        // Flatten scoring
-        scorePotential: a.scoring.potential,
-        scoreLivePerformance: a.scoring.livePerformance,
-        scoreMarketability: a.scoring.marketability,
-        scoreReliability: a.scoring.reliability,
-        scoreBookingPriority: a.scoring.bookingPriority,
-        scoreOverall: a.scoring.overall,
-        scoreNotes: a.scoring.notes,
-        // Create social stats snapshot
-        socialStats: {
-          create: {
-            instagramFollowers: a.stats.instagramFollowers,
-            tiktokFollowers: a.stats.tiktokFollowers,
-            youtubeSubscribers: a.stats.youtubeSubscribers,
-            spotifyMonthlyListeners: a.stats.spotifyMonthlyListeners,
-            avgEngagement: a.stats.avgEngagement,
-            estimatedTotalAudience: a.stats.estimatedTotalAudience,
-            snapshotDate: a.stats.lastRefreshed
-              ? new Date(a.stats.lastRefreshed)
-              : new Date(),
-          },
-        },
       },
     });
   }

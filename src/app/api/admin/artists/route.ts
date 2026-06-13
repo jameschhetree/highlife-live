@@ -35,7 +35,6 @@ export async function GET(request: Request) {
 
   const rows = await prisma.artist.findMany({
     where,
-    include: { socialStats: true },
     orderBy: { name: "asc" },
   });
   return Response.json(rows.map(dbArtistToAdmin));
@@ -51,30 +50,13 @@ export async function POST(request: Request) {
   const body = await request.json();
   const data = adminArtistToDbInput(body);
 
-  // Extract stats for nested create
-  const statsData = body.stats
-    ? {
-        instagramFollowers: body.stats.instagramFollowers ?? 0,
-        tiktokFollowers: body.stats.tiktokFollowers ?? 0,
-        youtubeSubscribers: body.stats.youtubeSubscribers ?? 0,
-        spotifyMonthlyListeners: body.stats.spotifyMonthlyListeners ?? 0,
-        avgEngagement: body.stats.avgEngagement ?? "0%",
-        estimatedTotalAudience: body.stats.estimatedTotalAudience ?? 0,
-        snapshotDate: body.stats.lastRefreshed
-          ? new Date(body.stats.lastRefreshed)
-          : new Date(),
-      }
-    : undefined;
-
   const createData = {
     ...data,
     isDemo: false,
-    ...(statsData ? { socialStats: { create: statsData } } : {}),
   } as Prisma.ArtistCreateInput;
 
   const created = await prisma.artist.create({
     data: createData,
-    include: { socialStats: true },
   });
   return Response.json(dbArtistToAdmin(created), { status: 201 });
 }

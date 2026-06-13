@@ -16,8 +16,6 @@ type DevelopingArtist = {
   genre: string;
   pitch: string;
   image: string;
-  homeCity: string;
-  homeState: string;
 };
 
 interface BookingForm {
@@ -520,11 +518,6 @@ function BookingFormContent() {
                             {a.genre}
                           </span>
                         </div>
-                        {(a.homeCity || a.homeState) && (
-                          <p className="mt-0.5 text-[11px] tracking-wide text-zinc-500">
-                            {[a.homeCity, a.homeState].filter(Boolean).join(", ")}
-                          </p>
-                        )}
                         <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-300">{a.pitch}</p>
                       </button>
                     </li>

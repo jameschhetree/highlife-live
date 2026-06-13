@@ -18,16 +18,6 @@ export type PerformanceType =
   | "Producer/DJ Hybrid"
   | "Other";
 
-export interface ArtistScoring {
-  potential: number;
-  livePerformance: number;
-  marketability: number;
-  reliability: number;
-  bookingPriority: number;
-  overall: number;
-  notes: string;
-}
-
 export interface ArtistSocials {
   instagram?: string;
   tiktok?: string;
@@ -39,16 +29,6 @@ export interface ArtistSocials {
   linktree?: string;
 }
 
-export interface ArtistStats {
-  instagramFollowers: number;
-  tiktokFollowers: number;
-  youtubeSubscribers: number;
-  spotifyMonthlyListeners: number;
-  avgEngagement: string;
-  estimatedTotalAudience: number;
-  lastRefreshed: string;
-}
-
 export interface AdminArtist {
   id: string;
   name: string;
@@ -57,9 +37,6 @@ export interface AdminArtist {
   email: string;
   phone: string;
   managerContact: string;
-  homeCity: string;
-  homeState: string;
-  primaryMarket: string;
   primaryGenre: string;
   secondaryGenres: string[];
   performanceType: PerformanceType;
@@ -71,15 +48,9 @@ export interface AdminArtist {
   cleanExplicit: string;
   bio: string;
   shortPitch: string;
-  longPitch: string;
   pressQuotes: string[];
-  highlights: string[];
   internalNotes: string;
-  reliabilityNotes: string;
-  bestFitVenueNotes: string;
   socials: ArtistSocials;
-  stats: ArtistStats;
-  scoring: ArtistScoring;
   image: string;
   isDemo: true;
 }
@@ -274,9 +245,6 @@ export const demoArtists: AdminArtist[] = [
     email: "isabella@vegamusic.com",
     phone: "(202) 555-0141",
     managerContact: "Marco Reyes (marco@vegamgmt.com)",
-    homeCity: "Washington",
-    homeState: "DC",
-    primaryMarket: "DMV",
     primaryGenre: "Opera / Classical Crossover",
     secondaryGenres: ["Jazz Vocal", "Art Pop"],
     performanceType: "Opera Vocalist",
@@ -288,15 +256,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Clean only",
     bio: "Classically trained mezzo-soprano with a modern edge. Isabella trained at Peabody Conservatory and has performed at venues ranging from the Kennedy Center Millennium Stage to private embassy events across DC. Her crossover style blends operatic power with jazz phrasing.",
     shortPitch: "Classically trained vocalist available for elevated cultural, private, and special event programming in the DMV.",
-    longPitch: "Isabella Vega is a Peabody-trained mezzo-soprano who brings classical vocal power to contemporary settings. With experience at the Kennedy Center, embassy events, and private galas, she delivers performances that elevate any room. Her repertoire spans Italian opera, jazz standards, and original art-pop compositions.",
     pressQuotes: ["\"A voice that stops rooms.\" — Washington City Paper", "\"The future of crossover classical.\" — DCist"],
-    highlights: ["Kennedy Center Millennium Stage 2025", "French Embassy Cultural Gala", "Baltimore Symphony guest artist"],
     internalNotes: "Great for premium/upscale bookings. Avoid dive bars and loud club environments.",
-    reliabilityNotes: "Always on time, professional rider requests. Easy to work with.",
-    bestFitVenueNotes: "Cultural centers, theaters, embassy events, upscale restaurants with live music programs, private galas.",
     socials: { instagram: "@isabellavegamusic", youtube: "IsabellaVegaOfficial", spotify: "Isabella Vega", website: "isabellavega.com" },
-    stats: { instagramFollowers: 12400, tiktokFollowers: 3200, youtubeSubscribers: 8900, spotifyMonthlyListeners: 15600, avgEngagement: "4.2%", estimatedTotalAudience: 40100, lastRefreshed: "2026-05-28" },
-    scoring: { potential: 8, livePerformance: 9, marketability: 7, reliability: 10, bookingPriority: 9, overall: 8.6, notes: "Strong classical niche, excellent reliability, premium bookings" },
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
     isDemo: true,
   },
@@ -308,9 +270,6 @@ export const demoArtists: AdminArtist[] = [
     email: "elfuego@gmail.com",
     phone: "(301) 555-0198",
     managerContact: "Self-managed",
-    homeCity: "Silver Spring",
-    homeState: "MD",
-    primaryMarket: "DMV",
     primaryGenre: "Dembow / Reggaeton",
     secondaryGenres: ["Latin Trap", "Club"],
     performanceType: "Dembow/Latin Club Act",
@@ -322,15 +281,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Explicit (clean versions available)",
     bio: "El Fuego is the DMV's hottest Latin club act. Born in the Dominican Republic and raised in Silver Spring, he brings authentic dembow energy fused with modern reggaeton production. His sets are high-energy, bilingual, and built for dance floors.",
     shortPitch: "High-energy Latin/Dembow act available for club night support or themed event in the DMV.",
-    longPitch: "El Fuego combines authentic Dominican dembow rhythms with modern club production. Based in Silver Spring, MD, he has become a fixture in the DMV Latin nightlife scene with residencies at multiple venues and a growing regional following. His bilingual sets keep dance floors packed from open to close.",
     pressQuotes: ["\"DMV's dembow king.\" — El Tiempo Latino"],
-    highlights: ["Latin Night residency at Ultrabar DC", "Fiesta DC Main Stage 2025", "Opening for Farruko at Echostage"],
     internalNotes: "Best for Latin nights, club events, college Latin parties. Strong crowd pull in MD/DC Latin communities.",
-    reliabilityNotes: "Generally reliable. Has been late to 1 of 8 bookings. Improving.",
-    bestFitVenueNotes: "Latin clubs, college Latin nights, lounges with Latin programming, festivals with Latin stages.",
     socials: { instagram: "@elfuegodmv", tiktok: "@elfuegodmv", spotify: "El Fuego DMV" },
-    stats: { instagramFollowers: 28500, tiktokFollowers: 45000, youtubeSubscribers: 5600, spotifyMonthlyListeners: 22000, avgEngagement: "6.1%", estimatedTotalAudience: 101100, lastRefreshed: "2026-05-25" },
-    scoring: { potential: 7, livePerformance: 8, marketability: 8, reliability: 7, bookingPriority: 8, overall: 7.6, notes: "Strong Latin niche, high social engagement, good crowd pull" },
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
     isDemo: true,
   },
@@ -342,9 +295,6 @@ export const demoArtists: AdminArtist[] = [
     email: "tone@tonebrady.com",
     phone: "(404) 555-0177",
     managerContact: "Dee Williams (dee@tbookmgmt.com)",
-    homeCity: "Atlanta",
-    homeState: "GA",
-    primaryMarket: "Atlanta / DMV",
     primaryGenre: "Hip-Hop",
     secondaryGenres: ["Trap Soul", "R&B Rap"],
     performanceType: "Rapper",
@@ -356,15 +306,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Both available",
     bio: "Tone Brady brings raw Atlanta energy to every stage. With roots in the underground scene and a sound that bridges trap, soul, and modern hip-hop, Tone has become one of the most sought-after performers in the Southeast.",
     shortPitch: "Atlanta hip-hop artist with a commanding live show, available for club dates, festivals, and private events.",
-    longPitch: "Tone Brady is an Atlanta-based hip-hop artist whose sound bridges trap, soul, and modern rap. With a growing regional following and a live show known for its energy and crowd control, Tone is ready for stages of any size. Currently building his DMV market presence through strategic bookings.",
     pressQuotes: ["\"Atlanta's next big export.\" — Creative Loafing", "\"A performer who earns every room.\" — HipHopDX"],
-    highlights: ["HighLife Sessions ATL 2025", "A3C Festival", "Culture Room Miami headliner"],
     internalNotes: "Top priority artist. Strong performer, reliable, good media presence. Push for DMV club and college bookings.",
-    reliabilityNotes: "Excellent. Always early to soundcheck. Professional team.",
-    bestFitVenueNotes: "Hip-hop clubs, college shows, festivals with urban stages, private events with younger demos.",
     socials: { instagram: "@tonebrady", tiktok: "@tonebrady", youtube: "ToneBradyOfficial", spotify: "Tone Brady", website: "tonebrady.com" },
-    stats: { instagramFollowers: 67000, tiktokFollowers: 120000, youtubeSubscribers: 34000, spotifyMonthlyListeners: 185000, avgEngagement: "5.8%", estimatedTotalAudience: 406000, lastRefreshed: "2026-05-29" },
-    scoring: { potential: 9, livePerformance: 9, marketability: 9, reliability: 10, bookingPriority: 10, overall: 9.4, notes: "Top-tier artist. Push aggressively for bookings." },
     image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80",
     isDemo: true,
   },
@@ -376,9 +320,6 @@ export const demoArtists: AdminArtist[] = [
     email: "nyla@nylavale.com",
     phone: "(404) 555-0233",
     managerContact: "James Carter (james@highlifedmv.com)",
-    homeCity: "Atlanta",
-    homeState: "GA",
-    primaryMarket: "Atlanta / East Coast",
     primaryGenre: "R&B",
     secondaryGenres: ["Neo-Soul", "Jazz"],
     performanceType: "RnB Vocalist",
@@ -390,15 +331,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Clean",
     bio: "Nyla Vale is the voice of new Atlanta R&B. With a catalog that spans intimate acoustic sessions to full-band productions, Nyla delivers performances that are both technically stunning and deeply emotional.",
     shortPitch: "Atlanta R&B vocalist with a voice built for rooms that demand elegance and atmosphere.",
-    longPitch: "Nyla Vale is an Atlanta-based R&B vocalist whose performances blend technical vocal mastery with deep emotional connection. From intimate lounge sets to festival main stages, Nyla transforms every venue into an experience. Ideal for upscale programming, brand dinners, and curated live music nights.",
     pressQuotes: ["\"The voice Atlanta has been waiting for.\" — Earmilk"],
-    highlights: ["Essence Fest Lounge 2025", "Art Basel Private Performance", "HighLife Sessions ATL"],
     internalNotes: "Strong for lounge, upscale, and brand event bookings. Pairs well with DJ Saint Noir.",
-    reliabilityNotes: "Reliable. Clear communication. Prefers acoustic/intimate setups when possible.",
-    bestFitVenueNotes: "Lounges, upscale restaurants with live music, private events, brand dinners, jazz clubs.",
     socials: { instagram: "@nylavale", spotify: "Nyla Vale", appleMusic: "Nyla Vale", website: "nylavale.com" },
-    stats: { instagramFollowers: 34000, tiktokFollowers: 18000, youtubeSubscribers: 12000, spotifyMonthlyListeners: 78000, avgEngagement: "4.9%", estimatedTotalAudience: 142000, lastRefreshed: "2026-05-27" },
-    scoring: { potential: 8, livePerformance: 9, marketability: 8, reliability: 9, bookingPriority: 8, overall: 8.4, notes: "Premium R&B talent, strong for upscale bookings" },
     image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
     isDemo: true,
   },
@@ -410,9 +345,6 @@ export const demoArtists: AdminArtist[] = [
     email: "foolery@gmail.com",
     phone: "(202) 555-0312",
     managerContact: "Self-managed",
-    homeCity: "Washington",
-    homeState: "DC",
-    primaryMarket: "DMV",
     primaryGenre: "Alternative Rap",
     secondaryGenres: ["Punk Rap", "Indie Hip-Hop"],
     performanceType: "Rapper",
@@ -424,15 +356,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Explicit",
     bio: "Foolery defies genre boundaries with a sound that fuses alternative rap, punk energy, and introspective lyricism. Based in the DMV, Foolery has carved a lane as one of the most unpredictable and electrifying performers in the mid-Atlantic scene.",
     shortPitch: "DMV alternative rap with punk energy and genre-defying live shows.",
-    longPitch: "Foolery is a DC-based alternative rap artist whose live shows are legendary for their intensity and unpredictability. Blending punk energy with introspective hip-hop, Foolery appeals to a cross-genre audience and has built a loyal following in the DMV indie scene. Ideal for college shows, showcases, and festivals with diverse programming.",
     pressQuotes: ["\"DC's most electrifying performer.\" — Bandwidth"],
-    highlights: ["Black Room DC 2025", "Howard Homecoming", "Broccoli City Warmup Set"],
     internalNotes: "Currently in testing phase. Strong live performer but needs more consistent booking history.",
-    reliabilityNotes: "Mostly reliable. Can be hard to reach for pre-production details. Working on it.",
-    bestFitVenueNotes: "Indie venues, college shows, alternative programming, punk/rap crossover events.",
     socials: { instagram: "@foolerydc", tiktok: "@foolerydc", soundcloud: "foolery" },
-    stats: { instagramFollowers: 8900, tiktokFollowers: 15000, youtubeSubscribers: 3400, spotifyMonthlyListeners: 11000, avgEngagement: "7.2%", estimatedTotalAudience: 38300, lastRefreshed: "2026-05-20" },
-    scoring: { potential: 7, livePerformance: 8, marketability: 6, reliability: 6, bookingPriority: 6, overall: 6.6, notes: "High energy, needs more consistency. Testing phase." },
     image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&q=80",
     isDemo: true,
   },
@@ -444,9 +370,6 @@ export const demoArtists: AdminArtist[] = [
     email: "djsaintnoir@gmail.com",
     phone: "(202) 555-0456",
     managerContact: "Self-managed",
-    homeCity: "Washington",
-    homeState: "DC",
-    primaryMarket: "DMV",
     primaryGenre: "DJ / Electronic",
     secondaryGenres: ["Afrobeats", "House", "Amapiano"],
     performanceType: "DJ",
@@ -458,15 +381,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "N/A (DJ sets)",
     bio: "DJ Saint Noir is DC's premier nightlife selector. Specializing in afrobeats-to-house transitions, premium club sets, and brand activations, Saint Noir has held residencies at the city's most exclusive venues.",
     shortPitch: "DC nightlife selector specializing in premium club sets, brand activations, and curated events.",
-    longPitch: "DJ Saint Noir is Washington DC's go-to nightlife DJ for premium events. With residencies at top DC venues and experience with brand activations for Hennessy, Moet, and local luxury brands, Saint Noir brings a curated sonic experience that elevates any room. His ability to read and control a room is unmatched in the DMV.",
     pressQuotes: ["\"DC's most trusted selector.\" — Washington Nightlife Guide"],
-    highlights: ["Hennessy Artistry DC", "HighLife Industry Mixer", "Echostage support sets"],
     internalNotes: "Great add-on for any DMV event. Can pair with vocalists for premium lounge bookings.",
-    reliabilityNotes: "Extremely reliable. Owns his own equipment. Always professional.",
-    bestFitVenueNotes: "Clubs, lounges, brand activations, private events, rooftop parties.",
     socials: { instagram: "@djsaintnoir", website: "djsaintnoir.com" },
-    stats: { instagramFollowers: 15800, tiktokFollowers: 4500, youtubeSubscribers: 1200, spotifyMonthlyListeners: 0, avgEngagement: "3.8%", estimatedTotalAudience: 21500, lastRefreshed: "2026-05-22" },
-    scoring: { potential: 7, livePerformance: 8, marketability: 7, reliability: 10, bookingPriority: 7, overall: 7.8, notes: "Reliable DJ, great for pairing with other artists" },
     image: "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=400&q=80",
     isDemo: true,
   },
@@ -478,9 +395,6 @@ export const demoArtists: AdminArtist[] = [
     email: "booking@velvetcollective.band",
     phone: "(410) 555-0789",
     managerContact: "Sarah Kim (sarah@velvetcollective.band)",
-    homeCity: "Baltimore",
-    homeState: "MD",
-    primaryMarket: "Baltimore / DMV",
     primaryGenre: "Indie Rock",
     secondaryGenres: ["Dream Pop", "Shoegaze"],
     performanceType: "Band",
@@ -492,15 +406,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Clean",
     bio: "The Velvet Collective is a 5-piece indie band from Baltimore blending dream pop textures with shoegaze intensity. Their live shows feature immersive visuals and a sonic experience that reviewers have called transcendent.",
     shortPitch: "Baltimore indie band with immersive live shows, ideal for college circuits and indie venues.",
-    longPitch: "The Velvet Collective is a Baltimore-based 5-piece indie band whose sound sits at the intersection of dream pop and shoegaze. With a growing mid-Atlantic following and a live show that features custom visuals, they offer a complete performance experience. Currently building out their venue circuit beyond Baltimore.",
     pressQuotes: ["\"Baltimore's best-kept secret.\" — Baltimore Sun Arts"],
-    highlights: ["Ottobar headliner 2025", "Baltimore Artscape", "SXSW unofficial showcase"],
     internalNotes: "Exploring fit for college circuit and indie festival bookings. Need 2-3 more shows to evaluate.",
-    reliabilityNotes: "New relationship. First booking went smoothly.",
-    bestFitVenueNotes: "Indie venues, college shows, festivals with indie/alt stages, art events.",
     socials: { instagram: "@velvetcollectiveband", spotify: "The Velvet Collective", website: "velvetcollective.band" },
-    stats: { instagramFollowers: 4200, tiktokFollowers: 2100, youtubeSubscribers: 890, spotifyMonthlyListeners: 6500, avgEngagement: "5.5%", estimatedTotalAudience: 13690, lastRefreshed: "2026-05-15" },
-    scoring: { potential: 6, livePerformance: 7, marketability: 5, reliability: 7, bookingPriority: 5, overall: 6.0, notes: "Promising indie act, needs more road testing" },
     image: "https://images.unsplash.com/photo-1598387993281-cecf8b71a8f8?w=400&q=80",
     isDemo: true,
   },
@@ -512,9 +420,6 @@ export const demoArtists: AdminArtist[] = [
     email: "kira@kiramoon.com",
     phone: "(703) 555-0621",
     managerContact: "Self-managed",
-    homeCity: "Arlington",
-    homeState: "VA",
-    primaryMarket: "DMV",
     primaryGenre: "R&B",
     secondaryGenres: ["Pop", "Dance"],
     performanceType: "Singer",
@@ -526,15 +431,9 @@ export const demoArtists: AdminArtist[] = [
     cleanExplicit: "Clean",
     bio: "Kira Moon is a NoVA-based R&B vocalist with a smooth, radio-ready sound. Currently on pause from active bookings due to personal commitments but remains on the HighLife roster for future opportunities.",
     shortPitch: "DMV R&B vocalist with pop crossover appeal, currently on pause.",
-    longPitch: "Kira Moon is an Arlington, VA-based R&B and pop vocalist whose smooth vocal style and stage presence have made her a favorite in the DMV lounge scene. Currently on a booking pause but expected to return to active status in late 2026.",
     pressQuotes: [],
-    highlights: ["DMV Voices showcase 2025", "Northern Virginia Jazz Fest"],
     internalNotes: "PAUSED: Taking a break from bookings through Q3 2026. Check back September.",
-    reliabilityNotes: "Was reliable when active. Keep on roster for when she returns.",
-    bestFitVenueNotes: "Lounges, wine bars, upscale restaurants, private events.",
     socials: { instagram: "@kiramoonmusic" },
-    stats: { instagramFollowers: 6100, tiktokFollowers: 3800, youtubeSubscribers: 450, spotifyMonthlyListeners: 4200, avgEngagement: "4.0%", estimatedTotalAudience: 14550, lastRefreshed: "2026-04-10" },
-    scoring: { potential: 6, livePerformance: 7, marketability: 6, reliability: 8, bookingPriority: 2, overall: 5.8, notes: "Good talent, currently paused. Re-evaluate in Q4." },
     image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
     isDemo: true,
   },
