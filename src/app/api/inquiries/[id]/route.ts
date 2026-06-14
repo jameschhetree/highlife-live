@@ -64,7 +64,7 @@ export async function PATCH(
   if (!inq) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Once converted to event or finalized, the venue cannot edit anymore
-  if (inq.status === "Booked" || inq.status === "Lost" || inq.convertedEventId) {
+  if (inq.status === "Submitted" || inq.status === "Lost" || inq.convertedEventId) {
     return Response.json({ error: "Inquiry is finalized and cannot be edited." }, { status: 409 });
   }
 

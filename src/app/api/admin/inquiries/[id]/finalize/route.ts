@@ -1,6 +1,6 @@
 // POST /api/admin/inquiries/[id]/finalize
 // Owner-admin: turn an inquiry into a published Event.
-// Creates an Event row, marks the Inquiry as Booked, links convertedEventId.
+// Creates an Event row, marks the Inquiry as Submitted, links convertedEventId.
 // Idempotent: if already converted, returns the existing Event without creating a duplicate.
 
 import { prisma } from "@/lib/db";
@@ -73,7 +73,7 @@ export async function POST(
   await prisma.inquiry.update({
     where: { id },
     data: {
-      status: "Booked",
+      status: "Submitted",
       convertedEventId: event.id,
     },
   });

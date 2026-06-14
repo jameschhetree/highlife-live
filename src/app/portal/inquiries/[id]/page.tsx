@@ -49,7 +49,7 @@ const statusBadge: Record<string, { color: string; bg: string; Icon: typeof Cloc
   New:      { color: "text-amber-300",   bg: "bg-amber-400/10 border-amber-400/20",   Icon: Clock },
   Reviewed: { color: "text-sky-300",     bg: "bg-sky-400/10 border-sky-400/20",       Icon: Eye },
   Replied:  { color: "text-violet-300",  bg: "bg-violet-400/10 border-violet-400/20", Icon: Reply },
-  Booked:   { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
+  Submitted: { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
   Lost:     { color: "text-rose-300",    bg: "bg-rose-400/10 border-rose-400/20",     Icon: XCircle },
 };
 
@@ -183,7 +183,7 @@ export default function PortalInquiryDetailPage({ params }: { params: Promise<{ 
 
   const sb = statusBadge[inquiry.status] ?? statusBadge.New;
   const StatusIcon = sb.Icon;
-  const isFinalized = inquiry.status === "Booked" || inquiry.status === "Lost" || !!inquiry.convertedEventId;
+  const isFinalized = inquiry.status === "Submitted" || inquiry.status === "Lost" || !!inquiry.convertedEventId;
 
   return (
     <div className="min-h-screen text-foreground">

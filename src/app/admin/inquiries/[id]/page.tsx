@@ -60,7 +60,7 @@ interface NoteRow {
   createdAt: string;
 }
 
-const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Working", "Contract Sent", "Booked", "Archived"] as const;
+const STATUS_OPTIONS = ["New", "Reviewed", "Replied", "Working", "Contract Sent", "Submitted", "Archived"] as const;
 const WORKING_SUBSTATUS_OPTIONS = ["WorkingResponsibilities", "Negotiating", "FineTuning"] as const;
 const WORKING_SUBSTATUS_LABEL: Record<string, string> = {
   WorkingResponsibilities: "Working Responsibilities",
@@ -74,7 +74,7 @@ const statusBadge: Record<string, { color: string; bg: string; Icon: typeof Cloc
   Replied:         { color: "text-violet-300",  bg: "bg-violet-400/10 border-violet-400/20",   Icon: Reply },
   Working:         { color: "text-fuchsia-300", bg: "bg-fuchsia-400/10 border-fuchsia-400/20", Icon: Briefcase },
   "Contract Sent": { color: "text-cyan-300",    bg: "bg-cyan-400/10 border-cyan-400/20",       Icon: FileText },
-  Booked:          { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
+  Submitted:       { color: "text-emerald-300", bg: "bg-emerald-400/10 border-emerald-400/20", Icon: CheckCircle },
   Archived:        { color: "text-zinc-400",    bg: "bg-zinc-400/10 border-zinc-400/20",       Icon: Archive },
   Lost:            { color: "text-rose-300",    bg: "bg-rose-400/10 border-rose-400/20",       Icon: XCircle },
 };
@@ -184,7 +184,7 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
   const finalize = async () => {
     if (!session || !inquiry) return;
     if (!isOwnerAdmin(session)) return;
-    if (!confirm(`Finalize "${inquiry.artistName} at ${inquiry.venueName}" as a published event?\n\nMarks inquiry Booked, creates an Event row, and shows it on the public /events page.`)) {
+    if (!confirm(`Finalize "${inquiry.artistName} at ${inquiry.venueName}" as a published event?\n\nMarks inquiry Submitted, creates an Event row, and shows it on the public /events page.`)) {
       return;
     }
     setFinalizing(true);
@@ -240,7 +240,7 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
           <div className="glass-card rounded-2xl p-5">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Quick Actions</h2>
-              {inquiry.status === "Booked" && (
+              {inquiry.status === "Submitted" && (
                 <Link
                   href={`/admin/bookings/new?inquiryId=${inquiry.id}`}
                   className="inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 btn-gradient font-bold"
