@@ -151,7 +151,7 @@ body {
 
 /* Base dark background — animated orbs handled by AtmosphereOrbs component */
 .bg-radial-atmosphere {
-  background: #050608;
+  background: transparent;
 }
 
 /* Pill chip */
