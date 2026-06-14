@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Search, Edit, Trash2, Upload, RefreshCw, Lock } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Upload, RefreshCw, Lock, ChevronUp, ChevronDown, EyeOff } from "lucide-react";
 import { useVenues, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { createVenue, updateVenue, deleteVenue } from "@/lib/admin-store";
 import { getAdminSession, isOwnerAdmin } from "@/lib/admin-auth";
@@ -71,6 +71,8 @@ export default function VenuesPage() {
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [showDnc, setShowDnc] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [hideNeedsReview, setHideNeedsReview] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState<Partial<AdminVenue>>(defaultVenue);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -98,6 +100,15 @@ export default function VenuesPage() {
     };
   }, []);
 
+  function handleSort(col: SortKey) {
+    if (sortBy === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(col);
+      setSortDir(col === "capacity" ? "desc" : "asc");
+    }
+  }
+
   const filtered = venues
     .filter((v) => {
       const q = search.toLowerCase();
@@ -108,14 +119,16 @@ export default function VenuesPage() {
       const matchesType = typeFilter === "All Types" || v.venueType === typeFilter;
       const matchesDnc =
         showDnc || (v.reviewStatus !== "Do Not Contact" && v.relationshipStatus !== "Do Not Contact");
-      return matchesSearch && matchesType && matchesDnc;
+      const matchesReview = !hideNeedsReview || v.reviewStatus !== "Needs Review";
+      return matchesSearch && matchesType && matchesDnc && matchesReview;
     })
     .sort((a, b) => {
-      if (sortBy === "capacity") return (b.capacity ?? 0) - (a.capacity ?? 0);
-      if (sortBy === "status") return a.reviewStatus.localeCompare(b.reviewStatus);
-      if (sortBy === "relationship") return a.relationshipStatus.localeCompare(b.relationshipStatus);
-      if (sortBy === "type") return a.venueType.localeCompare(b.venueType);
-      return a.name.localeCompare(b.name);
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortBy === "capacity") return ((a.capacity ?? 0) - (b.capacity ?? 0)) * dir;
+      if (sortBy === "status") return a.reviewStatus.localeCompare(b.reviewStatus) * dir;
+      if (sortBy === "relationship") return a.relationshipStatus.localeCompare(b.relationshipStatus) * dir;
+      if (sortBy === "type") return a.venueType.localeCompare(b.venueType) * dir;
+      return a.name.localeCompare(b.name) * dir;
     });
 
   function openNew() {
@@ -203,6 +216,17 @@ export default function VenuesPage() {
           <h1 className="font-display uppercase text-3xl tracking-tight">Venues</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <button
+              onClick={() => setHideNeedsReview((v) => !v)}
+              className={`px-3 py-2 rounded-xl border text-[10px] tracking-[0.18em] uppercase transition-colors inline-flex items-center gap-1.5 ${
+                hideNeedsReview
+                  ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                  : "border-white/10 bg-black/40 text-zinc-300 hover:text-foreground hover:border-white/25"
+              }`}
+            >
+              <EyeOff size={11} />
+              {hideNeedsReview ? "Review: hidden" : "Hide Needs Review"}
+            </button>
+            <button
               onClick={() => setShowDnc((v) => !v)}
               className={`px-3 py-2 rounded-xl border text-[10px] tracking-[0.18em] uppercase transition-colors inline-flex items-center gap-1.5 ${
                 showDnc
@@ -265,7 +289,11 @@ export default function VenuesPage() {
           </select>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortKey)}
+            onChange={(e) => {
+              const next = e.target.value as SortKey;
+              setSortBy(next);
+              setSortDir(next === "capacity" ? "desc" : "asc");
+            }}
             className="px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 focus:outline-none focus:border-pink-500/40 appearance-none cursor-pointer"
           >
             <option value="name" className="bg-zinc-900">Sort: Name</option>
@@ -274,6 +302,14 @@ export default function VenuesPage() {
             <option value="relationship" className="bg-zinc-900">Sort: Relationship</option>
             <option value="type" className="bg-zinc-900">Sort: Type</option>
           </select>
+          <button
+            onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}
+            className="px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 text-sm text-zinc-300 hover:text-foreground hover:border-white/25 transition-colors inline-flex items-center gap-1.5"
+            title={sortDir === "asc" ? "Ascending" : "Descending"}
+          >
+            {sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <span className="text-[10px] tracking-[0.12em] uppercase">{sortDir === "asc" ? "ASC" : "DESC"}</span>
+          </button>
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -290,12 +326,32 @@ export default function VenuesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 border-b border-white/8">
-                  <th className="text-left font-normal px-4 py-3">Venue</th>
-                  <th className="text-left font-normal px-4 py-3 hidden md:table-cell">Type</th>
-                  <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Zip / Region</th>
-                  <th className="text-left font-normal px-4 py-3 hidden xl:table-cell">Capacity</th>
-                  <th className="text-left font-normal px-4 py-3">Status</th>
-                  <th className="text-left font-normal px-4 py-3 hidden lg:table-cell">Relationship</th>
+                  {([
+                    { key: "name" as SortKey, label: "Venue", hide: "" },
+                    { key: "type" as SortKey, label: "Type", hide: "hidden md:table-cell" },
+                    { key: null, label: "Zip / Region", hide: "hidden lg:table-cell" },
+                    { key: "capacity" as SortKey, label: "Capacity", hide: "hidden xl:table-cell" },
+                    { key: "status" as SortKey, label: "Status", hide: "" },
+                    { key: "relationship" as SortKey, label: "Relationship", hide: "hidden lg:table-cell" },
+                  ] as const).map(({ key, label, hide }) => (
+                    <th
+                      key={label}
+                      className={`text-left font-normal px-4 py-3 ${hide} ${key ? "cursor-pointer select-none group/th hover:text-zinc-300 transition-colors" : ""}`}
+                      onClick={key ? () => handleSort(key) : undefined}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {label}
+                        {key && sortBy === key && (
+                          sortDir === "asc"
+                            ? <ChevronUp size={10} className="text-pink-400" />
+                            : <ChevronDown size={10} className="text-pink-400" />
+                        )}
+                        {key && sortBy !== key && (
+                          <ChevronUp size={10} className="text-zinc-700 opacity-0 group-hover/th:opacity-100 transition-opacity" />
+                        )}
+                      </span>
+                    </th>
+                  ))}
                   <th className="text-left font-normal px-4 py-3 w-20">Actions</th>
                 </tr>
               </thead>
