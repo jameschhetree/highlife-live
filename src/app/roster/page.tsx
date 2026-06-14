@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, ArrowDownAZ, ArrowUpZA } from "lucide-react";
 import { ArtistCard } from "@/components/ArtistCard";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Artist } from "@/lib/data";
@@ -13,6 +14,8 @@ export default function RosterPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(true);
 
   useEffect(() => {
     fetch("/api/artists", { cache: "no-store" })
@@ -30,10 +33,28 @@ export default function RosterPage() {
     return Array.from(set);
   }, [artists]);
 
-  const filtered =
-    activeFilter === "All"
-      ? artists
-      : artists.filter((a) => a.category === activeFilter);
+  const filtered = useMemo(() => {
+    let result = artists;
+
+    // Category filter
+    if (activeFilter !== "All") {
+      result = result.filter((a) => a.category === activeFilter);
+    }
+
+    // Search filter
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((a) => a.name.toLowerCase().includes(q));
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name);
+      return sortAsc ? cmp : -cmp;
+    });
+
+    return result;
+  }, [artists, activeFilter, search, sortAsc]);
 
   return (
     <div className="bg-radial-atmosphere min-h-screen">
@@ -53,26 +74,47 @@ export default function RosterPage() {
             </div>
           </ScrollReveal>
 
-          {/* Filters — hidden on prod builds per Dok 2026-06-08. Demo keeps the selector. */}
-          {process.env.NEXT_PUBLIC_BUILD_TARGET === "demo" && (
-            <ScrollReveal delay={0.1}>
-              <div className="glass-card rounded-2xl p-2.5 mb-10 inline-flex flex-wrap gap-1.5">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveFilter(cat)}
-                    className={`text-[10px] tracking-[0.18em] uppercase px-4 py-2 rounded-full transition-colors ${
-                      activeFilter === cat
-                        ? "bg-foreground text-background"
-                        : "text-silver hover:text-foreground hover:bg-white/5"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+          {/* Search + Sort */}
+          <ScrollReveal delay={0.05}>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="glass-card rounded-2xl px-4 py-2.5 flex items-center gap-2.5 flex-1 min-w-[200px] max-w-md">
+                <Search size={14} className="text-zinc-500 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search artists..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="bg-transparent text-sm text-foreground placeholder:text-zinc-600 focus:outline-none w-full"
+                />
               </div>
-            </ScrollReveal>
-          )}
+              <button
+                onClick={() => setSortAsc((p) => !p)}
+                className="glass-card rounded-2xl px-4 py-2.5 flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors"
+              >
+                {sortAsc ? <ArrowDownAZ size={14} /> : <ArrowUpZA size={14} />}
+                {sortAsc ? "A-Z" : "Z-A"}
+              </button>
+            </div>
+          </ScrollReveal>
+
+          {/* Filters */}
+          <ScrollReveal delay={0.1}>
+            <div className="glass-card rounded-2xl p-2.5 mb-10 inline-flex flex-wrap gap-1.5">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveFilter(cat)}
+                  className={`text-[10px] tracking-[0.18em] uppercase px-4 py-2 rounded-full transition-colors ${
+                    activeFilter === cat
+                      ? "bg-foreground text-background"
+                      : "text-silver hover:text-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </ScrollReveal>
 
           {/* Grid */}
           <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -90,6 +132,8 @@ export default function RosterPage() {
                   ? "Loading roster..."
                   : artists.length === 0
                   ? "The roster is currently being assembled. Check back soon."
+                  : search.trim()
+                  ? "No artists match your search."
                   : "No artists found in this category."}
               </p>
             </div>

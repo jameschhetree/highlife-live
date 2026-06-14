@@ -61,12 +61,50 @@ export async function GET() {
       targetVenueTypes: true,
       travelWillingness: true,
       image: true,
+      pressQuotes: true,
+      performanceType: true,
+      typicalSetLength: true,
+      cleanExplicit: true,
+      socialInstagram: true,
+      socialTiktok: true,
+      socialYoutube: true,
+      socialSpotify: true,
+      socialAppleMusic: true,
+      socialSoundcloud: true,
+      socialWebsite: true,
+      socialLinktree: true,
+      links: { orderBy: { sortOrder: "asc" }, select: { title: true, url: true } },
+      assets: { select: { id: true, kind: true, blobUrl: true, filename: true, mimeType: true } },
     },
   });
 
   const mapped: Artist[] = rows.map((r) => {
     const slug = slugify(r.name) || r.id;
     const generatedEpk = getGeneratedEpkByArtistId(r.id);
+
+    // Build links array: custom links + social links derived from social fields
+    const customLinks = (r.links ?? []).map((l) => ({ title: l.title, url: l.url }));
+    const socialEntries: { field: string; title: string }[] = [
+      { field: r.socialInstagram, title: "Instagram" },
+      { field: r.socialTiktok, title: "TikTok" },
+      { field: r.socialYoutube, title: "YouTube" },
+      { field: r.socialSpotify, title: "Spotify" },
+      { field: r.socialAppleMusic, title: "Apple Music" },
+      { field: r.socialSoundcloud, title: "SoundCloud" },
+      { field: r.socialWebsite, title: "Website" },
+      { field: r.socialLinktree, title: "Linktree" },
+    ];
+    const socialLinks = socialEntries
+      .filter((s) => s.field && s.field.trim() !== "")
+      .map((s) => {
+        let url = s.field.trim();
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+          url = `https://${url}`;
+        }
+        return { title: s.title, url };
+      });
+    const allLinks = [...customLinks, ...socialLinks];
+
     return {
       slug,
       epkUrl: generatedEpk
@@ -84,6 +122,13 @@ export async function GET() {
       pastEvents: [],
       travelAvailability: r.travelWillingness || "",
       image: r.image || "",
+      links: allLinks.length > 0 ? allLinks : undefined,
+      assets: (r.assets ?? []).length > 0 ? r.assets : undefined,
+      pressQuotes: r.pressQuotes.length > 0 ? r.pressQuotes : undefined,
+      secondaryGenres: r.secondaryGenres.length > 0 ? r.secondaryGenres : undefined,
+      performanceType: r.performanceType || undefined,
+      cleanExplicit: r.cleanExplicit || undefined,
+      typicalSetLength: r.typicalSetLength || undefined,
     };
   });
 

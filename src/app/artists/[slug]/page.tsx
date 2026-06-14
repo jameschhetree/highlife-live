@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  MapPin,
   Plane,
   Calendar,
-  Download,
   ArrowLeft,
   ArrowRight,
   Lock,
+  ExternalLink,
+  Link2,
+  Image as ImageIcon,
+  Play,
+  X,
+  Quote,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Artist } from "@/lib/data";
@@ -20,13 +24,14 @@ import { isAuthenticated } from "@/lib/auth";
 
 export default function ArtistDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params?.slug as string;
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
-  // NOTE: Venue auth uses the VenueLogin system via isAuthenticated().
-  // This checks localStorage for a venue/promoter session token set during partner login.
-  // If no venue auth session exists, restricted fields are hidden from public visitors.
   const [authed, setAuthed] = useState(false);
+  const [showLinks, setShowLinks] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -47,6 +52,13 @@ export default function ArtistDetailPage() {
       .catch(() => setArtist(null))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // EPK auto-redirect: if artist has an epkUrl, redirect to it
+  useEffect(() => {
+    if (artist?.epkUrl) {
+      router.replace(artist.epkUrl);
+    }
+  }, [artist, router]);
 
   if (loading) {
     return (
@@ -71,6 +83,23 @@ export default function ArtistDetailPage() {
       </div>
     );
   }
+
+  // If epkUrl is set we are redirecting -- show loading state during redirect
+  if (artist.epkUrl) {
+    return (
+      <div className="min-h-screen bg-radial-atmosphere pt-32 pb-24 flex items-center justify-center">
+        <span className="text-xs tracking-[0.18em] uppercase text-silver">Redirecting to press kit...</span>
+      </div>
+    );
+  }
+
+  const imageAssets = (artist.assets ?? []).filter((a) =>
+    a.mimeType.startsWith("image/")
+  );
+  const videoAssets = (artist.assets ?? []).filter((a) =>
+    a.mimeType.startsWith("video/")
+  );
+  const hasAssets = imageAssets.length > 0 || videoAssets.length > 0;
 
   return (
     <div className="bg-radial-atmosphere min-h-screen pt-28 pb-24">
@@ -114,15 +143,6 @@ export default function ArtistDetailPage() {
             </h1>
 
             <div className="flex items-center gap-4 mb-8 text-sm text-zinc-400">
-              {artist.city && (
-                <>
-                  <span className="flex items-center gap-1.5">
-                    <MapPin size={13} strokeWidth={1.5} />
-                    {artist.city}
-                  </span>
-                  <span className="text-border">|</span>
-                </>
-              )}
               {/* Travel availability -- visible only to authenticated venue partners */}
               {authed && artist.travelAvailability && (
                 <span className="flex items-center gap-1.5">
@@ -132,7 +152,54 @@ export default function ArtistDetailPage() {
               )}
             </div>
 
-            <p className="text-silver leading-relaxed mb-8">{artist.bio}</p>
+            <p className="text-silver leading-relaxed mb-6">{artist.bio}</p>
+
+            {/* Press Quotes */}
+            {artist.pressQuotes && artist.pressQuotes.length > 0 && (
+              <div className="mb-8">
+                <div className="space-y-3">
+                  {artist.pressQuotes.map((quote, i) => (
+                    <div
+                      key={i}
+                      className="border-l-2 border-pink-500/30 pl-4 py-1"
+                    >
+                      <p className="text-sm text-zinc-300 italic flex items-start gap-2">
+                        <Quote size={12} className="text-pink-400/60 mt-0.5 shrink-0" />
+                        {quote}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Partner-only detail pills */}
+            {authed && (
+              <div className="mb-8">
+                <div className="flex flex-wrap gap-2">
+                  {artist.cleanExplicit && (
+                    <span className="text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 rounded-full border border-white/10 bg-black/40 text-zinc-400">
+                      {artist.cleanExplicit}
+                    </span>
+                  )}
+                  {artist.performanceType && (
+                    <span className="text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 rounded-full border border-white/10 bg-black/40 text-zinc-400">
+                      {artist.performanceType}
+                    </span>
+                  )}
+                  {artist.typicalSetLength && (
+                    <span className="text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 rounded-full border border-white/10 bg-black/40 text-zinc-400">
+                      {artist.typicalSetLength}
+                    </span>
+                  )}
+                  {artist.secondaryGenres && artist.secondaryGenres.map((g) => (
+                    <span key={g} className="text-[9px] tracking-[0.16em] uppercase px-3 py-1.5 rounded-full border border-white/10 bg-black/40 text-zinc-400">
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Performance Types -- visible only to authenticated venue partners */}
             {authed && artist.performanceTypes.length > 0 && (
@@ -189,21 +256,26 @@ export default function ArtistDetailPage() {
                   <ArrowRight size={14} />
                 </Link>
               )}
-              {artist.epkUrl ? (
-                <Link
-                  href={artist.epkUrl}
+
+              {/* Show Links button */}
+              {artist.links && artist.links.length > 0 && (
+                <button
+                  onClick={() => setShowLinks(true)}
                   className="flex items-center gap-2 px-6 py-3.5 border border-white/10 hover:border-white/25 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground rounded-full transition-colors"
                 >
-                  <Download size={13} />
-                  Press Kit
-                </Link>
-              ) : (
+                  <Link2 size={13} />
+                  Show Links
+                </button>
+              )}
+
+              {/* Media button */}
+              {hasAssets && (
                 <button
-                  className="flex items-center gap-2 px-6 py-3.5 border border-white/10 text-xs tracking-[0.18em] uppercase text-zinc-500 rounded-full cursor-not-allowed"
-                  disabled
+                  onClick={() => setShowMedia(true)}
+                  className="flex items-center gap-2 px-6 py-3.5 border border-white/10 hover:border-white/25 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground rounded-full transition-colors"
                 >
-                  <Download size={13} />
-                  Press Kit Pending
+                  <ImageIcon size={13} />
+                  Media
                 </button>
               )}
             </div>
@@ -241,6 +313,157 @@ export default function ArtistDetailPage() {
           </div>
         </ScrollReveal>
       </div>
+
+      {/* Links Modal */}
+      <AnimatePresence>
+        {showLinks && artist.links && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowLinks(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+              className="glass-card rounded-2xl p-6 w-full max-w-md mx-4 border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                  Links
+                </h3>
+                <button
+                  onClick={() => setShowLinks(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/8 text-zinc-400 hover:text-foreground transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {artist.links.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/4 hover:bg-white/8 border border-white/6 hover:border-white/12 transition-colors group"
+                  >
+                    <span className="text-sm text-zinc-200 group-hover:text-foreground transition-colors">
+                      {link.title}
+                    </span>
+                    <ExternalLink size={13} className="text-zinc-500 group-hover:text-pink-300 transition-colors shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Media Panel */}
+      <AnimatePresence>
+        {showMedia && hasAssets && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-sm"
+            onClick={() => { setShowMedia(false); setPlayingVideo(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+              className="glass-card h-full w-full max-w-lg border-l border-white/10 p-6 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                  Media
+                </h3>
+                <button
+                  onClick={() => { setShowMedia(false); setPlayingVideo(null); }}
+                  className="p-1.5 rounded-lg hover:bg-white/8 text-zinc-400 hover:text-foreground transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Image gallery */}
+              {imageAssets.length > 0 && (
+                <div className="mb-6">
+                  <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
+                    Photos
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {imageAssets.map((asset) => (
+                      <a
+                        key={asset.id}
+                        href={asset.blobUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative aspect-square overflow-hidden rounded-xl border border-white/8 hover:border-white/20 transition-colors group"
+                      >
+                        <img
+                          src={asset.blobUrl}
+                          alt={asset.filename}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video gallery */}
+              {videoAssets.length > 0 && (
+                <div>
+                  <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-3">
+                    Videos
+                  </div>
+                  <div className="space-y-3">
+                    {videoAssets.map((asset) => (
+                      <div
+                        key={asset.id}
+                        className="relative rounded-xl overflow-hidden border border-white/8"
+                      >
+                        {playingVideo === asset.id ? (
+                          <video
+                            src={asset.blobUrl}
+                            controls
+                            autoPlay
+                            className="w-full rounded-xl"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => setPlayingVideo(asset.id)}
+                            className="relative w-full aspect-video bg-black/60 flex items-center justify-center group"
+                          >
+                            <div className="w-14 h-14 rounded-full border-2 border-white/30 group-hover:border-white/60 bg-black/40 group-hover:bg-black/60 flex items-center justify-center transition-colors">
+                              <Play size={20} className="text-white/70 group-hover:text-white ml-0.5" />
+                            </div>
+                            <span className="absolute bottom-3 left-3 text-[10px] tracking-[0.12em] text-zinc-400">
+                              {asset.filename}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

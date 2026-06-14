@@ -136,6 +136,76 @@ function InlineEdit({ value, onSave, multiline }: { value: string; onSave: (v: s
   );
 }
 
+// Inline editor for secondary genres -- usable by owner or assigned agent
+function SecondaryGenresEditor({ genres, onSave }: { genres: string[]; onSave: (v: string[]) => void }) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {genres.map((g, i) => (
+        <span key={g} className="inline-flex items-center gap-1 text-[9px] tracking-[0.12em] uppercase bg-white/6 border border-white/10 rounded-full px-2.5 py-1 text-zinc-400">
+          {g}
+          <button
+            onClick={() => {
+              const updated = genres.filter((_, idx) => idx !== i);
+              onSave(updated);
+            }}
+            className="text-zinc-600 hover:text-red-400 transition-colors ml-0.5"
+            title={`Remove ${g}`}
+          >
+            <X size={8} />
+          </button>
+        </span>
+      ))}
+      {adding ? (
+        <span className="inline-flex items-center gap-1.5">
+          <input
+            className="bg-white/6 border border-white/12 rounded-lg px-2 py-1 text-[10px] text-zinc-200 focus:outline-none focus:border-pink-500/40 w-28"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Genre name"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && draft.trim()) {
+                onSave([...genres, draft.trim()]);
+                setDraft("");
+                setAdding(false);
+              }
+              if (e.key === "Escape") { setDraft(""); setAdding(false); }
+            }}
+          />
+          <button
+            onClick={() => {
+              if (draft.trim()) {
+                onSave([...genres, draft.trim()]);
+                setDraft("");
+              }
+              setAdding(false);
+            }}
+            className="p-1 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+          >
+            <Check size={10} />
+          </button>
+          <button
+            onClick={() => { setDraft(""); setAdding(false); }}
+            className="p-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
+          >
+            <X size={10} />
+          </button>
+        </span>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-300 transition-colors inline-flex items-center gap-1"
+        >
+          <Plus size={9} /> Add
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ArtistDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -160,6 +230,12 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
   // canView: if the artist is in the server-scoped useArtists() list, the agent has access.
   // The API already filters by AgentArtistAssignment for non-owners.
   const canView = !!artist;
+  // isAssignedAgent: non-owner agents who have this artist in their scoped store
+  // can edit specific operational fields (travelWillingness, cleanExplicit,
+  // performanceType, typicalSetLength, secondaryGenres).
+  const isAssignedAgent = !canManage && canView && session?.role === "agent";
+  // canEditAgentFields: owner OR assigned agent
+  const canEditAgentFields = canManage || isAssignedAgent;
 
   useEffect(() => {
     setSession(getAdminSession());
@@ -421,7 +497,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                 <div>
                   <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Set Length</div>
                   <div className="text-sm text-zinc-300">
-                    {canManage ? <InlineEdit value={artist.typicalSetLength} onSave={(v) => inlineSave("typicalSetLength", v)} /> : artist.typicalSetLength}
+                    {canEditAgentFields ? <InlineEdit value={artist.typicalSetLength} onSave={(v) => inlineSave("typicalSetLength", v)} /> : artist.typicalSetLength}
                   </div>
                 </div>
                 <div>
@@ -432,8 +508,8 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
 
-              {/* Inline-editable fields */}
-              {canManage && (
+              {/* Inline-editable fields -- owner OR assigned agent */}
+              {canEditAgentFields && (
                 <div className="grid sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/6">
                   <div>
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Clean/Explicit</div>
@@ -456,16 +532,28 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                 </div>
               )}
 
-              {artist.secondaryGenres.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1.5">Secondary Genres</div>
+              {/* Secondary genres -- editable inline for owner or assigned agent */}
+              <div className="mt-4">
+                <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1.5">Secondary Genres</div>
+                {artist.secondaryGenres.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {artist.secondaryGenres.map((g) => (
                       <span key={g} className="chip text-[9px]">{g}</span>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <span className="text-sm text-zinc-600 italic">None set</span>
+                )}
+                {canEditAgentFields && (
+                  <SecondaryGenresEditor
+                    genres={artist.secondaryGenres}
+                    onSave={(updated) => {
+                      updateArtist(id, { secondaryGenres: updated });
+                      triggerStoreUpdate();
+                    }}
+                  />
+                )}
+              </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-4">
