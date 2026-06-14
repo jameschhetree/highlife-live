@@ -13,6 +13,13 @@ export interface Artist {
   pastEvents: string[];
   travelAvailability: string;
   image: string;
+  links?: { title: string; url: string }[];
+  assets?: { id: string; kind: string; blobUrl: string; filename: string; mimeType: string }[];
+  pressQuotes?: string[];
+  secondaryGenres?: string[];
+  performanceType?: string;
+  cleanExplicit?: string;
+  typicalSetLength?: string;
 }
 
 export interface Event {

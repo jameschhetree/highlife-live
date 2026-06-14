@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { MapPin, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { Artist } from "@/lib/data";
 
 interface ArtistCardProps {
@@ -50,11 +50,6 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] tracking-[0.18em] uppercase text-silver">
               {artist.genre}
-            </span>
-            <span className="text-border">|</span>
-            <span className="text-xs text-silver flex items-center gap-1">
-              <MapPin size={10} />
-              {artist.city}
             </span>
           </div>
 
