@@ -22,6 +22,7 @@ const ORBS: Orb[] = [
   { r: 168, g: 85,  b: 247, opacity: 0.20, size: 340, x: "6%",  xInner: "6%",  y: "4%",   nonHomeOnly: true },
   { r: 56,  g: 120, b: 255, opacity: 0.18, size: 300, x: "93%", xInner: "93%", y: "5%",   nonHomeOnly: true },
   { r: 236, g: 72,  b: 153, opacity: 0.12, size: 260, x: "48%", xInner: "48%", y: "12%",  nonHomeOnly: true },
+  { r: 253, g: 224, b: 71,  opacity: 0.15, size: 280, x: "7%",  xInner: "7%",  y: "22%",  nonHomeOnly: true },
 ];
 
 type Orb = {
