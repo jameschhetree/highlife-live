@@ -8,6 +8,7 @@
 // an optional override object so the owner's pre-fill edits in the form are honored.
 
 import { prisma } from "@/lib/db";
+import { del } from "@vercel/blob";
 import {
   getAdminEmailFromRequest,
   canManageAuditionsEmail,
@@ -90,6 +91,19 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     where: { id },
     data: { status: "Submitted" },
   });
+
+  // Clean up audition blobs — artist media will be uploaded separately.
+  const uploads = Array.isArray(audition.uploads) ? audition.uploads : [];
+  const urls = uploads
+    .map((u) => (u && typeof u === "object" && !Array.isArray(u) ? (u as Record<string, unknown>).url : undefined))
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
+  if (urls.length > 0) {
+    try {
+      await del(urls, { token: process.env.BLOB_READ_WRITE_TOKEN });
+    } catch {
+      // Blob deletion failure should not block conversion response.
+    }
+  }
 
   return Response.json({ ok: true, artist: created });
 }

@@ -227,14 +227,121 @@ model Opportunity {
 // ── EPKs ────────────────────────────────────────────────────
 
 model EPK {
-  id         String   @id @default(cuid())
-  artistId   String
-  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  status     String   @default("Draft") // Draft, Approved, Published, Archived
-  publishUrl String?
-  isDemo     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  artistId       String   @unique
+  artist         Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  status         String   @default("Draft") // Draft, Approved, Published, Archived
+  publishUrl     String?
+  isDemo         Boolean  @default(false)
+  createdByEmail String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions EPKVersion[]
+  jobs     EPKGenerationJob[]
+  assets   EPKAsset[]
+}
+
+// ── EPK Generator (Phase 6+, owner-only generator foundation) ──
+// Added 2026-06-12 per Murd handoff (epk-generator-foundation brief).
+
+model EPKVersion {
+  id                String    @id @default(cuid())
+  epkId             String
+  epk               EPK       @relation(fields: [epkId], references: [id], onDelete: Cascade)
+  versionNumber     Int
+  status            String    @default("Draft") // Draft | Preview | Published | Previous | Rejected
+  routeSlug         String
+  sourcePath        String    @default("")
+  manifest          Json      @default("{}")
+  qaReport          Json      @default("{}")
+  branchName        String?
+  commitSha         String?
+  pullRequestNumber Int?
+  previewUrl        String?
+  createdByEmail    String    @default("")
+  publishedAt       DateTime?
+  supersededAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  jobs EPKGenerationJob[]
+
+  @@unique([epkId, versionNumber])
+  @@index([epkId, status, publishedAt])
+  @@index([routeSlug])
+}
+
+model EPKGenerationJob {
+  id                  String      @id @default(cuid())
+  epkId               String
+  epk                 EPK         @relation(fields: [epkId], references: [id], onDelete: Cascade)
+  versionId           String?
+  version             EPKVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  status              String      @default("Submitted") // Submitted | AwaitingAnswers | Queued | Generating | DependencyApproval | PreviewReady | Failed | Cancelled | Completed
+  model               String      @default("gpt-5.5")
+  input               Json        @default("{}")
+  questions           Json        @default("[]")
+  answers             Json        @default("[]")
+  revisionNumber      Int         @default(0)
+  maxRevisionRounds   Int         @default(3)
+  inputTokens         Int         @default(0)
+  outputTokens        Int         @default(0)
+  estimatedCostMicros Int         @default(0)
+  externalRunId       String?
+  callbackNonceHash   String?
+  branchName          String?
+  commitSha           String?
+  pullRequestNumber   Int?
+  previewUrl          String?
+  failureCode         String?
+  failureMessage      String?
+  createdByEmail      String      @default("")
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  assets EPKAsset[]
+
+  @@index([epkId, createdAt])
+  @@index([status, createdAt])
+  @@index([externalRunId])
+}
+
+model EPKAsset {
+  id                String           @id @default(cuid())
+  epkId             String
+  epk               EPK              @relation(fields: [epkId], references: [id], onDelete: Cascade)
+  jobId             String
+  job               EPKGenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  kind              String // image | audio | video | pdf
+  blobUrl           String
+  blobPath          String
+  filename          String
+  mimeType          String
+  sizeBytes         Int
+  sha256            String
+  scanStatus        String           @default("Pending") // Pending | Clean | Rejected
+  metadata          Json             @default("{}")
+  analysis          Json             @default("{}")
+  rightsConfirmedAt DateTime
+  isPublished       Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([epkId, kind])
+  @@index([jobId])
+  @@index([scanStatus])
+}
+
+model EPKGeneratorLease {
+  key         String    @id
+  jobId       String?   @unique
+  acquiredAt  DateTime?
+  heartbeatAt DateTime?
+  expiresAt   DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
 // ── Suppression List ────────────────────────────────────────
@@ -621,6 +728,22 @@ model PartnerInquiryHidden {
 
   @@unique([venueLoginId, inquiryId])
   @@index([venueLoginId])
+}
+
+// ── Generic Notes (unified threaded notes for any entity) ───
+
+model Note {
+  id          String   @id @default(cuid())
+  entityType  String // "artist" | "venue" | "inquiry"
+  entityId    String
+  authorType  String // "admin" | "agent" | "venue" | "internal"
+  authorEmail String
+  authorName  String   @default("")
+  body        String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType, entityId])
 }
 
 // ── Audit Log ───────────────────────────────────────────────

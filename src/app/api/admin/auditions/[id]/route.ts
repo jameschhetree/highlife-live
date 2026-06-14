@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { del } from "@vercel/blob";
 import {
   canManageAuditionsEmail,
   getAdminEmailFromRequest,
@@ -71,6 +72,22 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
       return Response.json({ error: "Cannot delete an audition not assigned to you" }, { status: 403 });
     }
   }
+  // Delete uploaded blobs from Vercel Blob storage before removing the DB row.
+  const audition = await prisma.agentApplication.findUnique({ where: { id }, select: { uploads: true } });
+  if (audition) {
+    const uploads = Array.isArray(audition.uploads) ? audition.uploads : [];
+    const urls = uploads
+      .map((u) => (u && typeof u === "object" && !Array.isArray(u) ? (u as Record<string, unknown>).url : undefined))
+      .filter((url): url is string => typeof url === "string" && url.length > 0);
+    if (urls.length > 0) {
+      try {
+        await del(urls, { token: process.env.BLOB_READ_WRITE_TOKEN });
+      } catch {
+        // Blob deletion failure should not block audition deletion.
+      }
+    }
+  }
+
   const assignmentDeletes = await prisma.auditionAssignment.deleteMany({ where: { auditionId: id } });
   await prisma.agentApplication.delete({ where: { id } });
   return Response.json({ ok: true, deletedAssignments: assignmentDeletes.count });

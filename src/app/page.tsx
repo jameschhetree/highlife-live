@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { GsapParallaxImage } from "@/components/GsapParallaxImage";
 import type { Artist } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
@@ -205,16 +206,13 @@ export default function HomePage() {
 
             <ScrollReveal delay={0.2}>
               <div className="relative aspect-[4/5] bg-card border border-border/30 overflow-hidden rounded-2xl">
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage: "url(/hero-djbooth.jpg)",
-                  }}
-                  role="img"
-                  aria-label="DJ behind the booth at a packed HighLife Live show"
+                <GsapParallaxImage
+                  src="/hero-djbooth.jpg"
+                  alt="DJ behind the booth at a packed HighLife Live show"
+                  containerClassName="absolute inset-0"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen pointer-events-none" />
               </div>
             </ScrollReveal>
           </div>

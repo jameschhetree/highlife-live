@@ -66,8 +66,8 @@ export default function AdminDashboardPage() {
     { label: agentView ? "Assigned" : "Total Venues", value: String(agentView ? (agentAssignedCount ?? "—") : (liveCounts.venues ?? "—")), delta: agentView ? "assigned to you" : "in CRM", icon: MapPinned },
     { label: "Inquiries", value: String(liveCounts.inquiries ?? "—"), delta: "total submitted", icon: Inbox },
     { label: "Events", value: String(liveCounts.events ?? "—"), delta: "published", icon: CalendarClock },
-    { label: "Active Campaigns", value: "—", delta: "wiring in 4.5", icon: Megaphone, demo: true },
-    { label: "Bookings Won", value: "—", delta: "wiring in 4.5", icon: CheckCircle, demo: true },
+    { label: "Active Campaigns", value: "—", delta: "coming soon", icon: Megaphone, demo: true },
+    { label: "Bookings Won", value: "—", delta: "coming soon", icon: CheckCircle, demo: true },
   ];
 
   const visibleStats: StatCard[] = ownerStats;
@@ -225,7 +225,7 @@ export default function AdminDashboardPage() {
             </div>
             {visiblePipeline.length === 0 ? (
               <div className="py-8 text-center text-xs text-zinc-500 italic">
-                Pipeline summary lands in Phase 4.5. Full Kanban available at <Link href="/admin/pipeline" className="text-pink-300 hover:underline">Pipeline</Link>.
+                Pipeline summary coming soon. Full Kanban available at <Link href="/admin/pipeline" className="text-pink-300 hover:underline">Pipeline</Link>.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -264,7 +264,7 @@ export default function AdminDashboardPage() {
             </h2>
             {visibleActivity.length === 0 ? (
               <div className="py-8 text-center text-xs text-zinc-500 italic">
-                Live activity feed lands in Phase 4.5.
+                Live activity feed coming soon.
               </div>
             ) : (
               <ul className="space-y-3">
@@ -280,7 +280,7 @@ export default function AdminDashboardPage() {
         </section>
 
         <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 pt-4 border-t border-white/5">
-          Live counts pulled from the database. Sections marked DEMO ship in Phase 4.5.
+          Live counts pulled from the database. Some sections show demo data.
         </p>
       </div>
     </div>

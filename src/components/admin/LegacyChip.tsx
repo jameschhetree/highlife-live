@@ -11,7 +11,7 @@ interface LegacyChipProps {
 }
 
 export function LegacyChip({
-  hint = "Legacy surface — canonical workflow lives in Inquiries. /api/bookings is scheduled for retirement in Phase 5.5.",
+  hint = "Legacy surface — canonical workflow lives in Inquiries. /api/bookings is scheduled for retirement in a future update.",
   className = "",
 }: LegacyChipProps) {
   return (

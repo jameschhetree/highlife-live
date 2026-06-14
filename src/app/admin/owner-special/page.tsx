@@ -130,7 +130,7 @@ export default function OwnerSpecialPage() {
           className="glass-card rounded-2xl p-5 border border-pink-500/15"
         >
           <h2 className="text-[11px] tracking-[0.22em] uppercase text-pink-300 mb-3 flex items-center gap-2">
-            <Crown size={14} /> Phase 3 Status
+            <Crown size={14} /> System Status
           </h2>
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="flex items-center gap-2 text-sm">

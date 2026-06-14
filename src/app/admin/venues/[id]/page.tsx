@@ -25,6 +25,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import type { ReviewStatus, RelationshipStatus, AdminVenue, VenueType } from "@/lib/admin-data";
 import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import NotesThread from "@/components/admin/notes-thread";
 
 const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Amphitheater", "Stadium", "Other"];
 const reviewStatuses: ReviewStatus[] = ["Needs Review", "Verified", "Do Not Contact", "Duplicate"];
@@ -446,6 +447,10 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                   ))}
                 </ul>
               )}
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}>
+              <NotesThread entityType="venue" entityId={id} />
             </motion.div>
           </div>
 

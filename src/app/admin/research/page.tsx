@@ -43,7 +43,7 @@ export default function ResearchPage() {
     return (
       <AgentStagedNotice
         pageTitle="Research Queue"
-        description="The research queue surfaces raw contact data (emails, source URLs, owner notes) that agents shouldn't see unfiltered. Agent-scoped contact access ships in Phase 5.5 alongside the venue-contact-grant flow expansion."
+        description="The research queue surfaces raw contact data (emails, source URLs, owner notes) that agents shouldn't see unfiltered. Agent-scoped contact access coming in a future update alongside the venue-contact-grant flow expansion."
       />
     );
   }

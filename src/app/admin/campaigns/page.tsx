@@ -44,7 +44,7 @@ export default function CampaignsPage() {
     return (
       <AgentStagedNotice
         pageTitle="Campaigns"
-        description="Agent-scoped outreach campaigns ship in Phase 5.5 once we lock down which contact lists agents can email and what guardrails the AI drafting layer needs. For now, campaign authoring is owner-only."
+        description="Agent-scoped outreach campaigns coming in a future update once we lock down which contact lists agents can email and what guardrails the AI drafting layer needs. For now, campaign authoring is owner-only."
       />
     );
   }
@@ -195,12 +195,11 @@ export default function CampaignsPage() {
         open={newCampaignOpen}
         onClose={() => setNewCampaignOpen(false)}
         title="Campaign builder coming soon"
-        targetPhase="Phase 4.5"
         icon={<Megaphone size={16} className="text-pink-200" />}
         body={
           <>
             <p>
-              The end-to-end campaign builder — target list selection, multi-step email sequence, approval flow, send scheduling — lands in Phase 4.5.
+              The end-to-end campaign builder — target list selection, multi-step email sequence, approval flow, send scheduling — coming soon.
             </p>
             <p className="mt-2 text-xs text-zinc-400">
               No outbound sends or AI drafting are wired yet, so the New Campaign action is staged for now.
