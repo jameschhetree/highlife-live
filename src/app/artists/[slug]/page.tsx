@@ -6,12 +6,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   MapPin,
-  Music,
   Plane,
   Calendar,
   Download,
-  Play,
-  Pause,
   ArrowLeft,
   ArrowRight,
   Lock,
@@ -20,26 +17,12 @@ import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Artist } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 
-const dummyTracks = [
-  { title: "Midnight Session", duration: "3:42" },
-  { title: "Crown Heights", duration: "4:15" },
-  { title: "No Ceiling", duration: "3:28" },
-  { title: "Culture Code", duration: "4:01" },
-];
-
-const galleryImages = [
-  "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=80",
-  "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=400&q=80",
-  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=80",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80",
-];
 
 export default function ArtistDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
-  const [playingTrack, setPlayingTrack] = useState<number | null>(null);
   // NOTE: Venue auth uses the VenueLogin system via isAuthenticated().
   // This checks localStorage for a venue/promoter session token set during partner login.
   // If no venue auth session exists, restricted fields are hidden from public visitors.
@@ -117,17 +100,6 @@ export default function ArtistDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.22),transparent_60%)] mix-blend-screen" />
 
-            <div className="absolute top-5 right-5">
-              <span
-                className={`text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur ${
-                  artist.available
-                    ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/30"
-                    : "bg-zinc-700/50 text-zinc-300 border border-zinc-600/40"
-                }`}
-              >
-                {artist.available ? "Available for Booking" : "Currently Booked"}
-              </span>
-            </div>
           </motion.div>
 
           <motion.div
@@ -251,70 +223,6 @@ export default function ArtistDetailPage() {
           </motion.div>
         </div>
 
-        {/* Music Player */}
-        <ScrollReveal>
-          <div className="mb-20">
-            <h2 className="font-display uppercase text-2xl mb-6 flex items-center gap-3">
-              <Music size={18} strokeWidth={1.5} className="text-pink-300" />
-              Featured Tracks
-            </h2>
-            <div className="glass-card rounded-2xl divide-y divide-white/8 overflow-hidden">
-              {dummyTracks.map((track, i) => (
-                <button
-                  key={track.title}
-                  onClick={() =>
-                    setPlayingTrack(playingTrack === i ? null : i)
-                  }
-                  className="w-full flex items-center justify-between p-4 hover:bg-white/4 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/20 flex items-center justify-center">
-                      {playingTrack === i ? (
-                        <Pause size={14} className="text-foreground" />
-                      ) : (
-                        <Play size={14} className="text-zinc-200 ml-0.5" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{track.title}</div>
-                      <div className="text-xs text-zinc-500">{artist.name}</div>
-                    </div>
-                  </div>
-                  <span className="text-xs text-zinc-500">{track.duration}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-zinc-500 mt-3 italic">
-              Demo player. Full streaming available on request.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        {/* Gallery */}
-        <ScrollReveal>
-          <div className="mb-20">
-            <h2 className="font-display uppercase text-2xl mb-6">Gallery</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {galleryImages.map((img, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08, duration: 0.5 }}
-                  className="aspect-square overflow-hidden rounded-2xl border border-white/8"
-                >
-                  <div
-                    className="w-full h-full bg-cover bg-center img-bw hover:scale-105 transition-transform duration-700"
-                    style={{ backgroundImage: `url(${img})` }}
-                    role="img"
-                    aria-label={`${artist.name} performance photo ${i + 1}`}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </ScrollReveal>
 
         {/* Bottom CTA */}
         <ScrollReveal>

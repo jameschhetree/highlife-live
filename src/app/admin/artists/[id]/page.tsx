@@ -649,6 +649,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   const kindAssets = assets.filter((a) => a.kind === kind);
                   const isUploading = uploadingKind === kind;
                   const atLimit = kindAssets.length >= max;
+                  if (kindAssets.length === 0 && !isUploading && !canManage) return null;
                   return (
                     <div key={kind} className="py-1.5 border-b border-white/4 last:border-0">
                       <div className="flex items-center justify-between">
