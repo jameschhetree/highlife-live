@@ -44,6 +44,27 @@ export default function HomePage() {
         />
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
+          {/* Tiny accent orb pair — top corners of hero card */}
+          <div
+            aria-hidden
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              width: 320, height: 320,
+              top: "-4%", left: "-3%",
+              background: "radial-gradient(circle, rgba(168,85,247,0.22) 0%, transparent 60%)",
+              filter: "blur(60px)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              width: 280, height: 280,
+              top: "-6%", right: "-7%",
+              background: "radial-gradient(circle, rgba(236,72,153,0.20) 0%, transparent 60%)",
+              filter: "blur(60px)",
+            }}
+          />
           <motion.div
             initial={{ opacity: 0, y: 18, filter: "blur(3px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
