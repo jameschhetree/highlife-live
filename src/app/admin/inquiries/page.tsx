@@ -34,7 +34,7 @@ interface InquiryRow {
   submittedAt: string;
 }
 
-const statuses = ["All", "New", "Reviewed", "Replied", "Working", "Contract Sent", "Booked", "Archived"] as const;
+const statuses = ["All", "New", "Reviewed", "Replied", "Working", "Contract Sent", "Submitted", "Archived"] as const;
 const sources = ["All", "public", "venue_partner"] as const;
 
 const statusColor: Record<string, string> = {
@@ -43,7 +43,7 @@ const statusColor: Record<string, string> = {
   Replied: "text-violet-300 bg-violet-400/10 border-violet-400/20",
   Working: "text-fuchsia-300 bg-fuchsia-400/10 border-fuchsia-400/20",
   "Contract Sent": "text-cyan-300 bg-cyan-400/10 border-cyan-400/20",
-  Booked: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
+  Submitted: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
   Archived: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
   Lost: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
 };
@@ -54,7 +54,7 @@ const statusIcon: Record<string, typeof Clock> = {
   Replied: Reply,
   Working: Briefcase,
   "Contract Sent": FileText,
-  Booked: CheckCircle,
+  Submitted: CheckCircle,
   Archived: Archive,
   Lost: XCircle,
 };
