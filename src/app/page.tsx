@@ -207,8 +207,8 @@ export default function HomePage() {
             <ScrollReveal delay={0.2}>
               <div className="relative aspect-[4/5] bg-card border border-border/30 overflow-hidden rounded-2xl">
                 <GsapParallaxImage
-                  src="/hero-djbooth.jpg"
-                  alt="DJ behind the booth at a packed HighLife Live show"
+                  src="/hero-collage.jpg"
+                  alt="HighLife Live artists — real performances and sessions"
                   containerClassName="absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent pointer-events-none" />
