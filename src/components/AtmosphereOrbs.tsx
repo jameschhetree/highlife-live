@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -19,6 +20,8 @@ const ORBS = [
 export function AtmosphereOrbs() {
   const containerRef = useRef<HTMLDivElement>(null);
   const orbRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
 
   useGSAP(
     () => {
@@ -106,7 +109,7 @@ export function AtmosphereOrbs() {
             width: orb.size,
             height: orb.size,
             left: orb.x,
-            top: orb.y,
+            top: isHome ? orb.y : `calc(${orb.y} - 10%)`,
             transform: "translate(-50%, -50%)",
             ["--orb-r" as string]: orb.r,
             ["--orb-g" as string]: orb.g,
