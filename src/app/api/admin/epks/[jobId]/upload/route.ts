@@ -60,13 +60,16 @@ function parseAssetPayload(value: string | null | undefined): AssetPayload {
   };
 }
 
+// PNG magic: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
+const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
 function matchesAllowedSignature(kind: EpkAssetKind, bytes: Uint8Array): boolean {
   const text = new TextDecoder("latin1").decode(bytes);
   if (kind === "pdf") return text.startsWith("%PDF-");
   if (kind === "image") {
     return (
       (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) ||
-      text.startsWith("\x89PNG\r\n\x1a\n") ||
+      (bytes.length >= 8 && PNG_MAGIC.every((b, i) => bytes[i] === b)) ||
       text.startsWith("GIF87a") ||
       text.startsWith("GIF89a") ||
       (text.startsWith("RIFF") && text.slice(8, 12) === "WEBP")
