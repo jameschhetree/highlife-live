@@ -692,32 +692,44 @@ export default function EpksPage() {
                   label="Files"
                   hint="Up to 10 images, 5 audio files, 3 videos, and 2 PDFs. The design API may inspect photos only; it never receives video, audio, or PDF content."
                 >
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp,image/gif,audio/*,video/mp4,video/quicktime,video/webm,application/pdf"
-                    onChange={(event) => {
-                      const selected = Array.from(event.target.files ?? []);
-                      const error = validateFiles(selected);
-                      if (error) {
-                        setFormError(error);
+                  <label className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.15em] text-zinc-300 cursor-pointer hover:bg-white/10 transition-colors">
+                    <Plus size={12} /> Add Files
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/webp,image/gif,audio/*,video/mp4,video/quicktime,video/webm,application/pdf"
+                      onChange={(event) => {
+                        const selected = Array.from(event.target.files ?? []);
+                        const merged = [...files, ...selected];
+                        const error = validateFiles(merged);
+                        if (error) {
+                          setFormError(error);
+                          event.target.value = "";
+                          return;
+                        }
+                        setFiles(merged);
                         event.target.value = "";
-                        return;
-                      }
-                      setFiles(selected);
-                    }}
-                    className="block w-full text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-xs file:uppercase file:tracking-[0.15em] file:text-white hover:file:bg-white/15"
-                  />
+                      }}
+                    />
+                  </label>
                   {files.length > 0 && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {files.map((file) => {
+                      {files.map((file, idx) => {
                         const kind = inferKind(file);
                         const Icon = kind === "image" ? FileImage : kind === "audio" ? FileAudio : kind === "video" ? Film : FileText;
                         return (
-                          <div key={`${file.name}-${file.size}`} className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
-                            <Icon size={14} className="text-pink-300" />
+                          <div key={`${file.name}-${file.size}-${idx}`} className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
+                            <Icon size={14} className="text-pink-300 shrink-0" />
                             <span className="truncate text-xs text-zinc-300">{file.name}</span>
-                            <span className="ml-auto shrink-0 text-[10px] text-zinc-600">{formatBytes(file.size)}</span>
+                            <span className="shrink-0 text-[10px] text-zinc-600">{formatBytes(file.size)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}
+                              className="shrink-0 ml-auto text-zinc-600 hover:text-red-400 transition-colors p-0.5"
+                            >
+                              <X size={12} />
+                            </button>
                           </div>
                         );
                       })}
