@@ -13,6 +13,7 @@ interface SendArgs {
   html: string;
   text?: string;
   replyTo?: string;
+  strictFrom?: boolean;
 }
 
 function domainOf(address: string): string {
@@ -30,7 +31,9 @@ function getZohoTransport(): nodemailer.Transporter | null {
   if (!host || !user || !pass) return null;
   if (zohoTransport) return zohoTransport;
   const port = Number(process.env.ZOHO_SMTP_PORT || 465);
-  const secure = (process.env.ZOHO_SMTP_SECURE ?? (port === 465 ? "true" : "false")) === "true";
+  const secure =
+    (process.env.ZOHO_SMTP_SECURE ?? (port === 465 ? "true" : "false")) ===
+    "true";
   zohoTransport = nodemailer.createTransport({
     host,
     port,
@@ -68,6 +71,7 @@ async function sendViaResend(args: SendArgs): Promise<string> {
     text: args.text,
     replyTo: args.replyTo,
   });
+  if (result.error) throw new Error(result.error.message);
   return `resend:${result.data?.id || "ok"}`;
 }
 
@@ -89,6 +93,7 @@ export async function sendEmail(args: SendArgs): Promise<string> {
     return label;
   } catch (primaryErr) {
     console.warn(`[EMAIL_SENDER_STATUS] primary ${primary} failed for from=${args.from}:`, primaryErr);
+    if (args.strictFrom) throw primaryErr;
     // Fallback. For highlifelive.com senders that need Zoho, the Resend fallback will
     // probably fail too (unverified domain), so we rewrite From to bookings@highlifedmv.com
     // as a last-resort so the message still goes out.
@@ -113,4 +118,5 @@ export const SENDERS = {
   agentNotification: "HighLife Live <admin@highlifelive.com>",
   auditions: "HighLife Live <auditions@highlifelive.com>",
   internalBookings: "HighLife Live <bookings@highlifedmv.com>", // legacy / fallback
+  epkWorkOrder: "HighLife EPK Admin <admin@highlifelive.com>",
 } as const;

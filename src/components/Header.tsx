@@ -26,24 +26,26 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
-  // Admin console has its own shell -- don't render the public header inside /admin
-  if (pathname?.startsWith("/admin")) return null;
+  const hidden =
+    pathname?.startsWith("/admin") ||
+    (pathname?.startsWith("/roster/") && pathname.endsWith("-epk"));
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
-
     const onScroll = () => setScrolled(window.scrollY > 20);
+    const frame = window.requestAnimationFrame(() => {
+      setAuthed(isAuthenticated());
+      onScroll();
+    });
     window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
     };
-  }, []);
-
-  useEffect(() => {
-    setAuthed(isAuthenticated());
   }, [pathname]);
+
+  // Admin and standalone EPK microsites have their own shells.
+  if (hidden) return null;
 
   return (
     <>

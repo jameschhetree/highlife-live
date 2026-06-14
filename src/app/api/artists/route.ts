@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/db";
 import type { Artist } from "@/lib/data";
+import { getGeneratedEpkByArtistId } from "@/generated/epks/registry";
 
 export const dynamic = "force-dynamic";
 
@@ -63,21 +64,28 @@ export async function GET() {
     },
   });
 
-  const mapped: Artist[] = rows.map((r) => ({
-    slug: slugify(r.name) || r.id,
-    name: r.name,
-    genre: r.primaryGenre || (r.secondaryGenres[0] ?? ""),
-    category: categoryFor(r.primaryGenre || ""),
-    city: "",
-    priceRange: r.bookingFeeRange || "",
-    available: r.status === "Active" || r.status === "Priority",
-    bio: r.bio || "",
-    shortDesc: r.shortPitch || "",
-    performanceTypes: r.targetVenueTypes ?? [],
-    pastEvents: [],
-    travelAvailability: r.travelWillingness || "",
-    image: r.image || "",
-  }));
+  const mapped: Artist[] = rows.map((r) => {
+    const slug = slugify(r.name) || r.id;
+    const generatedEpk = getGeneratedEpkByArtistId(r.id);
+    return {
+      slug,
+      epkUrl: generatedEpk
+        ? `/roster/${generatedEpk.manifest.routeSlug}`
+        : undefined,
+      name: r.name,
+      genre: r.primaryGenre || (r.secondaryGenres[0] ?? ""),
+      category: categoryFor(r.primaryGenre || ""),
+      city: "",
+      priceRange: r.bookingFeeRange || "",
+      available: r.status === "Active" || r.status === "Priority",
+      bio: r.bio || "",
+      shortDesc: r.shortPitch || "",
+      performanceTypes: r.targetVenueTypes ?? [],
+      pastEvents: [],
+      travelAvailability: r.travelWillingness || "",
+      image: r.image || "",
+    };
+  });
 
   return Response.json(mapped);
 }

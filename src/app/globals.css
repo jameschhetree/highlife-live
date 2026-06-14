@@ -298,3 +298,24 @@ body {
     animation: none;
   }
 }
+
+.epk-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.75rem 1rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.epk-input:focus {
+  outline: none;
+  border-color: rgba(244, 114, 182, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.epk-input::placeholder {
+  color: rgb(82 82 91);
+}

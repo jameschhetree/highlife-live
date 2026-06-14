@@ -15,7 +15,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Lock,
-  FileText,
 } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import type { Artist } from "@/lib/data";
@@ -35,9 +34,6 @@ const galleryImages = [
   "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80",
 ];
 
-// EPK status shape returned from /api/admin/epks or inline DB check
-type EpkStatus = { hasActiveEpk: boolean; slug: string };
-
 export default function ArtistDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -48,10 +44,12 @@ export default function ArtistDetailPage() {
   // This checks localStorage for a venue/promoter session token set during partner login.
   // If no venue auth session exists, restricted fields are hidden from public visitors.
   const [authed, setAuthed] = useState(false);
-  const [epkStatus, setEpkStatus] = useState<EpkStatus | null>(null);
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
+    const frame = window.requestAnimationFrame(() => {
+      setAuthed(isAuthenticated());
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   // Pull artist from DB via /api/artists; match by slug.
@@ -65,20 +63,6 @@ export default function ArtistDetailPage() {
       })
       .catch(() => setArtist(null))
       .finally(() => setLoading(false));
-  }, [slug]);
-
-  // Check if artist has an active EPK (Published status)
-  useEffect(() => {
-    if (!slug) return;
-    // Try to fetch EPK status -- this is a lightweight check
-    fetch(`/api/artists/epk-status?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && data.hasActiveEpk) {
-          setEpkStatus(data);
-        }
-      })
-      .catch(() => { /* EPK check is optional -- fail silently */ });
   }, [slug]);
 
   if (loading) {
@@ -233,24 +217,22 @@ export default function ArtistDetailPage() {
                   <ArrowRight size={14} />
                 </Link>
               )}
-              <button
-                className="flex items-center gap-2 px-6 py-3.5 border border-white/10 hover:border-white/25 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground rounded-full transition-colors"
-                onClick={() => {
-                  alert("Press kit download coming soon.");
-                }}
-              >
-                <Download size={13} />
-                Press Kit
-              </button>
-              {/* EPK link -- shown when artist has an active/published EPK */}
-              {epkStatus?.hasActiveEpk && (
+              {artist.epkUrl ? (
                 <Link
-                  href={`/epk/${epkStatus.slug || slug}`}
-                  className="flex items-center gap-2 px-6 py-3.5 border border-pink-500/20 hover:border-pink-500/40 bg-pink-500/5 text-xs tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200 rounded-full transition-colors"
+                  href={artist.epkUrl}
+                  className="flex items-center gap-2 px-6 py-3.5 border border-white/10 hover:border-white/25 text-xs tracking-[0.18em] uppercase text-zinc-300 hover:text-foreground rounded-full transition-colors"
                 >
-                  <FileText size={13} />
-                  View EPK
+                  <Download size={13} />
+                  Press Kit
                 </Link>
+              ) : (
+                <button
+                  className="flex items-center gap-2 px-6 py-3.5 border border-white/10 text-xs tracking-[0.18em] uppercase text-zinc-500 rounded-full cursor-not-allowed"
+                  disabled
+                >
+                  <Download size={13} />
+                  Press Kit Pending
+                </button>
               )}
             </div>
 

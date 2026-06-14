@@ -48,6 +48,15 @@ const defaultTheme = { gradient: "from-[#0f1115] to-[#131620]", accent: "via-vio
 
 type SortKey = "date" | "city" | "artist";
 
+function artistSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<EventItem[]>(seedEvents);
   const [cityFilter, setCityFilter] = useState("All");
@@ -73,6 +82,21 @@ export default function EventsPage() {
 
   const allCities = ["All", ...Array.from(new Set(events.map((e) => e.city)))];
   const allArtists = ["All", ...Array.from(new Set(events.flatMap((e) => e.featuredArtists)))];
+
+  useEffect(() => {
+    const requestedSlug = new URLSearchParams(window.location.search).get("artist");
+    if (!requestedSlug) return;
+    const matchingArtist = Array.from(
+      new Set(events.flatMap((event) => event.featuredArtists)),
+    ).find(
+      (artist) => artistSlug(artist) === requestedSlug,
+    );
+    if (!matchingArtist) return;
+    const frame = window.requestAnimationFrame(() => {
+      setArtistFilter(matchingArtist);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [events]);
 
   const sortByDate = (a: EventItem, b: EventItem) => {
     const aT = a.startAt ? new Date(a.startAt).getTime() : new Date(a.date).getTime();

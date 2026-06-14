@@ -236,63 +236,23 @@ model EPK {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  versions EPKVersion[]
-  jobs     EPKGenerationJob[]
-  assets   EPKAsset[]
-}
-
-// ── EPK Generator (Phase 6+, owner-only generator foundation) ──
-// Added 2026-06-12 per Murd handoff (epk-generator-foundation brief).
-
-model EPKVersion {
-  id                String    @id @default(cuid())
-  epkId             String
-  epk               EPK       @relation(fields: [epkId], references: [id], onDelete: Cascade)
-  versionNumber     Int
-  status            String    @default("Draft") // Draft | Preview | Published | Previous | Rejected
-  routeSlug         String
-  sourcePath        String    @default("")
-  manifest          Json      @default("{}")
-  qaReport          Json      @default("{}")
-  branchName        String?
-  commitSha         String?
-  pullRequestNumber Int?
-  previewUrl        String?
-  createdByEmail    String    @default("")
-  publishedAt       DateTime?
-  supersededAt      DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  jobs EPKGenerationJob[]
-
-  @@unique([epkId, versionNumber])
-  @@index([epkId, status, publishedAt])
-  @@index([routeSlug])
+  jobs   EPKGenerationJob[]
+  assets EPKAsset[]
 }
 
 model EPKGenerationJob {
   id                  String      @id @default(cuid())
   epkId               String
   epk                 EPK         @relation(fields: [epkId], references: [id], onDelete: Cascade)
-  versionId           String?
-  version             EPKVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
-  status              String      @default("Submitted") // Submitted | AwaitingAnswers | Queued | Generating | DependencyApproval | PreviewReady | Failed | Cancelled | Completed
+  status              String      @default("Submitted") // Submitted | AwaitingAnswers | PromptReady | GenerationRequested | Failed | Cancelled
   model               String      @default("gpt-5.5")
   input               Json        @default("{}")
   questions           Json        @default("[]")
   answers             Json        @default("[]")
-  revisionNumber      Int         @default(0)
-  maxRevisionRounds   Int         @default(3)
   inputTokens         Int         @default(0)
   outputTokens        Int         @default(0)
   estimatedCostMicros Int         @default(0)
   externalRunId       String?
-  callbackNonceHash   String?
-  branchName          String?
-  commitSha           String?
-  pullRequestNumber   Int?
-  previewUrl          String?
   failureCode         String?
   failureMessage      String?
   createdByEmail      String      @default("")
@@ -332,15 +292,6 @@ model EPKAsset {
   @@index([epkId, kind])
   @@index([jobId])
   @@index([scanStatus])
-}
-
-model EPKGeneratorLease {
-  key         String    @id
-  jobId       String?   @unique
-  acquiredAt  DateTime?
-  heartbeatAt DateTime?
-  expiresAt   DateTime?
-  updatedAt   DateTime  @updatedAt
 }
 
 // ── Suppression List ────────────────────────────────────────

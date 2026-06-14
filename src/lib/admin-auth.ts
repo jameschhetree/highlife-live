@@ -64,6 +64,7 @@ export function setAdminSession(session: AdminSession): void {
 export function adminLogout(): void {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(ADMIN_KEY);
+    void fetch("/api/admin/login", { method: "DELETE" }).catch(() => null);
   }
 }
 

@@ -5,6 +5,12 @@
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import {
+  clearOwnerSessionCookie,
+  createOwnerSessionForIdentity,
+  setOwnerSessionCookie,
+} from "@/lib/epk/owner-session";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +39,7 @@ export async function POST(request: NextRequest) {
   // for backward compatibility with existing permission checks.
   const sessionRole = user.role === "agent" ? "agent" : "admin";
 
-  return Response.json({
+  const response = NextResponse.json({
     ok: true,
     email: user.email,
     displayName: user.name,
@@ -41,4 +47,23 @@ export async function POST(request: NextRequest) {
     dbRole: user.role,
     agentLoginId: user.id,
   });
+  if (user.role !== "agent") {
+    try {
+      const { token } = createOwnerSessionForIdentity({
+        email: user.email,
+        displayName: user.name,
+      });
+      setOwnerSessionCookie(response, token);
+    } catch {
+      // Keep the existing admin login working while EPK-specific signing is
+      // being configured. The EPK API remains inaccessible without this cookie.
+    }
+  }
+  return response;
+}
+
+export async function DELETE() {
+  const response = NextResponse.json({ ok: true });
+  clearOwnerSessionCookie(response);
+  return response;
 }
