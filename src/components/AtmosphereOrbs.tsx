@@ -10,15 +10,26 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const ORBS = [
-  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%",  homeOnly: false },
-  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%",  homeOnly: false },
-  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%",  homeOnly: false },
-  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  xInner: "11%", y: "72%",  homeOnly: false },
-  // Hero accent pair — homepage only, behind hero card corners
+const ORBS: Orb[] = [
+  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%" },
+  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%" },
+  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%" },
+  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  xInner: "11%", y: "72%" },
+  // Hero accent pair — homepage only
   { r: 168, g: 85,  b: 247, opacity: 0.22, size: 320, x: "22%", xInner: "22%", y: "38%",  homeOnly: true },
   { r: 56,  g: 120, b: 255, opacity: 0.20, size: 280, x: "78%", xInner: "78%", y: "36%",  homeOnly: true },
+  // Inner-page accent lights — top sides + center
+  { r: 168, g: 85,  b: 247, opacity: 0.16, size: 340, x: "8%",  xInner: "8%",  y: "6%",   nonHomeOnly: true },
+  { r: 56,  g: 120, b: 255, opacity: 0.14, size: 300, x: "92%", xInner: "92%", y: "8%",   nonHomeOnly: true },
+  { r: 236, g: 72,  b: 153, opacity: 0.12, size: 260, x: "48%", xInner: "48%", y: "12%",  nonHomeOnly: true },
 ];
+
+type Orb = {
+  r: number; g: number; b: number;
+  opacity: number; size: number;
+  x: string; xInner: string; y: string;
+  homeOnly?: boolean; nonHomeOnly?: boolean;
+};
 
 export function AtmosphereOrbs() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,7 +37,9 @@ export function AtmosphereOrbs() {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
-  const activeOrbs = isHome ? ORBS : ORBS.filter((o) => !o.homeOnly);
+  const activeOrbs = ORBS.filter((o) =>
+    isHome ? !o.nonHomeOnly : !o.homeOnly,
+  );
 
   useGSAP(
     () => {
