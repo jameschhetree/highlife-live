@@ -25,7 +25,6 @@ import { useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateArtist, deleteArtist } from "@/lib/admin-store";
 import {
   canManageArtists,
-  canViewArtist,
   getAdminSession,
   type AdminSession,
 } from "@/lib/admin-auth";
@@ -158,7 +157,9 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
   const [deleteQuoteIdx, setDeleteQuoteIdx] = useState<number | null>(null);
   const [newQuoteText, setNewQuoteText] = useState("");
   const canManage = canManageArtists(session);
-  const canView = artist ? canViewArtist(artist, session) : false;
+  // canView: if the artist is in the server-scoped useArtists() list, the agent has access.
+  // The API already filters by AgentArtistAssignment for non-owners.
+  const canView = !!artist;
 
   useEffect(() => {
     setSession(getAdminSession());
