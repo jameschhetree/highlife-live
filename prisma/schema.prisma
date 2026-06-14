@@ -73,7 +73,7 @@ model ArtistAsset {
   id        String   @id @default(cuid())
   artistId  String
   artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  kind      String   // profile_photo, press_photo, logo, music_link, video, stage_plot, tech_rider, hospitality_rider
+  kind      String   // profile_photo, press_photo, logo, video, stage_plot, music_file, other_photo
   blobUrl   String
   filename  String   @default("")
   mimeType  String   @default("")
@@ -106,6 +106,7 @@ model Venue {
   phone              String    @default("")
   website            String    @default("")
   instagram          String    @default("")
+  facebook           String    @default("")
   address            String    @default("")
   city               String    @default("")
   state              String    @default("")

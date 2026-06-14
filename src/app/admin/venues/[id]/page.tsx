@@ -206,6 +206,103 @@ function InlineEditable({
   );
 }
 
+// ── Inline Genres Editor ────────────────────────────────────
+function InlineGenresEdit({
+  genres,
+  venueId,
+}: {
+  genres: string[];
+  venueId: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(genres.join(", "));
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setDraft(genres.join(", "));
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const session = getAdminSession();
+      if (!session) return;
+      const parsed = draft.split(",").map((s) => s.trim()).filter(Boolean);
+      const res = await fetch(`/api/admin/venues/${venueId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ typicalGenres: parsed }),
+      });
+      if (res.ok) {
+        triggerStoreUpdate();
+        setEditing(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancel() {
+    setEditing(false);
+    setDraft(genres.join(", "));
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+          autoFocus
+          placeholder="Hip-Hop, R&B, Jazz"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") cancel();
+          }}
+        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={save}
+            disabled={saving}
+            className="p-1 rounded border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/10 text-emerald-300 hover:text-emerald-200 transition-colors disabled:opacity-50"
+            title="Save"
+          >
+            <Check size={12} />
+          </button>
+          <button
+            onClick={cancel}
+            className="p-1 rounded border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-300 hover:text-zinc-200 transition-colors"
+            title="Cancel"
+          >
+            <X size={12} />
+          </button>
+          <span className="text-[9px] text-zinc-500">Comma-separated</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex flex-wrap gap-1.5 cursor-pointer group"
+      onClick={startEdit}
+      title="Click to edit genres"
+    >
+      {genres.length > 0 ? (
+        genres.map((g) => (
+          <span key={g} className="chip text-[9px]">{g}</span>
+        ))
+      ) : (
+        <span className="text-zinc-500 italic text-sm">Click to add genres</span>
+      )}
+      <Edit size={10} className="self-center text-zinc-600 opacity-0 group-hover:opacity-60 transition-opacity ml-1" />
+    </div>
+  );
+}
+
 // ── Stage Info Types ────────────────────────────────────────
 type StageInfoData = {
   logins: { id: string; email: string; displayName: string; isActive: boolean }[];
@@ -510,9 +607,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                       ) : (
                         <div className="text-sm text-zinc-200">{venue.email}</div>
                       )}
-                      {venue.talentBuyerEmail !== venue.email && (
-                        <div className="text-xs text-zinc-500 mt-0.5">Talent: {venue.talentBuyerEmail}</div>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -561,27 +655,39 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Venue Details</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {(!accessState.loaded || !accessState.canSeeContacts
-                  ? [
-                      ["Type", venue.venueType],
-                      ["Zip Code", venue.zipCode || "--"],
-                      ["Region", venue.region || "--"],
-                      ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
-                    ]
-                  : [
-                      ["Type", venue.venueType],
-                      ["Zip Code", venue.zipCode || "--"],
-                      ["Region", venue.region || "--"],
-                      ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
-                      ["Instagram", venue.instagram],
-                      ["Talent Buyer", venue.talentBuyerEmail],
-                    ]
-                ).map(([label, value]) => (
+                {[
+                  ["Type", venue.venueType],
+                  ["Zip Code", venue.zipCode || "--"],
+                  ["Region", venue.region || "--"],
+                  ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
+                ].map(([label, value]) => (
                   <div key={label as string}>
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
                     <div className="text-sm text-zinc-300">{value}</div>
                   </div>
                 ))}
+                {/* Instagram -- inline editable for owner admins */}
+                {accessState.loaded && accessState.canSeeContacts && (
+                  <div>
+                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Instagram</div>
+                    {accessState.isOwnerAdmin ? (
+                      <InlineEditable value={venue.instagram} fieldKey="instagram" venueId={id} label="Instagram" />
+                    ) : (
+                      <div className="text-sm text-zinc-300">{venue.instagram || <span className="text-zinc-500 italic">--</span>}</div>
+                    )}
+                  </div>
+                )}
+                {/* Facebook -- inline editable for owner admins */}
+                {accessState.loaded && accessState.canSeeContacts && (
+                  <div>
+                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Facebook</div>
+                    {accessState.isOwnerAdmin ? (
+                      <InlineEditable value={venue.facebook} fieldKey="facebook" venueId={id} label="Facebook" />
+                    ) : (
+                      <div className="text-sm text-zinc-300">{venue.facebook || <span className="text-zinc-500 italic">--</span>}</div>
+                    )}
+                  </div>
+                )}
                 {/* Booking Email -- inline editable for owner admins */}
                 {accessState.loaded && accessState.canSeeContacts && (
                   <div>
@@ -596,11 +702,15 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="mt-4">
                 <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1.5">Typical Genres Booked</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {venue.typicalGenres.map((g) => (
-                    <span key={g} className="chip text-[9px]">{g}</span>
-                  ))}
-                </div>
+                {accessState.isOwnerAdmin ? (
+                  <InlineGenresEdit genres={venue.typicalGenres} venueId={id} />
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {venue.typicalGenres.map((g) => (
+                      <span key={g} className="chip text-[9px]">{g}</span>
+                    ))}
+                  </div>
+                )}
               </div>
               {venue.tags.length > 0 && (
                 <div className="mt-3">
@@ -799,18 +909,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </motion.div>
 
-            {/* Timeline sidebar */}
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-3">
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Timeline</h2>
-              <div>
-                <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Last Contacted</div>
-                <div className="text-sm text-zinc-300">{venue.lastContacted || "Never"}</div>
-              </div>
-              <div>
-                <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Next Follow-up</div>
-                <div className="text-sm text-zinc-300">{venue.nextFollowUp || "Not scheduled"}</div>
-              </div>
-            </motion.div>
           </div>
         </div>
       </div>

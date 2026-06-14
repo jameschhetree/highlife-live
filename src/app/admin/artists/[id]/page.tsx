@@ -47,16 +47,15 @@ const statusColor: Record<ArtistStatus, string> = {
   Archived: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20",
 };
 
-// Asset kind labels for display
+// Asset kind labels, max counts, and accepted file types
 const ASSET_KINDS = [
-  { kind: "profile_photo", label: "Profile Photo" },
-  { kind: "press_photo", label: "Press Photos" },
-  { kind: "logo", label: "Logo" },
-  { kind: "music_link", label: "Music Links" },
-  { kind: "video", label: "Videos" },
-  { kind: "stage_plot", label: "Stage Plot" },
-  { kind: "tech_rider", label: "Tech Rider" },
-  { kind: "hospitality_rider", label: "Hospitality Rider" },
+  { kind: "profile_photo", label: "Profile Photo", max: 1, accept: "image/*" },
+  { kind: "press_photo", label: "Press Photos", max: 5, accept: "image/*" },
+  { kind: "logo", label: "Logo", max: 1, accept: "image/*" },
+  { kind: "video", label: "Videos", max: 3, accept: "video/*" },
+  { kind: "stage_plot", label: "Stage Plot", max: 1, accept: "application/pdf" },
+  { kind: "music_file", label: "Music Files", max: 3, accept: "audio/*" },
+  { kind: "other_photo", label: "Other Photos", max: 5, accept: "image/*" },
 ] as const;
 
 type ArtistAsset = {
@@ -655,16 +654,20 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-3">Assets</h2>
               <div className="space-y-2 text-sm text-zinc-500">
-                {ASSET_KINDS.map(({ kind, label }) => {
+                {ASSET_KINDS.map(({ kind, label, max, accept }) => {
                   const kindAssets = assets.filter((a) => a.kind === kind);
                   const isUploading = uploadingKind === kind;
+                  const atLimit = kindAssets.length >= max;
                   return (
                     <div key={kind} className="py-1.5 border-b border-white/4 last:border-0">
                       <div className="flex items-center justify-between">
-                        <span>{label}</span>
+                        <span>
+                          {label}
+                          <span className="text-zinc-600 text-[9px] ml-1">({kindAssets.length}/{max})</span>
+                        </span>
                         {kindAssets.length > 0 ? (
-                          <span className="text-[9px] tracking-[0.18em] uppercase text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5">
-                            {kindAssets.length} uploaded
+                          <span className={`text-[9px] tracking-[0.18em] uppercase rounded-full px-2 py-0.5 ${atLimit ? "text-zinc-400 bg-zinc-400/10" : "text-emerald-400 bg-emerald-400/10"}`}>
+                            {atLimit ? "Full" : `${kindAssets.length} uploaded`}
                           </span>
                         ) : isUploading ? (
                           <span className="text-[9px] tracking-[0.18em] uppercase text-amber-300 bg-amber-400/10 rounded-full px-2 py-0.5 animate-pulse">
@@ -676,6 +679,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                             <input
                               type="file"
                               className="hidden"
+                              accept={accept}
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) handleAssetUpload(kind, file);
@@ -707,19 +711,22 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                               )}
                             </div>
                           ))}
-                          {/* Allow uploading more of the same kind */}
-                          <label className="text-[9px] text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors inline-flex items-center gap-1 pl-2">
-                            <Plus size={9} /> Add another
-                            <input
-                              type="file"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleAssetUpload(kind, file);
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
+                          {/* Allow uploading more only if under limit */}
+                          {!atLimit && (
+                            <label className="text-[9px] text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors inline-flex items-center gap-1 pl-2">
+                              <Plus size={9} /> Add another
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept={accept}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleAssetUpload(kind, file);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          )}
                         </div>
                       )}
                     </div>
