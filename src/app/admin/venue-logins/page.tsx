@@ -518,6 +518,15 @@ export default function VenueLoginsPage() {
                                     Archive
                                   </button>
                                 )}
+                                {req.status === "Archived" && (
+                                  <button
+                                    onClick={() => updateRequestStatus(req.id, "New")}
+                                    className="p-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 text-amber-300 hover:text-amber-200 transition-colors"
+                                    title="Unarchive — move back to New"
+                                  >
+                                    <Undo2 size={12} />
+                                  </button>
+                                )}
                                 {/* Archive button available on any non-archived status; Delete is nuclear and always available */}
                                 {req.status !== "Archived" && req.status !== "Rejected" && (
                                   <button
