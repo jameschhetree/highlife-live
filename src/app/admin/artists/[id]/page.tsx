@@ -633,14 +633,24 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   {links.map((link) => (
                     <div key={link.id} className="flex items-center justify-between">
                       <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">{link.title}</span>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-pink-300 inline-flex items-center gap-1 hover:text-pink-200 transition-colors"
-                      >
-                        Visit <ExternalLink size={10} />
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-pink-300 inline-flex items-center gap-1 hover:text-pink-200 transition-colors"
+                        >
+                          Visit <ExternalLink size={10} />
+                        </a>
+                        {canManage && (
+                          <button
+                            onClick={() => handleDeleteLink(link.id)}
+                            className="text-zinc-600 hover:text-red-400 transition-colors p-0.5"
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

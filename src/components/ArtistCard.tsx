@@ -24,26 +24,13 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden">
           <div
-            className="absolute inset-0 bg-cover bg-center img-bw transition-transform duration-700 group-hover:scale-105"
+            className={`absolute inset-0 bg-cover bg-center img-bw transition-transform duration-700 ${artist.epkUrl ? "group-hover:scale-105" : ""}`}
             style={{ backgroundImage: `url(${artist.image})` }}
             role="img"
             aria-label={`Photo of ${artist.name}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-
-          {/* Availability Badge */}
-          <div className="absolute top-4 right-4">
-            <span
-              className={`text-[10px] tracking-[0.2em] uppercase px-3 py-1 rounded-full backdrop-blur ${
-                artist.available
-                  ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/30"
-                  : "bg-zinc-700/50 text-zinc-300 border border-zinc-600/40"
-              }`}
-            >
-              {artist.available ? "Available" : "Booked"}
-            </span>
-          </div>
+          <div className={`absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen transition-opacity duration-700 ${artist.epkUrl ? "opacity-0 group-hover:opacity-100" : "opacity-0"}`} />
         </div>
 
         {/* Info */}
@@ -52,10 +39,12 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
             <h3 className="font-display uppercase text-xl tracking-wide leading-tight">
               {artist.name}
             </h3>
-            <ArrowUpRight
-              size={16}
-              className="text-silver opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-1 flex-shrink-0"
-            />
+            {artist.epkUrl && (
+              <ArrowUpRight
+                size={16}
+                className="text-silver opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-1 flex-shrink-0"
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-2 mb-3">
