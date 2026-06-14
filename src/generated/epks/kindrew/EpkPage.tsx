@@ -5,11 +5,12 @@ import {
   Anchor,
   ArrowLeft,
   ArrowUpRight,
+  Bone,
   CalendarDays,
   Compass,
   Link as LinkIcon,
   Play,
-  Sparkles,
+  Skull,
 } from "lucide-react";
 import { gsap } from "gsap";
 import type { GeneratedEpkPageProps } from "../types";
@@ -22,14 +23,6 @@ type RuntimeAsset = {
   alt?: string;
   mimeType?: string;
 };
-
-const GENRES = [
-  { name: "Indie", note: "the compass point" },
-  { name: "Grunge", note: "the weather front" },
-  { name: "Alternative", note: "the open water" },
-  { name: "Pop Hiphop", note: "the forward motion" },
-  { name: "Country", note: "the backroad turn" },
-];
 
 function isRuntimeAsset(value: unknown): value is RuntimeAsset {
   return typeof value === "object" && value !== null;
@@ -127,59 +120,99 @@ export function EpkPage(props: GeneratedEpkPageProps) {
     const root = rootRef.current;
     if (!root) return;
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (reduceMotion) return;
-
-    let observer: IntersectionObserver | undefined;
+    const media = gsap.matchMedia();
     const context = gsap.context(() => {
-      gsap.from(".kd-hero-copy > *", {
-        y: 28,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.11,
-        ease: "power3.out",
-      });
-      gsap.from(".kd-hero-art", {
-        x: 42,
-        rotate: 2,
-        opacity: 0,
-        duration: 1.1,
-        ease: "power3.out",
-      });
-      gsap.to(".kd-moon", {
-        y: 12,
-        duration: 3.6,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        let coveObserver: IntersectionObserver | undefined;
 
-      const revealObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            gsap.fromTo(
-              entry.target,
-              { y: 34, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.75, ease: "power2.out" },
-            );
-            revealObserver.unobserve(entry.target);
-          });
-        },
-        { threshold: 0.14 },
-      );
-      observer = revealObserver;
+        gsap.from(".kd-hero-copy > *", {
+          y: 28,
+          opacity: 0,
+          duration: 0.8,
+          stagger: 0.11,
+          ease: "power3.out",
+        });
+        gsap.from(".kd-hero-art", {
+          x: 42,
+          rotate: 2,
+          opacity: 0,
+          duration: 1.1,
+          ease: "power3.out",
+        });
+        gsap.to(".kd-moon", {
+          y: 12,
+          duration: 3.6,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
 
-      root.querySelectorAll("[data-reveal]").forEach((node) => {
-        revealObserver.observe(node);
+        const nextRevealObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              gsap.fromTo(
+                entry.target,
+                { y: 34, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.75, ease: "power2.out" },
+              );
+              nextRevealObserver.unobserve(entry.target);
+            });
+          },
+          { threshold: 0.14 },
+        );
+        root.querySelectorAll("[data-reveal]").forEach((node) => {
+          nextRevealObserver.observe(node);
+        });
+
+        const cove = root.querySelector(".kd-media");
+        if (cove) {
+          gsap.set(".kd-palm--left", { xPercent: 34, rotate: 5 });
+          gsap.set(".kd-palm--right", { xPercent: -34, rotate: -5 });
+          gsap.set(".kd-media-content", { opacity: 0.3, scale: 0.985 });
+
+          const nextCoveObserver = new IntersectionObserver(
+            ([entry]) => {
+              if (!entry?.isIntersecting) return;
+              gsap
+                .timeline({ defaults: { ease: "power3.inOut" } })
+                .to(".kd-palm--left", {
+                  xPercent: -92,
+                  rotate: -8,
+                  duration: 1.2,
+                })
+                .to(
+                  ".kd-palm--right",
+                  { xPercent: 92, rotate: 8, duration: 1.2 },
+                  "<",
+                )
+                .to(
+                  ".kd-media-content",
+                  { opacity: 1, scale: 1, duration: 0.85 },
+                  "<0.22",
+                )
+                .from(
+                  ".kd-treasure-route span",
+                  { scale: 0, stagger: 0.08, duration: 0.28 },
+                  "<0.1",
+                );
+              nextCoveObserver.disconnect();
+            },
+            { threshold: 0.22 },
+          );
+          coveObserver = nextCoveObserver;
+          nextCoveObserver.observe(cove);
+        }
+
+        return () => {
+          nextRevealObserver.disconnect();
+          coveObserver?.disconnect();
+        };
       });
-
     }, root);
 
     return () => {
-      observer?.disconnect();
+      media.revert();
       context.revert();
     };
   }, []);
@@ -211,9 +244,12 @@ export function EpkPage(props: GeneratedEpkPageProps) {
             <span>DREW</span>
           </h1>
           <p className="kd-hero-pitch">
-            A young indie artist moving freely through grunge, alternative,
-            pop hiphop, and country with emotionally charged performances and
-            upbeat momentum.
+            Seasoned indie artist moving freely through whatever genre he
+            pleases, from hiphop to alternative rock, Kin Drew delivers
+            emotionally charged performances and upbeat momentum. With a dream
+            to sail the Seven Seas, Kin brings a contagious spirit to every
+            show, forever showing love to his community of peace and freedom{" "}
+            <em>nu3era</em>.
           </p>
           <div className="kd-actions">
             <a className="kd-button kd-button--primary" href={props.routes.booking}>
@@ -238,6 +274,11 @@ export function EpkPage(props: GeneratedEpkPageProps) {
           <div className="kd-poster-mark" aria-hidden="true">
             自由
           </div>
+          <div className="kd-crossbones" aria-hidden="true">
+            <Bone className="kd-bone kd-bone--one" />
+            <Bone className="kd-bone kd-bone--two" />
+            <Skull />
+          </div>
           {assetSource(skullPhoto) ? (
             <img
               src={assetSource(skullPhoto)}
@@ -253,50 +294,68 @@ export function EpkPage(props: GeneratedEpkPageProps) {
         </div>
       </section>
 
-      <section className="kd-manifesto" aria-labelledby="manifesto-title">
-        <div className="kd-section-label">
-          <span>01</span>
-          Artist signal
-        </div>
-        <div className="kd-manifesto-copy" data-reveal>
-          <p className="kd-kicker">No fixed lane</p>
-          <h2 id="manifesto-title">
-            Music that moves from backroads to open water.
-          </h2>
-          <p>
-            KinDrew dabbles wherever the song leads. Country warmth can turn
-            into hiphop energy, indie atmosphere, or a grunge edge. Across the
-            shifts, the aim stays direct: paint a picture in the listener&apos;s
-            head and bring the crowd through the full journey.
-          </p>
-        </div>
-        <div className="kd-ink-slash" aria-hidden="true" />
-      </section>
-
-      <section className="kd-compass-section" aria-labelledby="sound-title">
-        <div className="kd-section-heading" data-reveal>
-          <div className="kd-section-label">
-            <span>02</span>
-            Sound map
+      <section className="kd-media" aria-labelledby="media-title">
+        <div className="kd-palm-curtain" aria-hidden="true">
+          <div className="kd-palm kd-palm--left">
+            <span className="kd-palm-trunk" />
+            <span className="kd-palm-frond kd-palm-frond--1" />
+            <span className="kd-palm-frond kd-palm-frond--2" />
+            <span className="kd-palm-frond kd-palm-frond--3" />
+            <span className="kd-palm-frond kd-palm-frond--4" />
+            <span className="kd-palm-frond kd-palm-frond--5" />
           </div>
-          <h2 id="sound-title">Five directions. One artist.</h2>
-        </div>
-        <div className="kd-genre-wheel">
-          <div className="kd-compass-core" aria-hidden="true">
-            <Compass size={56} strokeWidth={1} />
-            <span>MOVE</span>
+          <div className="kd-palm kd-palm--right">
+            <span className="kd-palm-trunk" />
+            <span className="kd-palm-frond kd-palm-frond--1" />
+            <span className="kd-palm-frond kd-palm-frond--2" />
+            <span className="kd-palm-frond kd-palm-frond--3" />
+            <span className="kd-palm-frond kd-palm-frond--4" />
+            <span className="kd-palm-frond kd-palm-frond--5" />
           </div>
-          {GENRES.map((genre, index) => (
-            <div
-              className={`kd-genre kd-genre--${index + 1}`}
-              key={genre.name}
-              data-reveal
-            >
-              <span>0{index + 1}</span>
-              <h3>{genre.name}</h3>
-              <p>{genre.note}</p>
+        </div>
+        <div className="kd-media-content">
+          <div className="kd-section-heading kd-media-heading" data-reveal>
+            <div className="kd-section-label">
+              <span>01</span>
+              Media cove
             </div>
-          ))}
+            <p className="kd-kicker">Wanted transmissions / found treasure</p>
+            <h2 id="media-title">Recent visuals</h2>
+            <p>
+              The first place to see new releases; occasional treasure chest
+              with sneak peaks.
+            </p>
+          </div>
+          <div className="kd-treasure-map" aria-hidden="true">
+            <div className="kd-island">
+              <span className="kd-island-x">X</span>
+              <Skull size={24} />
+            </div>
+            <div className="kd-treasure-route">
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+          <div className="kd-video-grid">
+            <VideoVoyage
+              title="Better Way"
+              eyebrow="Official video / first watch"
+              asset={betterWay}
+              active={activeVideo === "better-way"}
+              onPlay={() => setActiveVideo("better-way")}
+            />
+            <VideoVoyage
+              title="The Garden"
+              eyebrow="Live performance / presented by InaShell Ent."
+              asset={garden}
+              active={activeVideo === "the-garden"}
+              onPlay={() => setActiveVideo("the-garden")}
+            />
+          </div>
         </div>
       </section>
 
@@ -315,55 +374,44 @@ export function EpkPage(props: GeneratedEpkPageProps) {
           )}
         </div>
         <div className="kd-visual-copy" data-reveal>
-          <Sparkles size={24} />
-          <p className="kd-kicker">Samurai pirate / urban punk</p>
-          <h2>Dark atmosphere. Upbeat adventure.</h2>
+          <Skull size={24} />
+          <p className="kd-kicker">One soul / live free</p>
+          <h2>The. Pirate. King.</h2>
           <p>
-            The look draws from emo-punk fashion, anime energy, and a
-            free-spirited pirate character without losing the human center:
-            music made to feel alive, outside, and in motion.
+            Kin Drew&apos;s work highlights his stylistic themes and is a cult
+            classic for his fans.
           </p>
         </div>
       </section>
 
-      <section className="kd-media" aria-labelledby="media-title">
-        <div className="kd-section-heading" data-reveal>
-          <div className="kd-section-label">
-            <span>03</span>
-            Media cove
-          </div>
-          <h2 id="media-title">Press play when you&apos;re ready.</h2>
-          <p>Two views of KinDrew&apos;s sound, presented in the requested order.</p>
+      <section className="kd-manifesto" aria-labelledby="manifesto-title">
+        <div className="kd-section-label">
+          <span>02</span>
+          Artist signal
         </div>
-        <div className="kd-video-grid">
-          <VideoVoyage
-            title="Better Way"
-            eyebrow="Official video / first watch"
-            asset={betterWay}
-            active={activeVideo === "better-way"}
-            onPlay={() => setActiveVideo("better-way")}
-          />
-          <VideoVoyage
-            title="The Garden"
-            eyebrow="Live performance / presented by InaShell Ent."
-            asset={garden}
-            active={activeVideo === "the-garden"}
-            onPlay={() => setActiveVideo("the-garden")}
-          />
+        <div className="kd-manifesto-copy" data-reveal>
+          <p className="kd-kicker">Until there&apos;s no wind on the sails...</p>
+          <h2 id="manifesto-title">The crew that rules the sea</h2>
+          <p>
+            Coming from the DMV region, Kin Drew has been on his musical journey
+            since high school, consistently growing his fan base along with a
+            community and message that is <em>nu3era</em>. With his ability to
+            captivate any mind and gift dreams as large as his, Kin Drew has
+            championed the idea of living free with <em>nu3era</em> and his
+            music.
+          </p>
         </div>
+        <div className="kd-ink-slash" aria-hidden="true" />
       </section>
 
       <section className="kd-dock" aria-labelledby="dock-title">
         <div className="kd-dock-copy" data-reveal>
           <div className="kd-section-label">
-            <span>04</span>
+            <span>03</span>
             Social dock
           </div>
-          <h2 id="dock-title">Follow the signal.</h2>
-          <p>
-            Find KinDrew across social and streaming platforms, or bring the
-            live journey to your next event.
-          </p>
+          <h2 id="dock-title">Follow the ship.</h2>
+          <p>Get your spot on the boat and put wind in the sails.</p>
         </div>
         <nav className="kd-socials" aria-label="KinDrew public links">
           {props.links.map((link, index) => (
@@ -385,6 +433,11 @@ export function EpkPage(props: GeneratedEpkPageProps) {
       <section className="kd-booking" aria-labelledby="booking-title">
         <div className="kd-booking-compass" aria-hidden="true">
           <Compass size={170} strokeWidth={0.6} />
+        </div>
+        <div className="kd-booking-bones" aria-hidden="true">
+          <Bone />
+          <Skull />
+          <Bone />
         </div>
         <p className="kd-kicker">Next destination</p>
         <h2 id="booking-title">Bring KinDrew to the stage.</h2>
