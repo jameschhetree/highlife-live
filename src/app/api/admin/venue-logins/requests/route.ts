@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest) {
     return Response.json(row);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Update failed";
-    if (message.includes("Record to update not found") || message.includes("RecordNotFound")) {
+    if (message.includes("not found") || message.includes("RecordNotFound")) {
       return Response.json({ error: "Request not found" }, { status: 404 });
     }
     console.error("[venue-login-requests PATCH]", err);
