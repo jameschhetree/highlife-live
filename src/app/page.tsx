@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero — vibrant atmosphere + glass card centerpiece */}
-      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-radial-atmosphere pt-32 pb-24 sm:pt-28 sm:pb-20">
+      <section className="relative min-h-[100svh] flex items-center justify-center bg-radial-atmosphere pt-32 pb-24 sm:pt-28 sm:pb-20 overflow-x-clip">
         {/* Atmospheric noise overlay */}
         <div
           aria-hidden
