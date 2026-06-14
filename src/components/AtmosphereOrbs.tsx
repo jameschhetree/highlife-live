@@ -11,10 +11,13 @@ if (typeof window !== "undefined") {
 }
 
 const ORBS = [
-  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%" },
-  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%" },
-  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%" },
-  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  xInner: "11%", y: "72%" },
+  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%",  homeOnly: false },
+  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%",  homeOnly: false },
+  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%",  homeOnly: false },
+  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  xInner: "11%", y: "72%",  homeOnly: false },
+  // Hero accent pair — homepage only, behind hero card corners
+  { r: 168, g: 85,  b: 247, opacity: 0.22, size: 320, x: "22%", xInner: "22%", y: "38%",  homeOnly: true },
+  { r: 56,  g: 120, b: 255, opacity: 0.20, size: 280, x: "78%", xInner: "78%", y: "36%",  homeOnly: true },
 ];
 
 export function AtmosphereOrbs() {
@@ -23,21 +26,25 @@ export function AtmosphereOrbs() {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
+  const activeOrbs = isHome ? ORBS : ORBS.filter((o) => !o.homeOnly);
+
   useGSAP(
     () => {
       if (!containerRef.current) return;
       const orbs = orbRefs.current.filter(Boolean) as HTMLDivElement[];
-      if (orbs.length < 4) return;
+      if (orbs.length === 0) return;
+
+      const allColors = activeOrbs;
 
       orbs.forEach((orb, i) => {
         const angle = (i / orbs.length) * Math.PI * 2;
-        const radius = 220 + i * 50;
+        const radius = 220 + (i % 4) * 50;
         const dir = i % 2 === 0 ? 1 : -1;
 
-        const next = ORBS[(i + 1) % ORBS.length];
-        const next2 = ORBS[(i + 2) % ORBS.length];
-        const next3 = ORBS[(i + 3) % ORBS.length];
-        const self = ORBS[i];
+        const self = allColors[i];
+        const next = allColors[(i + 1) % allColors.length];
+        const next2 = allColors[(i + 2) % allColors.length];
+        const next3 = allColors[(i + 3) % allColors.length];
 
         const steps = 8;
         const kf: Record<string, Record<string, number>> = {};
@@ -91,7 +98,7 @@ export function AtmosphereOrbs() {
         });
       });
     },
-    { scope: containerRef },
+    { scope: containerRef, dependencies: [isHome] },
   );
 
   return (
@@ -100,9 +107,9 @@ export function AtmosphereOrbs() {
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
-      {ORBS.map((orb, i) => (
+      {activeOrbs.map((orb, i) => (
         <div
-          key={i}
+          key={`${orb.x}-${orb.y}-${i}`}
           ref={(el) => { orbRefs.current[i] = el; }}
           className="absolute rounded-full will-change-transform"
           style={{
@@ -115,7 +122,7 @@ export function AtmosphereOrbs() {
             ["--orb-g" as string]: orb.g,
             ["--orb-b" as string]: orb.b,
             background: `radial-gradient(circle, rgba(var(--orb-r), var(--orb-g), var(--orb-b), ${orb.opacity}) 0%, transparent 55%)`,
-            filter: "blur(80px)",
+            filter: `blur(${orb.homeOnly ? 60 : 80}px)`,
           }}
         />
       ))}

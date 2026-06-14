@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { GsapParallaxImage } from "@/components/GsapParallaxImage";
-import { HeroAccentOrbs } from "@/components/HeroAccentOrbs";
 import type { Artist } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
@@ -45,7 +44,6 @@ export default function HomePage() {
         />
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
-          <HeroAccentOrbs />
           <motion.div
             initial={{ opacity: 0, y: 18, filter: "blur(3px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
