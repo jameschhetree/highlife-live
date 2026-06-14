@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { sendEmail, SENDERS } from "@/lib/email";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,64 @@ export async function POST(request: NextRequest) {
       status: "New",
     },
   });
+
+  // Send confirmation email to the requester
+  try {
+    await sendEmail({
+      from: SENDERS.publicConfirmation,
+      to: workEmail,
+      subject: "Your Partner Login Request Has Been Received",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px;">
+          <h2 style="font-size: 20px; font-weight: 600; margin: 0 0 16px;">Thank you, ${contactName}</h2>
+          <p style="font-size: 14px; color: #444; line-height: 1.6; margin: 0 0 12px;">
+            We have received your partner login request for <strong>${organizationName}</strong>.
+          </p>
+          <p style="font-size: 14px; color: #444; line-height: 1.6; margin: 0 0 12px;">
+            Our team will review your request and follow up shortly. You will receive login credentials once your account has been approved.
+          </p>
+          <p style="font-size: 13px; color: #888; margin: 24px 0 0;">
+            HighLife Live<br/>
+            <a href="https://highlifelive.com" style="color: #e91e8c; text-decoration: none;">highlifelive.com</a>
+          </p>
+        </div>
+      `,
+    });
+  } catch (emailErr) {
+    console.error("[partner-request] confirmation email failed:", emailErr);
+  }
+
+  // Send admin notification email
+  try {
+    await sendEmail({
+      from: SENDERS.publicConfirmation,
+      to: "admin@highlifelive.com",
+      subject: `New Partner Login Request: ${organizationName}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+          <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 16px;">New Partner Login Request</h2>
+          <table style="font-size: 13px; color: #333; line-height: 1.6; border-collapse: collapse; width: 100%;">
+            <tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Type</td><td style="padding: 4px 0;">${accountType}</td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Organization</td><td style="padding: 4px 0;">${organizationName}</td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Contact</td><td style="padding: 4px 0;">${contactName} (${role})</td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Work Email</td><td style="padding: 4px 0;">${workEmail}</td></tr>
+            <tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Login Email</td><td style="padding: 4px 0;">${requestedLoginEmail}</td></tr>
+            ${workPhone ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Work Phone</td><td style="padding: 4px 0;">${workPhone}</td></tr>` : ""}
+            ${mobilePhone ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Mobile</td><td style="padding: 4px 0;">${mobilePhone}</td></tr>` : ""}
+            ${address ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Address</td><td style="padding: 4px 0;">${address}</td></tr>` : ""}
+            ${preferredGenre ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Genre</td><td style="padding: 4px 0;">${preferredGenre}</td></tr>` : ""}
+            ${howHeard ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">How Heard</td><td style="padding: 4px 0;">${howHeard}</td></tr>` : ""}
+            ${extraNotes ? `<tr><td style="padding: 4px 12px 4px 0; color: #888; white-space: nowrap;">Notes</td><td style="padding: 4px 0;">${extraNotes}</td></tr>` : ""}
+          </table>
+          <p style="font-size: 12px; color: #aaa; margin: 20px 0 0;">
+            Review at <a href="https://highlifelive.com/admin/venue-logins" style="color: #e91e8c;">Admin &rarr; Venue Logins</a>
+          </p>
+        </div>
+      `,
+    });
+  } catch (emailErr) {
+    console.error("[partner-request] admin notification email failed:", emailErr);
+  }
 
   return Response.json({ id: created.id }, { status: 201 });
 }

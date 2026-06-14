@@ -121,7 +121,6 @@ model Venue {
   sourceDate         String    @default("")
   contactConfidence  Int       @default(5)
   reviewStatus       String    @default("Needs Review") // Needs Review, Verified, Do Not Contact, Duplicate
-  notes              String    @default("")
   tags               String[]  @default([])
   lastContacted      DateTime?
   nextFollowUp       DateTime?
@@ -709,10 +708,11 @@ model VenueTimelineEvent {
   id          String   @id @default(cuid())
   venueId     String
   venue       Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  kind        String // note | inquiry | event | booking | email | other
+  kind        String // note | inquiry | event | booking | email | other | added | responded | booked | event_hosted | fell_through | pushed_back | negotiating
   refId       String? // optional string-FK to the related record id (no DB FK so kind can vary)
   body        String   @db.Text
   authorEmail String
+  eventDate   DateTime? // optional date for timeline entries (defaults to now in app layer)
   createdAt   DateTime @default(now())
 
   @@index([venueId, createdAt])

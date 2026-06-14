@@ -59,12 +59,26 @@ export async function POST(
       sourceDate: new Date().toISOString().slice(0, 10),
       reviewStatus: "Needs Review",
       relationshipStatus: "Warm",
-      notes: req.extraNotes
-        ? `Imported from partner request ${req.id}. Notes: ${req.extraNotes}`
-        : `Imported from partner request ${req.id}.`,
       isDemo: false,
     },
     select: { id: true, name: true },
+  });
+
+  // Link any existing VenueLogin(s) that were created from this same request
+  // back to the newly created Venue. This fixes the detached-login bug where
+  // approving a request that creates both a VenueLogin and a Venue left them unlinked.
+  await prisma.venueLogin.updateMany({
+    where: { sourceRequestId: req.id, venueId: null },
+    data: { venueId: created.id },
+  });
+
+  // Also try linking by organization name match (case-insensitive)
+  await prisma.venueLogin.updateMany({
+    where: {
+      organizationName: { equals: req.organizationName, mode: "insensitive" },
+      venueId: null,
+    },
+    data: { venueId: created.id },
   });
 
   await prisma.auditLog.create({

@@ -35,7 +35,6 @@ interface PartnerRequest {
   extraNotes: string;
   status: string;
   submittedAt: string;
-  // Populated by GET /api/admin/venue-logins/requests for the "in venue list?" UI.
   matchedVenueId: string | null;
   matchedVenueName: string | null;
 }
@@ -96,6 +95,9 @@ export default function VenueLoginsPage() {
   const [createFrom, setCreateFrom] = useState<PartnerRequest | null>(null);
   const [createForm, setCreateForm] = useState({ email: "", password: "", displayName: "", organizationName: "", accountType: "Venue" });
   const [createLoading, setCreateLoading] = useState(false);
+
+  // Request detail modal
+  const [detailRequest, setDetailRequest] = useState<PartnerRequest | null>(null);
 
   useEffect(() => {
     const current = getAdminSession();
@@ -158,38 +160,27 @@ export default function VenueLoginsPage() {
       }
     } catch (err) {
       console.error("[updateRequestStatus] network error:", err);
-      alert("Network error — could not update status. Please try again.");
+      alert("Network error -- could not update status. Please try again.");
       return;
     }
     await fetchRequests();
+    // Update the detail modal if it's showing the same request
+    if (detailRequest?.id === id) {
+      setDetailRequest((prev) => prev ? { ...prev, status } : null);
+    }
   };
 
   const deleteRequest = async (id: string) => {
     if (!session) return;
-    if (!confirm("Permanently delete this request? This cannot be undone. (For spam or mistakes — use Archive for normal cleanup.)")) {
+    if (!confirm("Permanently delete this request? This cannot be undone. (For spam or mistakes -- use Archive for normal cleanup.)")) {
       return;
     }
     await fetch(`/api/admin/venue-logins/requests?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: { "x-admin-email": session.email },
     });
+    if (detailRequest?.id === id) setDetailRequest(null);
     fetchRequests();
-  };
-
-  const [addingToVenuesId, setAddingToVenuesId] = useState<string | null>(null);
-  const addToVenues = async (id: string) => {
-    if (!session) return;
-    setAddingToVenuesId(id);
-    try {
-      await fetch(`/api/admin/venue-logins/requests/${id}/add-to-venues`, {
-        method: "POST",
-        headers: { "x-admin-email": session.email },
-      });
-      // Re-fetch so the row picks up matchedVenueId from the server
-      await fetchRequests();
-    } finally {
-      setAddingToVenuesId(null);
-    }
   };
 
   const openCreateFromRequest = (req: PartnerRequest) => {
@@ -201,6 +192,7 @@ export default function VenueLoginsPage() {
       organizationName: req.organizationName,
       accountType: req.accountType,
     });
+    setDetailRequest(null);
     setShowCreateModal(true);
   };
 
@@ -449,7 +441,8 @@ export default function VenueLoginsPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.25, delay: i * 0.02 }}
-                            className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors"
+                            className="border-b border-white/4 last:border-0 hover:bg-white/4 transition-colors cursor-pointer"
+                            onClick={() => setDetailRequest(req)}
                           >
                             <td className="px-2.5 sm:px-4 py-3">
                               <span className={`text-[10px] tracking-[0.18em] uppercase rounded-full px-2 py-0.5 border ${
@@ -465,25 +458,10 @@ export default function VenueLoginsPage() {
                               {req.address && (
                                 <span className="block text-[10px] text-zinc-500 mt-0.5">{req.address}</span>
                               )}
-                              {req.accountType === "Venue" && (
-                                req.matchedVenueId ? (
-                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-emerald-300/90 border border-emerald-400/30 bg-emerald-400/10 rounded-full px-2 py-0.5">
-                                    <Check size={9} /> In venue list
-                                  </span>
-                                ) : req.status === "Archived" ? (
-                                  <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-zinc-500 border border-white/8 bg-black/30 rounded-full px-2 py-0.5">
-                                    Archived — unarchive first
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={() => addToVenues(req.id)}
-                                    disabled={addingToVenuesId === req.id}
-                                    className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-amber-300 hover:text-amber-200 border border-amber-400/30 hover:border-amber-400/60 bg-amber-400/10 rounded-full px-2 py-0.5 transition-colors disabled:opacity-50"
-                                    title="Add this venue to the master venue list (autofills from request)"
-                                  >
-                                    + {addingToVenuesId === req.id ? "Adding..." : "Add to venue list"}
-                                  </button>
-                                )
+                              {req.accountType === "Venue" && req.matchedVenueId && (
+                                <span className="inline-flex items-center gap-1 mt-1 text-[9px] tracking-[0.18em] uppercase text-emerald-300/90 border border-emerald-400/30 bg-emerald-400/10 rounded-full px-2 py-0.5">
+                                  <Check size={9} /> In venue list
+                                </span>
                               )}
                             </td>
                             <td className="px-2.5 sm:px-4 py-3 hidden md:table-cell">
@@ -502,7 +480,7 @@ export default function VenueLoginsPage() {
                             <td className="px-2.5 sm:px-4 py-3 hidden lg:table-cell text-zinc-500 text-[11px]">
                               {new Date(req.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </td>
-                            <td className="px-2.5 sm:px-4 py-3">
+                            <td className="px-2.5 sm:px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center gap-1.5">
                                 {req.status === "New" && (
                                   <>
@@ -534,12 +512,11 @@ export default function VenueLoginsPage() {
                                   <button
                                     onClick={() => updateRequestStatus(req.id, "New")}
                                     className="p-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 text-amber-300 hover:text-amber-200 transition-colors"
-                                    title="Unarchive — move back to New"
+                                    title="Unarchive -- move back to New"
                                   >
                                     <Undo2 size={12} />
                                   </button>
                                 )}
-                                {/* Archive button available on any non-archived status; Delete is nuclear and always available */}
                                 {req.status !== "Archived" && req.status !== "Rejected" && (
                                   <button
                                     onClick={() => updateRequestStatus(req.id, "Archived")}
@@ -747,6 +724,127 @@ export default function VenueLoginsPage() {
         )}
       </div>
 
+      {/* Request Detail Modal */}
+      <AnimatePresence>
+        {detailRequest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-5"
+            onClick={() => setDetailRequest(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="glass-card rounded-2xl p-6 sm:p-8 w-full max-w-lg max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-display uppercase text-xl tracking-tight">{detailRequest.organizationName}</h2>
+                  <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mt-1">
+                    Partner Login Request
+                  </p>
+                </div>
+                <button
+                  onClick={() => setDetailRequest(null)}
+                  className="p-1.5 rounded-lg border border-white/10 hover:border-white/25 text-zinc-400 hover:text-foreground transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Status badge */}
+              {(() => {
+                const sc = STATUS_COLOR[detailRequest.status] ?? STATUS_COLOR.New;
+                return (
+                  <span className={`inline-flex text-[10px] tracking-[0.18em] uppercase rounded-full px-2.5 py-1 border mb-4 ${sc.bg} ${sc.text} ${sc.border}`}>
+                    {detailRequest.status}
+                  </span>
+                );
+              })()}
+
+              {/* Fields */}
+              <div className="space-y-3">
+                {[
+                  ["Account Type", detailRequest.accountType],
+                  ["Organization", detailRequest.organizationName],
+                  ["Address", detailRequest.address],
+                  ["Role", detailRequest.role],
+                  ["Contact Name", detailRequest.contactName],
+                  ["Work Phone", detailRequest.workPhone],
+                  ["Mobile Phone", detailRequest.mobilePhone],
+                  ["Work Email", detailRequest.workEmail],
+                  ["Requested Login Email", detailRequest.requestedLoginEmail],
+                  ["How Heard", detailRequest.howHeard],
+                  ["Preferred Genre", detailRequest.preferredGenre],
+                  ["Extra Notes", detailRequest.extraNotes],
+                  ["Submitted", new Date(detailRequest.submittedAt).toLocaleString()],
+                ].filter(([, val]) => val).map(([label, value]) => (
+                  <div key={label as string}>
+                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 mb-0.5">{label}</div>
+                    <div className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-white/8 flex-wrap">
+                {detailRequest.status === "New" && (
+                  <>
+                    <button
+                      onClick={() => openCreateFromRequest(detailRequest)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/10 text-emerald-300 hover:text-emerald-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                    >
+                      <UserPlus size={12} /> Create Login
+                    </button>
+                    <button
+                      onClick={() => { updateRequestStatus(detailRequest.id, "Rejected"); setDetailRequest(null); }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                    >
+                      <X size={12} /> Reject
+                    </button>
+                  </>
+                )}
+                {detailRequest.status === "Rejected" && (
+                  <button
+                    onClick={() => { updateRequestStatus(detailRequest.id, "Archived"); setDetailRequest(null); }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-300 hover:text-zinc-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                  >
+                    Archive
+                  </button>
+                )}
+                {detailRequest.status === "Archived" && (
+                  <button
+                    onClick={() => { updateRequestStatus(detailRequest.id, "New"); setDetailRequest(null); }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 text-amber-300 hover:text-amber-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                  >
+                    <Undo2 size={12} /> Unarchive
+                  </button>
+                )}
+                {detailRequest.status !== "Archived" && detailRequest.status !== "Rejected" && (
+                  <button
+                    onClick={() => { updateRequestStatus(detailRequest.id, "Archived"); setDetailRequest(null); }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-400 hover:text-zinc-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                  >
+                    Archive
+                  </button>
+                )}
+                <button
+                  onClick={() => { deleteRequest(detailRequest.id); }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 text-red-300 hover:text-red-200 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                >
+                  <Trash2 size={12} /> Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Password Reset Modal */}
       <AnimatePresence>
         {resetId && (
@@ -879,7 +977,7 @@ export default function VenueLoginsPage() {
                       className="mt-0.5 accent-amber-400"
                     />
                     <span>
-                      Also add <strong className="text-amber-300">{createForm.organizationName || "this venue"}</strong> to the master venue list (autofills address, contact, email from this request — keeps Find an Artist / opportunities flow tidy).
+                      Also add <strong className="text-amber-300">{createForm.organizationName || "this venue"}</strong> to the master venue list (autofills address, contact, email from this request -- keeps Find an Artist / opportunities flow tidy).
                     </span>
                   </label>
                 )}

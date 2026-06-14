@@ -18,7 +18,7 @@ interface Ctx {
   params: Promise<{ id: string }>;
 }
 
-const KINDS = new Set(["note", "inquiry", "event", "booking", "email", "other"]);
+const KINDS = new Set(["note", "inquiry", "event", "booking", "email", "other", "added", "responded", "booked", "event_hosted", "fell_through", "pushed_back", "negotiating"]);
 
 export async function GET(request: NextRequest, ctx: Ctx) {
   if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
@@ -78,6 +78,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
       refId: s.refId,
       body: s.body,
       authorEmail: s.authorEmail,
+      eventDate: s.eventDate,
       createdAt: s.createdAt,
     })),
     ...bookings.map((b) => ({
@@ -108,10 +109,11 @@ export async function POST(request: NextRequest, ctx: Ctx) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await ctx.params;
-  const body = (await request.json()) as { body?: string; kind?: string };
+  const body = (await request.json()) as { body?: string; kind?: string; eventDate?: string; refId?: string };
   const text = (body.body ?? "").trim();
-  if (!text) return Response.json({ error: "body required" }, { status: 400 });
   const kind = KINDS.has(body.kind ?? "note") ? (body.kind ?? "note") : "note";
+  // body text is optional for non-note kinds (e.g. "added" entries may have no body)
+  if (kind === "note" && !text) return Response.json({ error: "body required" }, { status: 400 });
 
   const created = await prisma.venueTimelineEvent.create({
     data: {
@@ -119,6 +121,8 @@ export async function POST(request: NextRequest, ctx: Ctx) {
       kind,
       body: text,
       authorEmail: email || "unknown",
+      eventDate: body.eventDate ? new Date(body.eventDate) : null,
+      refId: body.refId || null,
     },
   });
   return Response.json(created, { status: 201 });
