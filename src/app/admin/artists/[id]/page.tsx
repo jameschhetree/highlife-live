@@ -411,15 +411,24 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   ["Email", artist.email],
                   ["Phone", artist.phone],
                   ["Manager", artist.managerContact],
-                  ["Set Length", artist.typicalSetLength],
-                  ["Fee Range", artist.bookingFeeRange],
-                  ["Age Appeal", artist.ageDemoAppeal],
                 ].map(([label, value]) => (
                   <div key={label as string}>
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
                     <div className="text-sm text-zinc-300">{value}</div>
                   </div>
                 ))}
+                <div>
+                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Set Length</div>
+                  <div className="text-sm text-zinc-300">
+                    {canManage ? <InlineEdit value={artist.typicalSetLength} onSave={(v) => inlineSave("typicalSetLength", v)} /> : artist.typicalSetLength}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Fee Range</div>
+                  <div className="text-sm text-zinc-300">
+                    {canManage ? <InlineEdit value={artist.bookingFeeRange} onSave={(v) => inlineSave("bookingFeeRange", v)} /> : artist.bookingFeeRange}
+                  </div>
+                </div>
               </div>
 
               {/* Inline-editable fields */}
@@ -441,20 +450,6 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                     <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Performance Type</div>
                     <div className="text-sm text-zinc-300">
                       <InlineEdit value={artist.performanceType} onSave={(v) => inlineSave("performanceType", v)} />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Press Quotes <span className="text-zinc-700 normal-case tracking-normal">(Format: PublishingName - Date: &quot;Quote&quot;)</span></div>
-                    <div className="text-sm text-zinc-300">
-                      <InlineEdit
-                        value={artist.pressQuotes.join("\n")}
-                        onSave={(v) => {
-                          const quotes = v.split("\n").map((q) => q.trim()).filter(Boolean);
-                          updateArtist(id, { pressQuotes: quotes });
-                          triggerStoreUpdate();
-                        }}
-                        multiline
-                      />
                     </div>
                   </div>
                 </div>
