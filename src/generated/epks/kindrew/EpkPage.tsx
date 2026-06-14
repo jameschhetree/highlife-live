@@ -156,7 +156,7 @@ export function EpkPage(props: GeneratedEpkPageProps) {
         ease: "sine.inOut",
       });
 
-      observer = new IntersectionObserver(
+      const revealObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (!entry.isIntersecting) return;
@@ -165,14 +165,15 @@ export function EpkPage(props: GeneratedEpkPageProps) {
               { y: 34, opacity: 0 },
               { y: 0, opacity: 1, duration: 0.75, ease: "power2.out" },
             );
-            observer.unobserve(entry.target);
+            revealObserver.unobserve(entry.target);
           });
         },
         { threshold: 0.14 },
       );
+      observer = revealObserver;
 
       root.querySelectorAll("[data-reveal]").forEach((node) => {
-        observer.observe(node);
+        revealObserver.observe(node);
       });
 
     }, root);
