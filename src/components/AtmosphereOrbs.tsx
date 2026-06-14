@@ -19,8 +19,8 @@ const ORBS: Orb[] = [
   { r: 168, g: 85,  b: 247, opacity: 0.22, size: 320, x: "22%", xInner: "22%", y: "38%",  homeOnly: true },
   { r: 56,  g: 120, b: 255, opacity: 0.20, size: 280, x: "78%", xInner: "78%", y: "36%",  homeOnly: true },
   // Inner-page accent lights — top sides + center
-  { r: 168, g: 85,  b: 247, opacity: 0.16, size: 340, x: "8%",  xInner: "8%",  y: "6%",   nonHomeOnly: true },
-  { r: 56,  g: 120, b: 255, opacity: 0.14, size: 300, x: "92%", xInner: "92%", y: "8%",   nonHomeOnly: true },
+  { r: 168, g: 85,  b: 247, opacity: 0.20, size: 340, x: "6%",  xInner: "6%",  y: "4%",   nonHomeOnly: true },
+  { r: 56,  g: 120, b: 255, opacity: 0.18, size: 300, x: "93%", xInner: "93%", y: "5%",   nonHomeOnly: true },
   { r: 236, g: 72,  b: 153, opacity: 0.12, size: 260, x: "48%", xInner: "48%", y: "12%",  nonHomeOnly: true },
 ];
 
