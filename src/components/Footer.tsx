@@ -117,24 +117,30 @@ export function Footer() {
             {subscribed ? (
               <p className="text-sm text-emerald-400">You are subscribed.</p>
             ) : (
-              <form onSubmit={handleSubscribe} className="flex">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="flex-1 bg-soft-gray border border-border text-sm px-4 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors"
-                  aria-label="Email address for newsletter"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={subscribing}
-                  className="px-4 py-2.5 bg-foreground text-background text-sm font-medium tracking-wide uppercase hover:bg-foreground/90 transition-colors disabled:opacity-50"
-                >
-                  {subscribing ? "..." : "Join"}
-                </button>
-              </form>
+              <>
+                <form onSubmit={handleSubscribe} className="flex">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="flex-1 bg-soft-gray border border-border text-sm px-4 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:border-silver transition-colors"
+                    aria-label="Email address for newsletter"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={subscribing}
+                    className="px-4 py-2.5 bg-foreground text-background text-sm font-medium tracking-wide uppercase hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                  >
+                    {subscribing ? "..." : "Join"}
+                  </button>
+                </form>
+                <p className="mt-2 text-[11px] text-muted leading-relaxed">
+                  By joining, you agree to receive emails from HighLife Live.
+                  Unsubscribe at any time.
+                </p>
+              </>
             )}
             <div className="flex gap-4 mt-6">
               <a
@@ -153,9 +159,20 @@ export function Footer() {
           <p className="text-xs text-muted">
             &copy; {new Date().getFullYear()} HighLife Live. All rights reserved.
           </p>
-          <p className="text-xs text-muted">
-            Curated talent. Premium experiences. Artist-first booking.
-          </p>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-5 gap-y-2">
+            <Link href="/privacy" className="text-xs text-muted hover:text-silver transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-xs text-muted hover:text-silver transition-colors">
+              Terms of Use
+            </Link>
+            <Link href="/cookies" className="text-xs text-muted hover:text-silver transition-colors">
+              Cookies
+            </Link>
+            <Link href="/accessibility" className="text-xs text-muted hover:text-silver transition-colors">
+              Accessibility
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -434,7 +434,21 @@ function BookingFormContent() {
             />
           </Field>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[12px] text-zinc-500 leading-relaxed pt-1">
+            By submitting this form, you agree that HighLife Live may use the
+            information you provide to respond to your request and coordinate with
+            relevant artists, agents, venues, and service providers. We do not sell
+            information submitted through this form.{" "}
+            <Link
+              href="/privacy"
+              className="text-pink-400/80 hover:text-pink-300 underline underline-offset-4 transition-colors"
+            >
+              See our Privacy Policy
+            </Link>
+            .
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[11px] tracking-[0.18em] uppercase text-zinc-500">
               {authed ? "Saved to your portal on submit" : "No account required"}
             </p>
