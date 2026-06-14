@@ -92,22 +92,30 @@ async function inspectBlob(
   url: string,
   token: string,
 ): Promise<{ prefix: Uint8Array; size: number; contentType: string }> {
-  const result = await get(url, {
-    access: "private",
-    token,
-    useCache: false,
-  });
-  if (!result || result.statusCode !== 200) {
-    throw new Error("Uploaded asset could not be inspected.");
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (attempt > 1) await new Promise((r) => setTimeout(r, 1000 * attempt));
+    const result = await get(url, {
+      access: "private",
+      token,
+      useCache: false,
+    });
+    if (!result || result.statusCode !== 200) {
+      if (attempt < maxAttempts) continue;
+      throw new Error("Uploaded asset could not be inspected.");
+    }
+    const reader = result.stream.getReader();
+    const { value } = await reader.read();
+    await reader.cancel();
+    const prefix = value?.slice(0, 32) ?? new Uint8Array();
+    if (prefix.length === 0 && attempt < maxAttempts) continue;
+    return {
+      prefix,
+      size: result.blob.size,
+      contentType: result.blob.contentType.toLowerCase(),
+    };
   }
-  const reader = result.stream.getReader();
-  const { value } = await reader.read();
-  await reader.cancel();
-  return {
-    prefix: value?.slice(0, 32) ?? new Uint8Array(),
-    size: result.blob.size,
-    contentType: result.blob.contentType.toLowerCase(),
-  };
+  throw new Error("Uploaded asset could not be inspected.");
 }
 
 export async function POST(
