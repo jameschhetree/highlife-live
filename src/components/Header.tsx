@@ -5,9 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon, Sparkles, Zap } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
 import { PortalTransition } from "@/components/PortalTransition";
+import { useTheme } from "@/components/ThemeProvider";
 
 // Phase 3.9 / 2026-06-08 — env-gated nav. Shop appears only on demo builds
 // (NEXT_PUBLIC_BUILD_TARGET=demo). Production hides Shop until it's real.
@@ -26,6 +27,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { theme, setTheme, animationsEnabled, setAnimationsEnabled } = useTheme();
   const hidden =
     pathname?.startsWith("/admin") ||
     (pathname?.startsWith("/roster/") && pathname.endsWith("-epk"));
@@ -47,6 +49,16 @@ export function Header() {
   // Admin and standalone EPK microsites have their own shells.
   if (hidden) return null;
 
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const toggleAnimations = () => {
+    setAnimationsEnabled(!animationsEnabled);
+  };
+
+  const isLight = theme === "light";
+
   return (
     <>
       <header
@@ -57,25 +69,86 @@ export function Header() {
         }`}
       >
         <nav className="max-w-7xl mx-auto flex items-center justify-between px-5 py-3.5 lg:px-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
-            <span className="relative w-10 h-10 inline-block shrink-0">
-              <Image
-                src="/HighLifeLogo.png"
-                alt=""
-                fill
-                priority
-                sizes="40px"
-                className="object-contain"
-              />
-            </span>
-            <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
-              HighLife Live
-            </span>
-            <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
-              HighLife
-            </span>
-          </Link>
+          {/* Left: Toggle controls + Logo */}
+          <div className="flex items-center gap-2.5">
+            {/* Animations toggle — leftmost */}
+            <button
+              type="button"
+              onClick={toggleAnimations}
+              aria-label={animationsEnabled ? "Disable animations" : "Enable animations"}
+              title={animationsEnabled ? "Disable animations" : "Enable animations"}
+              className={`relative w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
+                ${isLight
+                  ? "border-black/12 bg-white/60 hover:bg-white/90 text-neutral-600 hover:text-neutral-900"
+                  : "border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90"
+                }`}
+            >
+              {animationsEnabled ? (
+                <Sparkles size={14} />
+              ) : (
+                <Zap size={14} className="opacity-50" />
+              )}
+            </button>
+
+            {/* Theme toggle — to the left of logo */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
+              title={isLight ? "Switch to dark mode" : "Switch to light mode"}
+              className={`relative w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
+                ${isLight
+                  ? "border-black/12 bg-white/60 hover:bg-white/90 text-neutral-600 hover:text-neutral-900"
+                  : "border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90"
+                }`}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {isLight ? (
+                  <motion.span
+                    key="moon"
+                    initial={{ opacity: 0, rotate: -30, scale: 0.7 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 30, scale: 0.7 }}
+                    transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                    className="flex items-center justify-center"
+                  >
+                    <Moon size={14} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="sun"
+                    initial={{ opacity: 0, rotate: 30, scale: 0.7 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: -30, scale: 0.7 }}
+                    transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+                    className="flex items-center justify-center"
+                  >
+                    <Sun size={14} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-3 group" aria-label="HighLife Live Home">
+              <span className="relative w-10 h-10 inline-block shrink-0">
+                <Image
+                  src="/HighLifeLogo.png"
+                  alt=""
+                  fill
+                  priority
+                  sizes="40px"
+                  className="object-contain"
+                />
+              </span>
+              <span className="font-display text-base tracking-[0.18em] uppercase hidden sm:block">
+                HighLife Live
+              </span>
+              <span className="font-display text-base tracking-[0.18em] uppercase sm:hidden">
+                HighLife
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-7">
