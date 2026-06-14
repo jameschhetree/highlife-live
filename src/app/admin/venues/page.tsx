@@ -82,21 +82,31 @@ export default function VenuesPage() {
   // Owner-admin gate for sensitive controls (CSV import, cron sync, edit, delete) +
   // contact-info preview in the list. Agents see the venue list but no contacts (Phase 3.7 D).
   // Default-deny while session loads (Dok HL Live 2026-06-03 "100ms buffer" rule).
-  const [permState, setPermState] = useState<{ loaded: boolean; isOwnerAdmin: boolean }>({ loaded: false, isOwnerAdmin: false });
+  const [permState, setPermState] = useState<{ loaded: boolean; isOwnerAdmin: boolean; grantedVenueIds: string[] }>({ loaded: false, isOwnerAdmin: false, grantedVenueIds: [] });
   useEffect(() => {
-    const start = performance.now();
     let cancelled = false;
     const session = getAdminSession();
     const isOwner = isOwnerAdmin(session);
-    const elapsed = performance.now() - start;
-    const wait = Math.max(0, 100 - elapsed);
-    setTimeout(() => {
-      if (cancelled) return;
-      setPermState({ loaded: true, isOwnerAdmin: isOwner });
-    }, wait);
-    return () => {
-      cancelled = true;
-    };
+    if (isOwner) {
+      setPermState({ loaded: true, isOwnerAdmin: true, grantedVenueIds: [] });
+      return;
+    }
+    if (!session) {
+      setPermState({ loaded: true, isOwnerAdmin: false, grantedVenueIds: [] });
+      return;
+    }
+    fetch("/api/venue-access", { headers: { "x-admin-email": session.email }, cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        const granted: string[] = Array.isArray(j?.grantedVenueIds) ? j.grantedVenueIds : [];
+        setPermState({ loaded: true, isOwnerAdmin: false, grantedVenueIds: granted });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPermState({ loaded: true, isOwnerAdmin: false, grantedVenueIds: [] });
+      });
+    return () => { cancelled = true; };
   }, []);
 
   function handleSort(col: SortKey) {
@@ -373,7 +383,7 @@ export default function VenuesPage() {
                         ) : permState.loaded ? (
                           <div className="text-[11px] text-zinc-500 mt-0.5 inline-flex items-center gap-1.5">
                             {venue.city ? `${venue.city}, ${venue.state}` : "Contact hidden"}
-                            <Lock size={9} className="text-zinc-600" />
+                            {permState.grantedVenueIds.includes(venue.id) ? null : <Lock size={9} className="text-zinc-600" />}
                           </div>
                         ) : (
                           // 100ms loading buffer — default-deny render so contacts don't flash

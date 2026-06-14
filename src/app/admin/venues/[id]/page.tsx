@@ -840,10 +840,12 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </motion.div>
 
-            {/* Notes Thread (unified notes component) */}
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}>
-              <NotesThread entityType="venue" entityId={id} />
-            </motion.div>
+            {/* Notes Thread — only visible to users with venue contact access */}
+            {accessState.loaded && accessState.canSeeContacts && (
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}>
+                <NotesThread entityType="venue" entityId={id} />
+              </motion.div>
+            )}
           </div>
 
           {/* Right Sidebar */}
