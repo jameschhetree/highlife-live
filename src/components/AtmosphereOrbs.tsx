@@ -11,10 +11,10 @@ if (typeof window !== "undefined") {
 }
 
 const ORBS = [
-  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", y: "16%" },
-  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", y: "18%" },
-  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", y: "72%" },
-  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  y: "72%" },
+  { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%" },
+  { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%" },
+  { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%" },
+  { r: 52,  g: 211, b: 153, opacity: 0.16, size: 640, x: "6%",  xInner: "11%", y: "72%" },
 ];
 
 export function AtmosphereOrbs() {
@@ -108,8 +108,8 @@ export function AtmosphereOrbs() {
           style={{
             width: orb.size,
             height: orb.size,
-            left: orb.x,
-            top: isHome ? orb.y : `calc(${orb.y} - 10%)`,
+            left: isHome ? orb.x : orb.xInner,
+            top: isHome ? orb.y : `calc(${orb.y} - 20%)`,
             transform: "translate(-50%, -50%)",
             ["--orb-r" as string]: orb.r,
             ["--orb-g" as string]: orb.g,
