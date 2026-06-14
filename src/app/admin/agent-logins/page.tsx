@@ -470,13 +470,15 @@ export default function AgentLoginsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => toggleActive(row)}
-                    className="text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors"
-                  >
-                    {row.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                  {resetForId !== row.id && (
+                  {row.role !== "owner" && (
+                    <button
+                      onClick={() => toggleActive(row)}
+                      className="text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-lg border border-white/10 hover:border-white/25 bg-black/40 text-zinc-300 hover:text-foreground transition-colors"
+                    >
+                      {row.isActive ? "Deactivate" : "Activate"}
+                    </button>
+                  )}
+                  {resetForId !== row.id && row.role !== "owner" && (
                     <button
                       onClick={() => { setResetForId(row.id); setResetPassword(""); }}
                       className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase px-3 py-2 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 text-amber-200 transition-colors"
@@ -498,7 +500,7 @@ export default function AgentLoginsPage() {
                   >
                     <Building2 size={11} /> Venue Access
                   </button>
-                  {session?.dbRole === "owner" && (
+                  {session?.dbRole === "owner" && row.role !== "owner" && (
                     <div className="inline-flex items-center gap-1.5">
                       <Shield size={11} className="text-zinc-500" />
                       <select
@@ -509,17 +511,18 @@ export default function AgentLoginsPage() {
                       >
                         <option value="agent">Agent</option>
                         <option value="admin">Admin</option>
-                        <option value="owner">Owner</option>
                       </select>
                     </div>
                   )}
-                  <button
-                    onClick={() => remove(row)}
-                    className="p-2 rounded-lg border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {row.role !== "owner" && (
+                    <button
+                      onClick={() => remove(row)}
+                      className="p-2 rounded-lg border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}

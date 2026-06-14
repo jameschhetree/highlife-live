@@ -25,6 +25,12 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (forbidden) return forbidden;
   const { id } = await ctx.params;
 
+  const existing = await prisma.agentLogin.findUnique({ where: { id } });
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.role === "owner") {
+    return Response.json({ error: "Owner logins cannot be modified from the UI." }, { status: 403 });
+  }
+
   const body = (await request.json()) as {
     name?: string;
     email?: string;
@@ -41,7 +47,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   if (typeof body.password === "string" && body.password.trim()) {
     data.passwordHash = await hashPassword(body.password.trim());
   }
-  if (typeof body.role === "string" && VALID_ROLES.includes(body.role as typeof VALID_ROLES[number])) {
+  if (typeof body.role === "string" && (body.role === "agent" || body.role === "admin")) {
     data.role = body.role;
   }
 
@@ -68,6 +74,13 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   const forbidden = forbidIfNotOwner(request);
   if (forbidden) return forbidden;
   const { id } = await ctx.params;
+
+  const existing = await prisma.agentLogin.findUnique({ where: { id } });
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.role === "owner") {
+    return Response.json({ error: "Owner logins cannot be deleted from the UI." }, { status: 403 });
+  }
+
   await prisma.agentLogin.delete({ where: { id } });
   return Response.json({ ok: true });
 }
