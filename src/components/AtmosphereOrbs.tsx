@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useTheme } from "@/components/ThemeProvider";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const ORBS: Orb[] = [
+// Dark mode orbs — soft purples, pinks, yellows, greens
+const DARK_ORBS: Orb[] = [
   { r: 168, g: 85,  b: 247, opacity: 0.32, size: 900, x: "12%", xInner: "17%", y: "16%" },
   { r: 236, g: 72,  b: 153, opacity: 0.26, size: 900, x: "88%", xInner: "83%", y: "18%" },
   { r: 253, g: 224, b: 71,  opacity: 0.18, size: 720, x: "50%", xInner: "50%", y: "72%" },
@@ -25,6 +27,22 @@ const ORBS: Orb[] = [
   { r: 253, g: 224, b: 71,  opacity: 0.15, size: 280, x: "7%",  xInner: "7%",  y: "22%",  nonHomeOnly: true },
 ];
 
+// Light mode orbs — deep electric blues, magentas, cyans (neon, vivid)
+const LIGHT_ORBS: Orb[] = [
+  { r: 0,   g: 120, b: 255, opacity: 0.22, size: 900, x: "12%", xInner: "17%", y: "16%" },
+  { r: 220, g: 0,   b: 180, opacity: 0.18, size: 900, x: "88%", xInner: "83%", y: "18%" },
+  { r: 0,   g: 220, b: 255, opacity: 0.15, size: 720, x: "50%", xInner: "50%", y: "72%" },
+  { r: 100, g: 0,   b: 255, opacity: 0.14, size: 640, x: "6%",  xInner: "11%", y: "72%" },
+  // Hero accent pair — homepage only
+  { r: 0,   g: 180, b: 255, opacity: 0.18, size: 320, x: "22%", xInner: "22%", y: "38%",  homeOnly: true },
+  { r: 180, g: 0,   b: 255, opacity: 0.16, size: 280, x: "78%", xInner: "78%", y: "36%",  homeOnly: true },
+  // Inner-page accent lights — top sides + center
+  { r: 0,   g: 100, b: 255, opacity: 0.16, size: 340, x: "6%",  xInner: "6%",  y: "4%",   nonHomeOnly: true },
+  { r: 0,   g: 220, b: 240, opacity: 0.14, size: 300, x: "93%", xInner: "93%", y: "5%",   nonHomeOnly: true },
+  { r: 200, g: 0,   b: 200, opacity: 0.10, size: 260, x: "48%", xInner: "48%", y: "12%",  nonHomeOnly: true },
+  { r: 0,   g: 160, b: 255, opacity: 0.12, size: 280, x: "7%",  xInner: "7%",  y: "22%",  nonHomeOnly: true },
+];
+
 type Orb = {
   r: number; g: number; b: number;
   opacity: number; size: number;
@@ -37,11 +55,39 @@ export function AtmosphereOrbs() {
   const orbRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const { theme, animationsEnabled } = useTheme();
+
+  // Don't render at all when animations are disabled
+  if (!animationsEnabled) return null;
+
+  const ORBS = theme === "light" ? LIGHT_ORBS : DARK_ORBS;
 
   const activeOrbs = ORBS.filter((o) =>
     isHome ? !o.nonHomeOnly : !o.homeOnly,
   );
 
+  return (
+    <AtmosphereOrbsInner
+      activeOrbs={activeOrbs}
+      isHome={isHome}
+      containerRef={containerRef}
+      orbRefs={orbRefs}
+    />
+  );
+}
+
+// Inner component so hooks aren't conditionally called
+function AtmosphereOrbsInner({
+  activeOrbs,
+  isHome,
+  containerRef,
+  orbRefs,
+}: {
+  activeOrbs: Orb[];
+  isHome: boolean;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  orbRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+}) {
   useGSAP(
     () => {
       if (!containerRef.current) return;
@@ -112,7 +158,7 @@ export function AtmosphereOrbs() {
         });
       });
     },
-    { scope: containerRef, dependencies: [isHome] },
+    { scope: containerRef, dependencies: [isHome, activeOrbs] },
   );
 
   return (

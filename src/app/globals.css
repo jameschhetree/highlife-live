@@ -22,6 +22,19 @@
   --font-display: var(--font-anton);
 }
 
+/* ─── Light theme overrides ─── */
+[data-theme="light"] {
+  --color-background: #f5f3f0;
+  --color-foreground: #1a1a1a;
+  --color-charcoal: #e8e6e3;
+  --color-silver: #666666;
+  --color-soft-gray: #f0eeeb;
+  --color-muted: #888888;
+  --color-border: #d4d2cf;
+  --color-card: #ffffff;
+  --color-card-hover: #f8f7f5;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -32,6 +45,7 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 ::selection {
@@ -46,6 +60,9 @@ body {
 }
 ::-webkit-scrollbar-track {
   background: #050608;
+}
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #e8e6e3;
 }
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #fde047, #fb923c, #ec4899, #a855f7, #38bdf8, #34d399, #fde047);
@@ -147,11 +164,36 @@ body {
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.06),
     0 30px 80px -30px rgba(0,0,0,0.75);
+  transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+[data-theme="light"] .glass-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.70) 100%);
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    0 30px 80px -30px rgba(0,0,0,0.18);
 }
 
 /* Base dark background — animated orbs handled by AtmosphereOrbs component */
+/* When animations are off, show static gradients */
 .bg-radial-atmosphere {
   background: transparent;
+}
+html.no-animations .bg-radial-atmosphere {
+  background:
+    radial-gradient(900px circle at 18% 22%, rgba(168, 85, 247, 0.28), transparent 55%),
+    radial-gradient(900px circle at 82% 24%, rgba(236, 72, 153, 0.22), transparent 55%),
+    radial-gradient(720px circle at 50% 78%, rgba(253, 224, 71, 0.14), transparent 60%),
+    radial-gradient(640px circle at 12% 78%, rgba(52, 211, 153, 0.12), transparent 60%),
+    #050608;
+}
+html.no-animations[data-theme="light"] .bg-radial-atmosphere {
+  background:
+    radial-gradient(900px circle at 18% 22%, rgba(168, 85, 247, 0.12), transparent 55%),
+    radial-gradient(900px circle at 82% 24%, rgba(236, 72, 153, 0.10), transparent 55%),
+    radial-gradient(720px circle at 50% 78%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(640px circle at 12% 78%, rgba(52, 211, 153, 0.06), transparent 60%),
+    #f5f3f0;
 }
 
 /* Pill chip */
@@ -174,6 +216,16 @@ body {
   background: rgba(255,255,255,0.08);
   color: #fff;
   border-color: rgba(255,255,255,0.18);
+}
+[data-theme="light"] .chip {
+  color: #444444;
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.12);
+}
+[data-theme="light"] .chip:hover {
+  background: rgba(0,0,0,0.08);
+  color: #1a1a1a;
+  border-color: rgba(0,0,0,0.22);
 }
 
 /* Marquee */
@@ -226,6 +278,11 @@ body {
   width: max-content;
   gap: 3rem;
   animation: marquee 35s linear infinite;
+}
+
+/* Theme transition — smooth color changes when switching */
+html {
+  transition: background-color 300ms ease;
 }
 
 /* Partner Login button — middle ground between sleek and rainbow.
@@ -313,4 +370,19 @@ body {
 
 .epk-input::placeholder {
   color: rgb(82 82 91);
+}
+
+[data-theme="light"] .epk-input {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.75);
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .epk-input:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .epk-input::placeholder {
+  color: rgb(130 130 140);
 }
