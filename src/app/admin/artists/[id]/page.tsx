@@ -17,6 +17,8 @@ import {
   X,
   Upload,
   Link2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { upload } from "@vercel/blob/client";
 import { useArtists, triggerStoreUpdate } from "@/hooks/useAdminStore";
@@ -152,6 +154,10 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
   const [newLinkTitle, setNewLinkTitle] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
   const [uploadingKind, setUploadingKind] = useState<string | null>(null);
+  const [editingQuoteIdx, setEditingQuoteIdx] = useState<number | null>(null);
+  const [editQuoteText, setEditQuoteText] = useState("");
+  const [deleteQuoteIdx, setDeleteQuoteIdx] = useState<number | null>(null);
+  const [newQuoteText, setNewQuoteText] = useState("");
   const canManage = canManageArtists(session);
   const canView = artist ? canViewArtist(artist, session) : false;
 
@@ -438,7 +444,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                     </div>
                   </div>
                   <div className="sm:col-span-2">
-                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Press Quotes</div>
+                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Press Quotes <span className="text-zinc-700 normal-case tracking-normal">(Format: PublishingName - Date: &quot;Quote&quot;)</span></div>
                     <div className="text-sm text-zinc-300">
                       <InlineEdit
                         value={artist.pressQuotes.join("\n")}
@@ -468,14 +474,119 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
 
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-4">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Press Quotes</h2>
+              <p className="text-[10px] tracking-[0.12em] text-zinc-600">Format: PublishingName - Date: &quot;Quote&quot;</p>
               {artist.pressQuotes.length > 0 ? (
                 <div className="space-y-2">
                   {artist.pressQuotes.map((q, i) => (
-                    <p key={i} className="text-sm text-zinc-400 italic border-l-2 border-pink-500/30 pl-3">{q}</p>
+                    <div key={i} className="border-l-2 border-pink-500/30 pl-3">
+                      {editingQuoteIdx === i ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editQuoteText}
+                            onChange={(e) => setEditQuoteText(e.target.value)}
+                            rows={2}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
+                            placeholder='Format: PublishingName - Date: "Quote"'
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (!editQuoteText.trim()) return;
+                                const updated = [...artist.pressQuotes];
+                                updated[i] = editQuoteText.trim();
+                                updateArtist(id, { pressQuotes: updated });
+                                triggerStoreUpdate();
+                                setEditingQuoteIdx(null);
+                                setEditQuoteText("");
+                              }}
+                              disabled={!editQuoteText.trim()}
+                              className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-emerald-300 hover:text-emerald-200 disabled:opacity-50"
+                            >
+                              <Check size={11} /> Save
+                            </button>
+                            <button
+                              onClick={() => { setEditingQuoteIdx(null); setEditQuoteText(""); }}
+                              className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-300"
+                            >
+                              <X size={11} /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-zinc-400 italic">{q}</p>
+                          {canManage && (
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <button
+                                onClick={() => { setEditingQuoteIdx(i); setEditQuoteText(q); }}
+                                className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-200 transition-colors"
+                              >
+                                <Pencil size={10} /> Edit
+                              </button>
+                              {deleteQuoteIdx === i ? (
+                                <span className="inline-flex items-center gap-2">
+                                  <span className="text-[10px] text-red-400">Delete?</span>
+                                  <button
+                                    onClick={() => {
+                                      const updated = artist.pressQuotes.filter((_, idx) => idx !== i);
+                                      updateArtist(id, { pressQuotes: updated });
+                                      triggerStoreUpdate();
+                                      setDeleteQuoteIdx(null);
+                                    }}
+                                    className="text-[10px] tracking-[0.18em] uppercase text-red-400 hover:text-red-300 font-bold"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteQuoteIdx(null)}
+                                    className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-300"
+                                  >
+                                    No
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => setDeleteQuoteIdx(i)}
+                                  className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-red-400 transition-colors"
+                                >
+                                  <Trash2 size={10} /> Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : (
                 <p className="text-sm text-zinc-600 italic">No press quotes added yet.</p>
+              )}
+
+              {/* Add quote form */}
+              {canManage && (
+                <div className="space-y-2 pt-3 border-t border-white/6">
+                  <textarea
+                    value={newQuoteText}
+                    onChange={(e) => setNewQuoteText(e.target.value)}
+                    rows={2}
+                    placeholder='Format: PublishingName - Date: "Quote"'
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newQuoteText.trim()) return;
+                      const updated = [...artist.pressQuotes, newQuoteText.trim()];
+                      updateArtist(id, { pressQuotes: updated });
+                      triggerStoreUpdate();
+                      setNewQuoteText("");
+                    }}
+                    disabled={!newQuoteText.trim()}
+                    className="inline-flex items-center gap-1.5 btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-full px-4 py-1.5 disabled:opacity-50"
+                  >
+                    <Plus size={11} /> Add Quote
+                  </button>
+                </div>
               )}
             </motion.div>
 
