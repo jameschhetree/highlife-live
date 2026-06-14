@@ -34,7 +34,9 @@ import { adminLogout, canViewAuditions, canManageVenueLogins, isOwnerAdmin, getA
 import { PortalTransition } from "@/components/PortalTransition";
 import { ExternalLink } from "lucide-react";
 
-type Gate = "all" | "owner" | "auditions" | "venue-logins";
+const isDemoBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === "demo";
+
+type Gate = "all" | "owner" | "auditions" | "venue-logins" | "owner-demo";
 type NavLeaf = { kind: "leaf"; href: string; label: string; icon: typeof LayoutDashboard; gate: Gate };
 type NavGroup = { kind: "group"; key: string; label: string; icon: typeof Crown; gate: Gate; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
@@ -50,13 +52,11 @@ const nav: NavItem[] = [
   { kind: "leaf", href: "/admin/venues", label: "Venues", icon: MapPinned, gate: "all" },
   // Phase 3.9 Scope 6 — Events visible to agents (server-side scoped to assigned-artist events).
   { kind: "leaf", href: "/admin/events", label: "Events", icon: CalendarRange, gate: "all" },
-  // Phase 3.9 Scope 7 — Pipeline owner-only this pass; rewire to real Inquiry/Booking workflow in 5.0.
-  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "owner" },
-  // Phase 3.9 Scope 13 — placeholder/demo surfaces hidden from agents until real + scoped.
-  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "owner" },
+  { kind: "leaf", href: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare, gate: "owner-demo" },
+  { kind: "leaf", href: "/admin/campaigns", label: "Campaigns", icon: Megaphone, gate: "owner-demo" },
   { kind: "leaf", href: "/admin/epks", label: "EPKs", icon: FileImage, gate: "owner" },
-  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "owner" },
-  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "owner" },
+  { kind: "leaf", href: "/admin/research", label: "Research Queue", icon: ClipboardList, gate: "owner-demo" },
+  { kind: "leaf", href: "/admin/reports", label: "Reports", icon: BarChart3, gate: "owner-demo" },
   {
     kind: "group",
     key: "owner-hub",
@@ -64,11 +64,11 @@ const nav: NavItem[] = [
     icon: Crown,
     gate: "owner",
     children: [
-      { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner" },
+      { kind: "leaf", href: "/admin/owner-special", label: "Status", icon: Gauge, gate: "owner-demo" },
       { kind: "leaf", href: "/admin/assignments", label: "Assignments", icon: UserCog, gate: "owner" },
       { kind: "leaf", href: "/admin/venue-logins", label: "Venue Logins", icon: KeyRound, gate: "venue-logins" },
       { kind: "leaf", href: "/admin/agent-logins", label: "Agent Logins", icon: Building2, gate: "owner" },
-      { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "owner" },
+      { kind: "leaf", href: "/admin/settings", label: "Settings", icon: Settings, gate: "owner-demo" },
     ],
   },
 ];
@@ -112,6 +112,7 @@ export function AdminSidebar() {
     if (gate === "auditions") return canViewAuditions(session);
     if (gate === "venue-logins") return canManageVenueLogins(session);
     if (gate === "owner") return isOwnerAdmin(session);
+    if (gate === "owner-demo") return isOwnerAdmin(session) && isDemoBuild;
     return true;
   };
 
