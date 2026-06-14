@@ -302,7 +302,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                     <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
                     <div>
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Address</div>
-                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}</div>
+                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}{venue.zipCode ? ` ${venue.zipCode}` : ""}</div>
                     </div>
                   </div>
                 </div>
@@ -355,7 +355,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                     <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
                     <div>
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Address</div>
-                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}</div>
+                      <div className="text-sm text-zinc-200">{venue.address}, {venue.city}, {venue.state}{venue.zipCode ? ` ${venue.zipCode}` : ""}</div>
                     </div>
                   </div>
                 </div>
@@ -368,12 +368,14 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                 {(!accessState.loaded || !accessState.canSeeContacts
                   ? [
                       ["Type", venue.venueType],
-                      ["Region", venue.region],
+                      ["Zip Code", venue.zipCode || "—"],
+                      ["Region", venue.region || "—"],
                       ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
                     ]
                   : [
                       ["Type", venue.venueType],
-                      ["Region", venue.region],
+                      ["Zip Code", venue.zipCode || "—"],
+                      ["Region", venue.region || "—"],
                       ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
                       ["Instagram", venue.instagram],
                       ["Booking Email", venue.bookingEmail],
@@ -491,7 +493,10 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         <FieldText label="Phone" value={editForm.phone ?? ""} onChange={(v) => patch("phone", v)} />
         <FieldSelect label="Venue Type" value={editForm.venueType ?? "Club"} onChange={(v) => patch("venueType", v)} options={venueTypes} />
         <FieldNumber label="Capacity" value={editForm.capacity ?? 0} onChange={(v) => patch("capacity", v)} />
-        <FieldText label="Zip Code" value={editForm.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
+        <div className="grid grid-cols-2 gap-3">
+          <FieldText label="Zip Code" value={editForm.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
+          <FieldText label="Region" value={editForm.region ?? ""} onChange={(v) => patch("region", v)} placeholder="Washington, DC" />
+        </div>
         <FieldSelect label="Review Status" value={editForm.reviewStatus ?? "Needs Review"} onChange={(v) => patch("reviewStatus", v)} options={reviewStatuses} />
         <FieldSelect label="Relationship" value={editForm.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatusesForForm} />
         <FieldTextArea label="Notes" value={editForm.notes ?? ""} onChange={(v) => patch("notes", v)} />

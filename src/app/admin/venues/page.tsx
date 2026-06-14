@@ -443,7 +443,10 @@ export default function VenuesPage() {
           <FieldText label="City" value={editingVenue.city ?? ""} onChange={(v) => patch("city", v)} />
           <FieldText label="State" value={editingVenue.state ?? ""} onChange={(v) => patch("state", v)} />
         </div>
-        <FieldText label="Zip Code" value={editingVenue.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
+        <div className="grid grid-cols-2 gap-3">
+          <FieldText label="Zip Code" value={editingVenue.zipCode ?? ""} onChange={(v) => patch("zipCode", v)} placeholder="20001" />
+          <FieldText label="Region" value={editingVenue.region ?? ""} onChange={(v) => patch("region", v)} placeholder="Washington, DC" />
+        </div>
         <FieldSelect label="Venue Type" value={editingVenue.venueType ?? "Club"} onChange={(v) => patch("venueType", v)} options={venueTypes} />
         <FieldNumber label="Capacity" value={editingVenue.capacity ?? 0} onChange={(v) => patch("capacity", v)} />
         <FieldTags label="Typical Genres" value={editingVenue.typicalGenres ?? []} onChange={(v) => patch("typicalGenres", v)} />
