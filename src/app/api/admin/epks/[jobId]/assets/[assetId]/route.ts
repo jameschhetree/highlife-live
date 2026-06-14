@@ -1,5 +1,6 @@
 import { get } from "@vercel/blob";
 import { prisma } from "@/lib/db";
+import { buildEpkWorkspaceFilename } from "@/lib/epk/constants";
 import { getOwnerSessionFromRequest } from "@/lib/epk/owner-session";
 import { verifySignedAssetDownload } from "@/lib/epk/signed-asset-links";
 
@@ -52,14 +53,18 @@ export async function GET(
     return Response.json({ error: "EPK asset is unavailable." }, { status: 404 });
   }
 
+  const workspaceFilename = buildEpkWorkspaceFilename({
+    assetId: asset.id,
+    filename: asset.filename,
+  });
   const asciiFilename =
-    asset.filename.replace(/[^\x20-\x7E]/g, "").replace(/["\\]/g, "_") ||
+    workspaceFilename.replace(/[^\x20-\x7E]/g, "").replace(/["\\]/g, "_") ||
     "epk-asset";
   return new Response(result.stream, {
     headers: {
       "Content-Type": asset.mimeType,
       "Content-Length": String(result.blob.size),
-      "Content-Disposition": `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(asset.filename)}`,
+      "Content-Disposition": `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(workspaceFilename)}`,
       "Cache-Control": "private, no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",
     },

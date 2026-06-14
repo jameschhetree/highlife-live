@@ -1,0 +1,247 @@
+HIGHLIFE EPK SELF-SERVICE INSTRUCTIONS
+======================================
+
+PURPOSE
+-------
+
+These instructions let Liam generate an EPK package without asking Murd to move
+the request or media files into the restricted EPK Workspace.
+
+The website prepares the design prompt and private media downloads. The EPK
+Workspace creates code under current/output. It does not publish the page.
+
+
+FOLDERS
+-------
+
+EPK Workspace:
+
+/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace
+
+Request folder:
+
+/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input
+
+Supporting media folder:
+
+/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input/assets
+
+Generated package:
+
+/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/output
+
+
+PART 1: CREATE THE REQUEST ON THE WEBSITE
+-----------------------------------------
+
+1. Sign in to the HighLife admin website.
+
+2. Open:
+
+   /admin/epks
+
+3. Click "New EPK."
+
+4. Select an eligible Active or Priority artist.
+
+5. Complete the genres, links, theme/vibe, and important features fields.
+
+6. Upload at least one supporting file.
+
+   Allowed supporting files:
+   - Artist or performance photos
+   - Audio
+   - Video
+   - PDF documents
+
+   The artist's existing roster profile picture does not count as the required
+   supporting upload.
+
+7. Confirm HighLife has permission to publish the uploaded files.
+
+8. Submit the secure brief.
+
+9. Answer every follow-up question.
+
+10. Click "Request EPK Generation."
+
+11. Wait for the "EPK generation requested" screen.
+
+
+PART 2: DOWNLOAD THE HANDOFF
+----------------------------
+
+The completed screen contains a Self-Service Handoff section.
+
+1. Click "Download Workspace Request."
+
+   The file will be named like:
+
+   epk-build-request-JOB_ID.txt
+
+2. Download every supporting file shown on the page.
+
+   Important:
+   - Do not rename the downloaded supporting files.
+   - Their names include the database asset ID.
+   - These exact names match the paths inside the workspace request.
+
+3. The email sent to epk@highlifelive.com is a backup copy. Its signed media
+   links expire after seven days. The website completion screen is the easier
+   handoff while the owner session is active.
+
+
+PART 3: CLEAN THE OLD WORKSPACE JOB
+-----------------------------------
+
+Do this before placing a new request into the workspace.
+
+1. In Finder, choose Go > Go to Folder.
+
+2. Paste:
+
+   /Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input
+
+3. Remove the previous job's request file from current/input.
+
+4. Remove the previous job's files from current/input/assets.
+
+5. Do not delete the EPK Workspace instruction files located above the current
+   folder.
+
+6. The previous current/output package may be copied somewhere else for
+   safekeeping. The generator is allowed to replace the active output package.
+
+
+PART 4: MOVE THE NEW FILES
+--------------------------
+
+1. Move the downloaded epk-build-request-JOB_ID.txt file into:
+
+   /Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input
+
+2. Create the assets folder if Finder does not show it:
+
+   /Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input/assets
+
+3. Move every downloaded supporting file into current/input/assets.
+
+4. Do not put the supporting files directly beside the request file.
+
+5. Do not rename the request or supporting files.
+
+6. Confirm current/input contains exactly one active EPK request.
+
+
+PART 5: RUN THE EPK WORKSPACE
+-----------------------------
+
+1. Open the visible Codex thread named "EPK Workspace."
+
+2. Do not paste the long design prompt into the message box. A long paste can
+   become a Codex attachment outside the restricted workspace and be rejected.
+
+3. Paste this exact command:
+
+   Reload the current EPK workspace instructions, then build the single EPK_BUILD_REQUEST_V1 file currently under current/input. Use only the listed local files under current/input/assets. Do not read Codex attachments.
+
+4. Send the command.
+
+5. The EPK Workspace should:
+   - Reload its current security and output contracts.
+   - Find the one request under current/input.
+   - Verify every listed supporting file exists under current/input/assets.
+   - Use the already answered website follow-up questions.
+   - Build without asking the same questions again.
+   - Write only under current/output.
+   - Run its QA checklist.
+
+6. Wait for:
+
+   PASS - Ready for coordinator integration review.
+
+
+PART 6: FIND THE GENERATED PACKAGE
+----------------------------------
+
+The generated files will be under:
+
+/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/output
+
+Expected contents:
+
+current/output/
+  questions.json
+  package/
+    manifest.json
+    EpkPage.tsx
+    epk.css
+    components/
+  QA_REPORT.md
+  GENERATION_SUMMARY.md
+
+
+PART 7: PUT THE PAGE ON THE TEST WEBSITE
+----------------------------------------
+
+The restricted EPK Workspace cannot access the HighLife repository, commit,
+push, deploy, or publish.
+
+After the package passes QA, ask Murd or Jeremy to:
+
+1. Review the package.
+2. Integrate it into src/generated/epks/ARTIST_SLUG/.
+3. Add the reviewed registry entry.
+4. Run the EPK validator, lint, TypeScript, and production build.
+5. Push to main/test.
+
+Production remains a separate explicit approval.
+
+
+COMMON PROBLEMS
+---------------
+
+"EPK_BUILD_REQUEST_V1 is unsupported"
+
+The thread loaded an old contract. Send the exact command in Part 5 so it
+reloads the current instruction files.
+
+
+"Attachment is outside the restricted workspace"
+
+The long prompt was pasted or attached directly to Codex. Download the request
+file from the website and move it into current/input instead.
+
+
+"A listed asset is missing"
+
+Download every supporting file again and place it under current/input/assets
+without renaming it.
+
+
+"Multiple active requests were found"
+
+Remove old request files so current/input contains only the job being built.
+
+
+"No supporting assets"
+
+Start a new website request and upload at least one supporting photo, audio
+file, video, or PDF. The roster profile image does not satisfy this rule.
+
+
+"Signed link expired"
+
+Open the work order again from /admin/epks while signed in and download the
+asset from the Self-Service Handoff section.
+
+
+SECURITY REMINDERS
+------------------
+
+- Never paste API keys, passwords, tokens, cookies, or environment variables
+  into the request or EPK Workspace.
+- Never paste signed media links into the EPK Workspace.
+- Never forward the work-order email.
+- Only place files intended for that artist's public EPK under current/input.
+- The EPK Workspace generates review code only. It cannot approve production.

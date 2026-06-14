@@ -1,7 +1,11 @@
 import "server-only";
 
 import { get } from "@vercel/blob";
-import { EPK_MODEL, sanitizeEpkFilename, slugifyEpkValue } from "@/lib/epk/constants";
+import {
+  buildEpkWorkspaceFilename,
+  EPK_MODEL,
+  slugifyEpkValue,
+} from "@/lib/epk/constants";
 import type { EpkJobInput } from "@/lib/epk/input";
 
 type PublicArtist = {
@@ -153,7 +157,10 @@ function buildCodexPrompt(input: {
         filename: asset.filename,
         mimeType: asset.mimeType,
         sizeBytes: asset.sizeBytes,
-        workspaceFilename: `assets/${asset.id}-${sanitizeEpkFilename(asset.filename)}`,
+        workspaceFilename: `assets/${buildEpkWorkspaceFilename({
+          assetId: asset.id,
+          filename: asset.filename,
+        })}`,
         apiVisualReview:
           asset.kind === "image"
             ? reviewedIds.has(asset.id)

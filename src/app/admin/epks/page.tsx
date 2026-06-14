@@ -7,6 +7,8 @@ import { upload } from "@vercel/blob/client";
 import {
   AlertTriangle,
   CheckCircle2,
+  Copy,
+  Download,
   ExternalLink,
   FileAudio,
   FileImage,
@@ -20,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  buildEpkWorkspaceFilename,
   buildEpkAssetPath,
   EPK_ASSET_LIMITS,
   type EpkAssetKind,
@@ -45,6 +48,14 @@ type AssetSummary = {
   filename: string;
   sizeBytes: number;
   scanStatus: string;
+};
+
+type WorkspaceAsset = {
+  id: string;
+  kind: EpkAssetKind;
+  filename: string;
+  workspaceFilename: string;
+  downloadUrl: string;
 };
 
 type JobSummary = {
@@ -109,6 +120,11 @@ const STATUS_STYLES: Record<string, string> = {
   Cancelled: "text-zinc-400 border-zinc-500/30 bg-zinc-500/10",
   Failed: "text-rose-200 border-rose-400/30 bg-rose-400/10",
 };
+
+const EPK_WORKSPACE_INPUT =
+  "/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input";
+const EPK_WORKSPACE_COMMAND =
+  "Reload the current EPK workspace instructions, then build the single EPK_BUILD_REQUEST_V1 file currently under current/input. Use only the listed local files under current/input/assets. Do not read Codex attachments.";
 
 function formatBytes(value: number): string {
   if (value < 1024 * 1024) return `${Math.ceil(value / 1024)} KB`;
@@ -176,6 +192,38 @@ function parseManualPrompt(value: unknown): string {
   return typeof prompt === "string" ? prompt : "";
 }
 
+function requestFilename(jobId: string): string {
+  return `epk-build-request-${jobId}.txt`;
+}
+
+function downloadTextFile(filename: string, contents: string) {
+  const url = URL.createObjectURL(
+    new Blob([contents], { type: "text/plain;charset=utf-8" }),
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function workspaceAssetsForJob(job: JobSummary): WorkspaceAsset[] {
+  return job.assets
+    .filter((asset) => asset.scanStatus !== "Rejected")
+    .map((asset) => ({
+      id: asset.id,
+      kind: asset.kind,
+      filename: asset.filename,
+      workspaceFilename: buildEpkWorkspaceFilename({
+        assetId: asset.id,
+        filename: asset.filename,
+      }),
+      downloadUrl: `/api/admin/epks/${job.id}/assets/${asset.id}`,
+    }));
+}
+
 export default function EpksPage() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<EpkData | null>(null);
@@ -191,8 +239,10 @@ export default function EpksPage() {
   const [questions, setQuestions] = useState<FollowupQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [generationRequested, setGenerationRequested] = useState<{
+    jobId: string;
     prompt: string;
     emailedTo: string;
+    workspaceAssets: WorkspaceAsset[];
   } | null>(null);
 
   const load = useCallback(async () => {
@@ -230,10 +280,12 @@ export default function EpksPage() {
     const artistParam = searchParams.get("artist");
     if (!artistParam || !data?.artists) return;
     const match = data.artists.find((a) => a.id === artistParam);
-    if (match) {
+    if (!match) return;
+    const frame = window.requestAnimationFrame(() => {
       setForm((f) => ({ ...f, artistName: match.name }));
       setFormOpen(true);
-    }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [data?.artists, searchParams]);
 
   const selectedArtist = useMemo(
@@ -347,6 +399,12 @@ export default function EpksPage() {
       setFormError("Confirm that HighLife may use every uploaded file publicly.");
       return;
     }
+    if (files.length === 0) {
+      setFormError(
+        "Upload at least one supporting photo, video, audio file, or PDF. The roster profile picture does not count.",
+      );
+      return;
+    }
     const fileError = validateFiles(files);
     if (fileError) {
       setFormError(fileError);
@@ -423,8 +481,12 @@ export default function EpksPage() {
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error ?? "Could not save answers.");
       setGenerationRequested({
+        jobId: currentJobId,
         prompt: String(payload.designPrompt ?? ""),
         emailedTo: String(payload.emailedTo ?? "epk@highlifelive.com"),
+        workspaceAssets: Array.isArray(payload.workspaceAssets)
+          ? (payload.workspaceAssets as WorkspaceAsset[])
+          : [],
       });
       setProgress("");
       await load();
@@ -591,28 +653,93 @@ export default function EpksPage() {
                     No files were attached.
                   </p>
                 </div>
-                <div>
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-display text-xl uppercase">Codex Prompt</h3>
-                      <p className="text-xs text-zinc-500">
-                        Paste this into the restricted EPK Workspace thread.
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-pink-300">
+                    Self-Service Handoff
+                  </p>
+                  <h3 className="mt-1 font-display text-2xl uppercase">
+                    Download, move, then build
+                  </h3>
+                  <ol className="mt-4 space-y-5 text-sm text-zinc-300">
+                    <li>
+                      <strong className="text-white">1. Download the request file.</strong>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        Move it into <code className="text-zinc-300">{EPK_WORKSPACE_INPUT}</code>.
                       </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void navigator.clipboard.writeText(generationRequested.prompt)
-                      }
-                      className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-300 hover:border-white/25"
-                    >
-                      Copy Prompt
-                    </button>
-                  </div>
-                  <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-white/8 bg-black/35 p-5 text-xs leading-relaxed text-zinc-300">
-                    {generationRequested.prompt}
-                  </pre>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadTextFile(
+                            requestFilename(generationRequested.jobId),
+                            generationRequested.prompt,
+                          )
+                        }
+                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-pink-400/25 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-pink-200 hover:border-pink-300/50"
+                      >
+                        <Download size={13} />
+                        Download Workspace Request
+                      </button>
+                    </li>
+                    <li>
+                      <strong className="text-white">2. Download every supporting file.</strong>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        Move them into <code className="text-zinc-300">{EPK_WORKSPACE_INPUT}/assets</code>.
+                        The downloads already use the filenames expected by the request.
+                      </p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {generationRequested.workspaceAssets.map((asset) => (
+                          <a
+                            key={asset.id}
+                            href={asset.downloadUrl}
+                            download={asset.workspaceFilename}
+                            className="flex items-center gap-2 rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-xs text-zinc-300 hover:border-white/20"
+                          >
+                            <Download size={13} className="shrink-0 text-pink-300" />
+                            <span className="truncate">{asset.workspaceFilename}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </li>
+                    <li>
+                      <strong className="text-white">3. Open the EPK Workspace thread and send this command.</strong>
+                      <pre className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-white/8 bg-black/35 p-3 text-xs leading-relaxed text-zinc-300">
+                        {EPK_WORKSPACE_COMMAND}
+                      </pre>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void navigator.clipboard.writeText(EPK_WORKSPACE_COMMAND)
+                        }
+                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-300 hover:border-white/25"
+                      >
+                        <Copy size={13} />
+                        Copy Build Command
+                      </button>
+                    </li>
+                  </ol>
                 </div>
+                <details>
+                  <summary className="cursor-pointer text-xs uppercase tracking-[0.16em] text-zinc-500 hover:text-zinc-300">
+                    View or copy raw Codex prompt
+                  </summary>
+                  <div className="mt-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="font-display text-xl uppercase">Codex Prompt</h3>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void navigator.clipboard.writeText(generationRequested.prompt)
+                        }
+                        className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-300 hover:border-white/25"
+                      >
+                        Copy Prompt
+                      </button>
+                    </div>
+                    <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-white/8 bg-black/35 p-5 text-xs leading-relaxed text-zinc-300">
+                      {generationRequested.prompt}
+                    </pre>
+                  </div>
+                </details>
                 <button
                   type="button"
                   onClick={() => {
@@ -690,7 +817,8 @@ export default function EpksPage() {
 
                 <Field
                   label="Files"
-                  hint="Up to 10 images, 5 audio files, 3 videos, and 2 PDFs. The design API may inspect photos only; it never receives video, audio, or PDF content."
+                  required
+                  hint="At least one supporting upload is required; the roster profile picture does not count. Up to 10 images, 5 audio files, 3 videos, and 2 PDFs. The design API may inspect photos only; it never receives video, audio, or PDF content."
                 >
                   <label className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.15em] text-zinc-300 cursor-pointer hover:bg-white/10 transition-colors">
                     <Plus size={12} /> Add Files
@@ -903,8 +1031,10 @@ export default function EpksPage() {
                                 setQuestions(parseQuestions(latestJob.questions));
                                 setAnswers(parseAnswers(latestJob.answers));
                                 setGenerationRequested({
+                                  jobId: latestJob.id,
                                   prompt: parseManualPrompt(latestJob.input),
                                   emailedTo: "epk@highlifelive.com",
+                                  workspaceAssets: workspaceAssetsForJob(latestJob),
                                 });
                                 setFormOpen(true);
                                 window.scrollTo({ top: 0, behavior: "smooth" });

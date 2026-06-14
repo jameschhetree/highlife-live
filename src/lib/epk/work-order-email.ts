@@ -6,6 +6,7 @@ type WorkOrderAsset = {
   id: string;
   kind: string;
   filename: string;
+  workspaceFilename: string;
   downloadUrl: string;
 };
 
@@ -39,13 +40,13 @@ export async function sendEpkWorkOrder(input: {
   const address = epkWorkOrderAddress();
   const assetLines = input.assets.map(
     (asset) =>
-      `- [${asset.kind}] ${asset.filename}\n  ${asset.downloadUrl}`,
+      `- [${asset.kind}] Save as current/input/assets/${asset.workspaceFilename}\n  Original: ${asset.filename}\n  ${asset.downloadUrl}`,
   );
   const text = [
     `EPK generation requested for ${input.artistName}`,
     `Job: ${input.jobId}`,
     "",
-    "Download any media you want the Codex EPK Workspace to inspect, then place it under current/input/assets using the filename in the prompt.",
+    "Download every supporting file and place it under current/input/assets. The download already uses the exact workspace filename required by the prompt.",
     "",
     "SIGNED PRIVATE MEDIA LINKS (expire after seven days)",
     assetLines.length > 0 ? assetLines.join("\n") : "No media uploaded.",
@@ -58,7 +59,7 @@ export async function sendEpkWorkOrder(input: {
       ? `<ul>${input.assets
           .map(
             (asset) =>
-              `<li><strong>${escapeHtml(asset.kind)}</strong>: <a href="${escapeHtml(asset.downloadUrl)}">${escapeHtml(asset.filename)}</a></li>`,
+              `<li><strong>${escapeHtml(asset.kind)}</strong>: <a href="${escapeHtml(asset.downloadUrl)}">${escapeHtml(asset.workspaceFilename)}</a><br><small>Original: ${escapeHtml(asset.filename)}</small></li>`,
           )
           .join("")}</ul>`
       : "<p>No media uploaded.</p>";
@@ -73,7 +74,7 @@ export async function sendEpkWorkOrder(input: {
       <div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:28px;color:#171717">
         <h1 style="font-size:24px;margin:0 0 8px">EPK generation requested</h1>
         <p style="margin:0 0 20px"><strong>${escapeHtml(input.artistName)}</strong><br>Job ${escapeHtml(input.jobId)}</p>
-        <p>Download any media you want the Codex EPK Workspace to inspect, then place it under <code>current/input/assets</code> using the filename included in the prompt.</p>
+        <p>Download every supporting file and place it under <code>current/input/assets</code>. Each download already uses the exact workspace filename required by the prompt.</p>
         <h2 style="font-size:18px;margin-top:28px">Signed private media links</h2>
         <p style="color:#52525b">These links expire after seven days. Do not forward this email.</p>
         ${assetHtml}

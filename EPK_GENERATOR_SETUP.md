@@ -52,19 +52,24 @@ files have been reviewed.
 ## Workflow
 
 1. An owner submits an eligible `Active` or `Priority` artist, direction, links,
-   and media.
+   and at least one supporting media file. The roster profile image does not
+   count as the supporting upload.
 2. Uploads remain in the private EPK quarantine store.
 3. The owner answers one to three structured questions.
 4. GPT-5.5 inspects text and up to three photos at low detail, then emits
    `EPK_BUILD_REQUEST_V1`.
 5. The app emails the prompt and seven-day signed download links from
    `admin@highlifelive.com` to `epk@highlifelive.com`. There are no attachments.
-6. Liam pastes the prompt into the restricted EPK Workspace and downloads only
-   the media needed for that job.
-7. Codex outputs one package under `src/generated/epks/<artist-slug>/` plus a
+6. Liam downloads the workspace request and every supporting file from the
+   completion screen. The request goes in `current/input`; media goes in
+   `current/input/assets` using the server-provided filenames.
+7. Liam opens the restricted EPK Workspace and asks it to build the single
+   request currently under `current/input`. The long prompt is not pasted into
+   Codex, preventing it from becoming an out-of-workspace attachment.
+8. Codex outputs one package under `src/generated/epks/<artist-slug>/` plus a
    registry snippet.
-8. The coordinator validates, integrates, builds, and pushes to `main`.
-9. Production remains untouched until Liam explicitly approves the `prod`
+9. The coordinator validates, integrates, builds, and pushes to `main`.
+10. Production remains untouched until Liam explicitly approves the `prod`
    merge.
 
 Git commits are the EPK version and rollback history. There is no application
