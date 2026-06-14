@@ -32,7 +32,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero — vibrant atmosphere + glass card centerpiece */}
-      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden bg-radial-atmosphere pt-32 pb-24 sm:pt-28 sm:pb-20">
+      <section className="relative min-h-[100svh] flex items-center justify-center bg-radial-atmosphere pt-32 pb-24 sm:pt-28 sm:pb-20 overflow-x-clip">
         {/* Atmospheric noise overlay */}
         <div
           aria-hidden
@@ -207,8 +207,8 @@ export default function HomePage() {
             <ScrollReveal delay={0.2}>
               <div className="relative aspect-[4/5] bg-card border border-border/30 overflow-hidden rounded-2xl">
                 <GsapParallaxImage
-                  src="/hero-djbooth.jpg"
-                  alt="DJ behind the booth at a packed HighLife Live show"
+                  src="/hero-collage.jpg"
+                  alt="HighLife Live artists — real performances and sessions"
                   containerClassName="absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/15 to-transparent pointer-events-none" />
