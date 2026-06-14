@@ -116,7 +116,6 @@ async function main() {
         sourceDate: v.sourceDate,
         contactConfidence: v.contactConfidence,
         reviewStatus: v.reviewStatus,
-        notes: v.notes,
         tags: v.tags,
         lastContacted: v.lastContacted ? new Date(v.lastContacted) : null,
         nextFollowUp: v.nextFollowUp ? new Date(v.nextFollowUp) : null,

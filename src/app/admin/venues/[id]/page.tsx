@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -18,12 +18,18 @@ import {
   AlertTriangle,
   Lock,
   Clock,
+  Check,
+  X,
+  Link2,
+  Unlink,
+  Calendar,
+  ChevronDown,
 } from "lucide-react";
 import { useVenues, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { updateVenue, deleteVenue } from "@/lib/admin-store";
 import { getAdminSession } from "@/lib/admin-auth";
 import type { ReviewStatus, RelationshipStatus, AdminVenue, VenueType } from "@/lib/admin-data";
-import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
+import EditDrawer, { FieldText, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import NotesThread from "@/components/admin/notes-thread";
 
@@ -55,7 +61,37 @@ type TimelineRow = {
   refId: string | null;
   body: string;
   authorEmail: string;
+  eventDate: string | null;
   createdAt: string;
+};
+
+const TIMELINE_KINDS = [
+  { value: "added", label: "Added" },
+  { value: "inquiry", label: "Inquiry" },
+  { value: "responded", label: "Responded" },
+  { value: "booked", label: "Booked" },
+  { value: "event_hosted", label: "Event Hosted" },
+  { value: "fell_through", label: "Fell Through" },
+  { value: "pushed_back", label: "Pushed Back" },
+  { value: "negotiating", label: "Negotiating / Discussion" },
+  { value: "note", label: "Note" },
+  { value: "other", label: "Other" },
+];
+
+const KIND_COLORS: Record<string, string> = {
+  added: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20",
+  inquiry: "text-sky-300 bg-sky-400/10 border-sky-400/20",
+  responded: "text-blue-300 bg-blue-400/10 border-blue-400/20",
+  booked: "text-pink-300 bg-pink-400/10 border-pink-400/20",
+  event_hosted: "text-violet-300 bg-violet-400/10 border-violet-400/20",
+  fell_through: "text-red-400 bg-red-400/10 border-red-400/20",
+  pushed_back: "text-amber-300 bg-amber-400/10 border-amber-400/20",
+  negotiating: "text-orange-300 bg-orange-400/10 border-orange-400/20",
+  note: "text-zinc-300 bg-zinc-400/10 border-zinc-400/20",
+  booking: "text-pink-300 bg-pink-400/10 border-pink-400/20",
+  email: "text-sky-300 bg-sky-400/10 border-sky-400/20",
+  event: "text-violet-300 bg-violet-400/10 border-violet-400/20",
+  other: "text-zinc-400 bg-zinc-400/10 border-zinc-400/20",
 };
 
 function authorLabel(email: string): string {
@@ -69,6 +105,113 @@ function ensureUrl(s: string): string {
   return /^https?:\/\//i.test(s) ? s : `https://${s}`;
 }
 
+function kindLabel(kind: string): string {
+  const found = TIMELINE_KINDS.find((k) => k.value === kind);
+  if (found) return found.label;
+  return kind.replace(/_/g, " ");
+}
+
+// ── Inline Editable Field Component ─────────────────────────
+function InlineEditable({
+  value,
+  fieldKey,
+  venueId,
+  label,
+  type = "text",
+  onSaved,
+}: {
+  value: string;
+  fieldKey: string;
+  venueId: string;
+  label: string;
+  type?: string;
+  onSaved?: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setDraft(value);
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const session = getAdminSession();
+      if (!session) return;
+      const res = await fetch(`/api/admin/venues/${venueId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ [fieldKey]: draft }),
+      });
+      if (res.ok) {
+        triggerStoreUpdate();
+        setEditing(false);
+        onSaved?.();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancel() {
+    setEditing(false);
+    setDraft(value);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <input
+          type={type}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="flex-1 bg-black/40 border border-white/20 rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") cancel();
+          }}
+        />
+        <button
+          onClick={save}
+          disabled={saving}
+          className="p-1 rounded border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/10 text-emerald-300 hover:text-emerald-200 transition-colors disabled:opacity-50"
+          title="Save"
+        >
+          <Check size={12} />
+        </button>
+        <button
+          onClick={cancel}
+          className="p-1 rounded border border-zinc-500/30 hover:border-zinc-500/60 bg-zinc-500/10 text-zinc-300 hover:text-zinc-200 transition-colors"
+          title="Cancel"
+        >
+          <X size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="text-sm text-zinc-200 cursor-pointer hover:text-pink-200 transition-colors group"
+      onClick={startEdit}
+      title={`Click to edit ${label}`}
+    >
+      {value || <span className="text-zinc-500 italic">Click to add</span>}
+      <Edit size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+    </div>
+  );
+}
+
+// ── Stage Info Types ────────────────────────────────────────
+type StageInfoData = {
+  logins: { id: string; email: string; displayName: string; isActive: boolean }[];
+  inquiries: { id: string; inquiryNumber: string; artistName: string; eventDate: string; status: string; submittedAt: string }[];
+};
+
 export default function VenueDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -78,8 +221,17 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
   const [editForm, setEditForm] = useState<Partial<AdminVenue>>({});
   const [showDelete, setShowDelete] = useState(false);
   const [timeline, setTimeline] = useState<TimelineRow[]>([]);
-  const [noteText, setNoteText] = useState("");
-  const [posting, setPosting] = useState(false);
+
+  // Timeline entry form state
+  const [showTimelineForm, setShowTimelineForm] = useState(false);
+  const [tlKind, setTlKind] = useState("note");
+  const [tlBody, setTlBody] = useState("");
+  const [tlDate, setTlDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [tlArtist, setTlArtist] = useState("");
+  const [tlPosting, setTlPosting] = useState(false);
+
+  // Stage & Info sidebar state
+  const [stageInfo, setStageInfo] = useState<StageInfoData | null>(null);
 
   // Venue contact access gate (Phase 3.6 / Workflow C)
   const [accessState, setAccessState] = useState<{
@@ -102,8 +254,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         const isOwner = Boolean(j?.ownerAdmin);
         const granted: string[] = Array.isArray(j?.grantedVenueIds) ? j.grantedVenueIds : [];
         const pending: string[] = Array.isArray(j?.pendingVenueIds) ? j.pendingVenueIds : [];
-        // 100ms minimum render-gate so contacts never flash visible before the
-        // access check returns (Dok HL Live 2026-06-03 — "i caught a quick glimpse").
         const elapsed = performance.now() - start;
         const wait = Math.max(0, 100 - elapsed);
         setTimeout(() => {
@@ -139,23 +289,49 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
       .catch(() => setTimeline([]));
   }, [id, accessState.loaded]);
 
-  async function postNote() {
+  // Load stage info
+  useEffect(() => {
+    if (!accessState.loaded) return;
     const session = getAdminSession();
-    if (!session || !noteText.trim()) return;
-    setPosting(true);
+    if (!session) return;
+    fetch(`/api/admin/venues/${id}/stage-info`, {
+      headers: { "x-admin-email": session.email },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setStageInfo(data))
+      .catch(() => setStageInfo(null));
+  }, [id, accessState.loaded]);
+
+  async function postTimelineEntry() {
+    const session = getAdminSession();
+    if (!session) return;
+    setTlPosting(true);
     try {
+      const payload: Record<string, string> = {
+        kind: tlKind,
+        body: tlKind === "inquiry" && tlArtist ? `${tlArtist}${tlBody ? ` - ${tlBody}` : ""}` : tlBody,
+        eventDate: tlDate,
+      };
+      if (tlKind === "inquiry" && tlArtist) {
+        payload.refId = tlArtist;
+      }
       const res = await fetch(`/api/admin/venues/${id}/timeline`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-email": session.email },
-        body: JSON.stringify({ body: noteText.trim(), kind: "note" }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const created = await res.json();
         setTimeline((prev) => [created, ...prev]);
-        setNoteText("");
+        setTlBody("");
+        setTlArtist("");
+        setTlKind("note");
+        setTlDate(new Date().toISOString().slice(0, 10));
+        setShowTimelineForm(false);
       }
     } finally {
-      setPosting(false);
+      setTlPosting(false);
     }
   }
 
@@ -258,18 +434,16 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {/* Contact Information Card */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Contact Information</h2>
 
               {!accessState.loaded ? (
-                // Default-deny render until access check returns (+100ms buffer).
-                // Prevents the "I caught a glimpse" flash bug Dok reported 2026-06-03.
                 <div className="py-8 text-center">
                   <Lock size={18} className="text-zinc-600 mx-auto mb-2" />
                   <p className="text-xs text-zinc-500">Loading access state...</p>
                 </div>
               ) : !accessState.canSeeContacts ? (
-                // Agent view without an active grant → contacts hidden, request CTA shown
                 <div className="space-y-4">
                   <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-400/20 bg-amber-400/5">
                     <Lock size={16} className="text-amber-300 mt-0.5 shrink-0" />
@@ -298,7 +472,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                     </button>
                   )}
 
-                  {/* Non-sensitive fields still visible to agents */}
                   <div className="flex items-start gap-3 sm:col-span-2 pt-2 border-t border-white/5">
                     <MapPin size={14} className="text-pink-300 mt-0.5 shrink-0" />
                     <div>
@@ -311,17 +484,32 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="flex items-start gap-3">
                     <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Contact Person</div>
-                      <div className="text-sm text-zinc-200">{venue.contactPerson}</div>
-                      <div className="text-xs text-zinc-500">{venue.contactTitle}</div>
+                      {accessState.isOwnerAdmin ? (
+                        <>
+                          <InlineEditable value={venue.contactPerson} fieldKey="contactPerson" venueId={id} label="Contact Person" />
+                          <div className="mt-0.5">
+                            <InlineEditable value={venue.contactTitle} fieldKey="contactTitle" venueId={id} label="Title" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm text-zinc-200">{venue.contactPerson}</div>
+                          <div className="text-xs text-zinc-500">{venue.contactTitle}</div>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Mail size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Email</div>
-                      <div className="text-sm text-zinc-200">{venue.email}</div>
+                      {accessState.isOwnerAdmin ? (
+                        <InlineEditable value={venue.email} fieldKey="email" venueId={id} label="Email" type="email" />
+                      ) : (
+                        <div className="text-sm text-zinc-200">{venue.email}</div>
+                      )}
                       {venue.talentBuyerEmail !== venue.email && (
                         <div className="text-xs text-zinc-500 mt-0.5">Talent: {venue.talentBuyerEmail}</div>
                       )}
@@ -329,16 +517,22 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="flex items-start gap-3">
                     <Phone size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Phone</div>
-                      <div className="text-sm text-zinc-200">{venue.phone}</div>
+                      {accessState.isOwnerAdmin ? (
+                        <InlineEditable value={venue.phone} fieldKey="phone" venueId={id} label="Phone" type="tel" />
+                      ) : (
+                        <div className="text-sm text-zinc-200">{venue.phone}</div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Globe size={14} className="text-pink-300 mt-0.5 shrink-0" />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Website</div>
-                      {venue.website ? (
+                      {accessState.isOwnerAdmin ? (
+                        <InlineEditable value={venue.website} fieldKey="website" venueId={id} label="Website" />
+                      ) : venue.website ? (
                         <a
                           href={ensureUrl(venue.website)}
                           target="_blank"
@@ -348,7 +542,7 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                           {venue.website} <ExternalLink size={10} />
                         </a>
                       ) : (
-                        <div className="text-sm text-zinc-500">—</div>
+                        <div className="text-sm text-zinc-500">--</div>
                       )}
                     </div>
                   </div>
@@ -363,23 +557,23 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </motion.div>
 
+            {/* Venue Details Card */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-4">Venue Details</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 {(!accessState.loaded || !accessState.canSeeContacts
                   ? [
                       ["Type", venue.venueType],
-                      ["Zip Code", venue.zipCode || "—"],
-                      ["Region", venue.region || "—"],
+                      ["Zip Code", venue.zipCode || "--"],
+                      ["Region", venue.region || "--"],
                       ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
                     ]
                   : [
                       ["Type", venue.venueType],
-                      ["Zip Code", venue.zipCode || "—"],
-                      ["Region", venue.region || "—"],
+                      ["Zip Code", venue.zipCode || "--"],
+                      ["Region", venue.region || "--"],
                       ["Capacity", venue.capacity > 0 ? venue.capacity.toLocaleString() : "N/A"],
                       ["Instagram", venue.instagram],
-                      ["Booking Email", venue.bookingEmail],
                       ["Talent Buyer", venue.talentBuyerEmail],
                     ]
                 ).map(([label, value]) => (
@@ -388,6 +582,17 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="text-sm text-zinc-300">{value}</div>
                   </div>
                 ))}
+                {/* Booking Email -- inline editable for owner admins */}
+                {accessState.loaded && accessState.canSeeContacts && (
+                  <div>
+                    <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">Booking Email</div>
+                    {accessState.isOwnerAdmin ? (
+                      <InlineEditable value={venue.bookingEmail} fieldKey="bookingEmail" venueId={id} label="Booking Email" type="email" />
+                    ) : (
+                      <div className="text-sm text-zinc-300">{venue.bookingEmail}</div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="mt-4">
                 <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1.5">Typical Genres Booked</div>
@@ -409,27 +614,89 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </motion.div>
 
+            {/* Timeline Card (dedicated, replaces old Notes & Timeline) */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5">
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 mb-3">Notes & Timeline</h2>
-              {venue.notes && (
-                <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap break-words mb-4">{venue.notes}</p>
-              )}
-              <div className="space-y-2 mb-4">
-                <textarea
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  rows={2}
-                  placeholder="Add a quick note (visible to owners + scoped agents)"
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 resize-y"
-                />
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300 inline-flex items-center gap-2">
+                  <Calendar size={12} /> Timeline
+                </h2>
                 <button
-                  onClick={postNote}
-                  disabled={posting || !noteText.trim()}
-                  className="inline-flex items-center gap-1.5 btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-full px-4 py-1.5 disabled:opacity-50"
+                  onClick={() => setShowTimelineForm(!showTimelineForm)}
+                  className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-pink-300 hover:text-pink-200 transition-colors"
                 >
-                  <Plus size={11} /> {posting ? "Posting…" : "Add Note"}
+                  <Plus size={11} /> Add Entry
                 </button>
               </div>
+
+              {/* Add Timeline Entry Form */}
+              {showTimelineForm && (
+                <div className="mb-4 p-4 rounded-xl border border-white/8 bg-black/30 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 block mb-1">Kind</label>
+                      <div className="relative">
+                        <select
+                          value={tlKind}
+                          onChange={(e) => setTlKind(e.target.value)}
+                          className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60 appearance-none pr-8"
+                        >
+                          {TIMELINE_KINDS.map((k) => (
+                            <option key={k.value} value={k.value}>{k.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 block mb-1">Date</label>
+                      <input
+                        type="date"
+                        value={tlDate}
+                        onChange={(e) => setTlDate(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-pink-400/60"
+                      />
+                    </div>
+                  </div>
+                  {tlKind === "inquiry" && (
+                    <div>
+                      <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 block mb-1">Artist Name</label>
+                      <input
+                        type="text"
+                        value={tlArtist}
+                        onChange={(e) => setTlArtist(e.target.value)}
+                        placeholder="e.g. Nyla Vale"
+                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-[9px] tracking-[0.18em] uppercase text-zinc-500 block mb-1">Notes (optional)</label>
+                    <textarea
+                      value={tlBody}
+                      onChange={(e) => setTlBody(e.target.value)}
+                      rows={2}
+                      placeholder="Additional details..."
+                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:outline-none focus:border-pink-400/60 resize-y"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={postTimelineEntry}
+                      disabled={tlPosting || (tlKind === "note" && !tlBody.trim())}
+                      className="inline-flex items-center gap-1.5 btn-gradient text-[10px] tracking-[0.18em] uppercase font-bold rounded-full px-4 py-1.5 disabled:opacity-50"
+                    >
+                      <Plus size={11} /> {tlPosting ? "Posting..." : "Add Entry"}
+                    </button>
+                    <button
+                      onClick={() => setShowTimelineForm(false)}
+                      className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {timeline.length === 0 ? (
                 <p className="text-xs text-zinc-500 italic">No timeline activity yet.</p>
               ) : (
@@ -437,44 +704,102 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
                   {timeline.map((t) => (
                     <li key={t.id} className="p-3 rounded-lg border border-white/8 bg-black/30">
                       <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1 flex items-center justify-between gap-2">
-                        <span>
-                          {t.kind === "note" ? authorLabel(t.authorEmail) : t.kind}
+                        <span className="flex items-center gap-2">
+                          <span className={`inline-flex px-1.5 py-0.5 rounded-full border text-[8px] tracking-[0.15em] uppercase ${KIND_COLORS[t.kind] || KIND_COLORS.other}`}>
+                            {kindLabel(t.kind)}
+                          </span>
+                          {t.kind !== "note" && t.authorEmail && (
+                            <span className="text-zinc-600">{authorLabel(t.authorEmail)}</span>
+                          )}
+                          {t.kind === "note" && (
+                            <span>{authorLabel(t.authorEmail)}</span>
+                          )}
                         </span>
-                        <span>{new Date(t.createdAt).toLocaleString()}</span>
+                        <span>
+                          {t.eventDate
+                            ? new Date(t.eventDate).toLocaleDateString()
+                            : new Date(t.createdAt).toLocaleString()}
+                        </span>
                       </div>
-                      <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{t.body}</p>
+                      {t.body && (
+                        <p className="text-sm text-zinc-200 whitespace-pre-wrap break-words">{t.body}</p>
+                      )}
                     </li>
                   ))}
                 </ul>
               )}
             </motion.div>
 
+            {/* Notes Thread (unified notes component) */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}>
               <NotesThread entityType="venue" entityId={id} />
             </motion.div>
           </div>
 
+          {/* Right Sidebar */}
           <div className="space-y-6">
+            {/* Contact Confidence */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 text-center">
               <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-2">Contact Confidence</div>
               <div className="font-display text-5xl text-gradient-hero leading-none mb-1">{venue.contactConfidence}</div>
               <div className="text-[10px] text-zinc-500">out of 10</div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-3">
-              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Source & Compliance</h2>
-              {[
-                ["Source", venue.source],
-                ["Source Date", venue.sourceDate],
-                ["Source URL", venue.sourceUrl || "N/A"],
-              ].map(([label, value]) => (
-                <div key={label as string}>
-                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-0.5">{label}</div>
-                  <div className="text-sm text-zinc-300 break-all">{value}</div>
+            {/* Stage & Info (replaces Source & Compliance) */}
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-4">
+              <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Stage & Info</h2>
+
+              {/* Login status */}
+              <div>
+                <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1">Login Status</div>
+                {!stageInfo ? (
+                  <div className="text-xs text-zinc-500">Loading...</div>
+                ) : stageInfo.logins.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {stageInfo.logins.map((login) => (
+                      <div key={login.id} className="flex items-center gap-2">
+                        <Link2 size={11} className="text-emerald-400 shrink-0" />
+                        <span className="text-sm text-emerald-300">Linked</span>
+                        <span className="text-xs text-zinc-400 truncate">{login.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Unlink size={11} className="text-zinc-500 shrink-0" />
+                    <span className="text-sm text-zinc-500">Unlinked</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Current Inquiries */}
+              {stageInfo && stageInfo.inquiries.length > 0 && (
+                <div>
+                  <div className="text-[9px] tracking-[0.18em] uppercase text-zinc-600 mb-1.5">Recent Inquiries</div>
+                  <div className="space-y-2">
+                    {stageInfo.inquiries.slice(0, 5).map((inq) => (
+                      <Link
+                        key={inq.id}
+                        href={`/admin/inquiries/${inq.id}`}
+                        className="block p-2 rounded-lg border border-white/6 hover:border-white/15 bg-black/20 transition-colors"
+                      >
+                        <div className="text-xs text-zinc-200 font-medium">{inq.artistName}</div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">
+                          {inq.inquiryNumber} &middot; {inq.eventDate || "No date"} &middot;{" "}
+                          <span className={`${
+                            inq.status === "Booked" ? "text-emerald-400" :
+                            inq.status === "New" ? "text-amber-300" :
+                            "text-zinc-400"
+                          }`}>{inq.status}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </motion.div>
 
+            {/* Timeline sidebar */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15, ease: [0.32, 0.72, 0, 1] }} className="glass-card rounded-2xl p-5 space-y-3">
               <h2 className="text-[11px] tracking-[0.22em] uppercase text-zinc-300">Timeline</h2>
               <div>
@@ -504,7 +829,6 @@ export default function VenueDetailPage({ params }: { params: Promise<{ id: stri
         </div>
         <FieldSelect label="Review Status" value={editForm.reviewStatus ?? "Needs Review"} onChange={(v) => patch("reviewStatus", v)} options={reviewStatuses} />
         <FieldSelect label="Relationship" value={editForm.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatusesForForm} />
-        <FieldTextArea label="Notes" value={editForm.notes ?? ""} onChange={(v) => patch("notes", v)} />
         <button onClick={handleSave} className="w-full btn-gradient px-4 py-3 rounded-xl text-sm font-semibold mt-2">
           Save Changes
         </button>

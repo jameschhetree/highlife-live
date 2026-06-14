@@ -75,10 +75,10 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
 
           <div className="flex items-center gap-2">
             <Link
-              href={`/artists/${artist.slug}`}
+              href={artist.epkUrl ?? `/artists/${artist.slug}`}
               className="flex-1 text-center text-[10px] tracking-[0.18em] uppercase text-silver hover:text-foreground transition-colors px-3 py-2 rounded-full border border-white/10 hover:border-white/25"
             >
-              More Info
+              {artist.epkUrl ? "View EPK" : "More Info"}
             </Link>
             <Link
               href={`/book?artist=${encodeURIComponent(artist.slug)}`}

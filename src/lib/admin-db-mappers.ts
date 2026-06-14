@@ -130,7 +130,6 @@ export function dbVenueToAdmin(v: PrismaVenue): AdminVenue {
     sourceDate: v.sourceDate,
     contactConfidence: v.contactConfidence,
     reviewStatus: v.reviewStatus as AdminVenue["reviewStatus"],
-    notes: v.notes,
     tags: v.tags,
     lastContacted: v.lastContacted
       ? v.lastContacted.toISOString().slice(0, 10)
@@ -169,7 +168,6 @@ export function adminVenueToDbInput(v: Partial<AdminVenue>) {
   if (v.sourceDate !== undefined) data.sourceDate = v.sourceDate;
   if (v.contactConfidence !== undefined) data.contactConfidence = v.contactConfidence;
   if (v.reviewStatus !== undefined) data.reviewStatus = v.reviewStatus;
-  if (v.notes !== undefined) data.notes = v.notes;
   if (v.tags !== undefined) data.tags = v.tags;
   if (v.relationshipStatus !== undefined) data.relationshipStatus = v.relationshipStatus;
   if (v.isDemo !== undefined) data.isDemo = v.isDemo;

@@ -80,12 +80,18 @@ export function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    setSession(getAdminSession());
+    const frame = window.requestAnimationFrame(() => {
+      setSession(getAdminSession());
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   // Close mobile drawer on route change
   useEffect(() => {
-    setMobileOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setMobileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
   // Lock body scroll when drawer is open
@@ -122,9 +128,7 @@ export function AdminSidebar() {
   const ownerHubChildHrefs = ["/admin/owner-special", "/admin/assignments", "/admin/venue-logins", "/admin/agent-logins", "/admin/settings"];
   const ownerHubActive = ownerHubChildHrefs.some((h) => pathname?.startsWith(h));
   const [ownerHubOpen, setOwnerHubOpen] = useState(false);
-  useEffect(() => {
-    if (ownerHubActive) setOwnerHubOpen(true);
-  }, [ownerHubActive]);
+  const showOwnerHub = ownerHubOpen || ownerHubActive;
 
   const renderLeaf = (leaf: NavLeaf, onItemClick: (() => void) | undefined, indent: boolean) => {
     const Icon = leaf.icon;
@@ -156,7 +160,7 @@ export function AdminSidebar() {
       {visibleNav.map((item) => {
         if (item.kind === "leaf") return renderLeaf(item, onItemClick, false);
         const GroupIcon = item.icon;
-        const Chevron = ownerHubOpen ? ChevronDown : ChevronRight;
+        const Chevron = showOwnerHub ? ChevronDown : ChevronRight;
         return (
           <li key={item.key} className="pt-1">
             <button
@@ -167,7 +171,7 @@ export function AdminSidebar() {
                   ? "bg-gradient-to-r from-pink-500/15 to-violet-500/15 text-foreground border-l-2 border-pink-400"
                   : "text-pink-300/80 hover:text-foreground hover:bg-pink-500/8"
               }`}
-              aria-expanded={ownerHubOpen}
+              aria-expanded={showOwnerHub}
             >
               <span className="flex items-center gap-3">
                 <GroupIcon size={16} strokeWidth={1.6} />
@@ -175,7 +179,7 @@ export function AdminSidebar() {
               </span>
               <Chevron size={14} strokeWidth={1.8} className="text-zinc-500" />
             </button>
-            {ownerHubOpen && (
+            {showOwnerHub && (
               <ul className="mt-1 space-y-0.5">
                 {item.children.map((child) => renderLeaf(child, onItemClick, true))}
               </ul>

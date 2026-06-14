@@ -109,7 +109,6 @@ export interface AdminVenue {
   sourceDate: string;
   contactConfidence: number;
   reviewStatus: ReviewStatus;
-  notes: string;
   tags: string[];
   lastContacted: string | null;
   nextFollowUp: string | null;
@@ -463,7 +462,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-03-15",
     contactConfidence: 9,
     reviewStatus: "Verified",
-    notes: "Top venue in DC. Hard to book without established draw. Start with support slots.",
     tags: ["premium", "high-capacity", "hip-hop", "latin"],
     lastContacted: "2026-05-10",
     nextFollowUp: "2026-06-10",
@@ -493,7 +491,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-02-20",
     contactConfidence: 8,
     reviewStatus: "Verified",
-    notes: "Iconic DC venue. Very selective on bookings. Need proven ticket sales or strong press.",
     tags: ["iconic", "indie", "hip-hop", "all-ages"],
     lastContacted: "2026-04-22",
     nextFollowUp: "2026-06-15",
@@ -523,7 +520,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-01-10",
     contactConfidence: 7,
     reviewStatus: "Verified",
-    notes: "Large venue. Realistic goal is support slot, not headline. Target for Tone Brady.",
     tags: ["premium", "large", "support-slot"],
     lastContacted: "2026-05-01",
     nextFollowUp: "2026-06-01",
@@ -553,7 +549,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-03-01",
     contactConfidence: 9,
     reviewStatus: "Verified",
-    notes: "Great for El Fuego Latin nights. Already has relationship through DJ Saint Noir.",
     tags: ["latin", "nightlife", "club", "mid-capacity"],
     lastContacted: "2026-05-18",
     nextFollowUp: "2026-06-05",
@@ -583,7 +578,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-04-12",
     contactConfidence: 7,
     reviewStatus: "Verified",
-    notes: "Great fit for Isabella Vega and Velvet Collective. Intimate, arts-focused venue.",
     tags: ["cultural", "intimate", "arts", "baltimore"],
     lastContacted: null,
     nextFollowUp: null,
@@ -613,7 +607,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-02-28",
     contactConfidence: 8,
     reviewStatus: "Verified",
-    notes: "Strong Baltimore indie venue. Good fit for Foolery, Velvet Collective. Already booked Mali Wave here.",
     tags: ["indie", "punk", "baltimore", "mid-capacity"],
     lastContacted: "2026-04-30",
     nextFollowUp: "2026-06-20",
@@ -643,7 +636,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-03-10",
     contactConfidence: 8,
     reviewStatus: "Verified",
-    notes: "Intimate Wharf venue. Excellent for Nyla Vale, Isabella Vega acoustic sets. Upscale crowd.",
     tags: ["intimate", "wharf", "upscale", "singer-songwriter"],
     lastContacted: "2026-05-05",
     nextFollowUp: "2026-06-05",
@@ -673,7 +665,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-04-20",
     contactConfidence: 6,
     reviewStatus: "Needs Review",
-    notes: "Major DC festival. Long shot for headline but support/emerging stage is realistic.",
     tags: ["festival", "major", "hip-hop", "large-scale"],
     lastContacted: null,
     nextFollowUp: null,
@@ -703,7 +694,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-03-05",
     contactConfidence: 9,
     reviewStatus: "Verified",
-    notes: "Intimate downtown DC lounge. Perfect for Nyla Vale, Kira Moon. Owner is responsive.",
     tags: ["lounge", "intimate", "rnb", "downtown"],
     lastContacted: "2026-05-20",
     nextFollowUp: "2026-06-03",
@@ -733,7 +723,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-04-01",
     contactConfidence: 6,
     reviewStatus: "Needs Review",
-    notes: "HBCU market entry point. Homecoming and spring fest are key booking windows.",
     tags: ["college", "hbcu", "hip-hop", "rnb"],
     lastContacted: null,
     nextFollowUp: null,
@@ -763,7 +752,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-04-18",
     contactConfidence: 7,
     reviewStatus: "Verified",
-    notes: "Upscale restaurant with dedicated live music space. Great for Isabella Vega, Nyla Vale.",
     tags: ["restaurant", "upscale", "jazz", "classical"],
     lastContacted: "2026-05-12",
     nextFollowUp: "2026-06-12",
@@ -793,7 +781,6 @@ export const demoVenues: AdminVenue[] = [
     sourceDate: "2026-04-05",
     contactConfidence: 8,
     reviewStatus: "Verified",
-    notes: "Key Latin promoter in PG County / DC. Books Latin nights at multiple venues. Priority contact for El Fuego.",
     tags: ["promoter", "latin", "pg-county", "multi-venue"],
     lastContacted: "2026-05-22",
     nextFollowUp: "2026-06-08",

@@ -1,5 +1,6 @@
 export interface Artist {
   slug: string;
+  epkUrl?: string;
   name: string;
   genre: string;
   category: string;

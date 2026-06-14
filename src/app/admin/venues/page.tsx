@@ -8,7 +8,7 @@ import { useVenues, triggerStoreUpdate } from "@/hooks/useAdminStore";
 import { createVenue, updateVenue, deleteVenue } from "@/lib/admin-store";
 import { getAdminSession, isOwnerAdmin } from "@/lib/admin-auth";
 import type { VenueType, ReviewStatus, RelationshipStatus, AdminVenue } from "@/lib/admin-data";
-import EditDrawer, { FieldText, FieldTextArea, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
+import EditDrawer, { FieldText, FieldSelect, FieldNumber, FieldTags } from "@/components/admin/EditDrawer";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const venueTypes: VenueType[] = ["Club", "Lounge", "Festival", "Theater", "College", "Restaurant/Bar", "Private Event Buyer", "Promoter", "Cultural Center", "Church/Event Hall", "Amphitheater", "Stadium", "Other"];
@@ -58,7 +58,6 @@ const defaultVenue: Partial<AdminVenue> = {
   sourceDate: new Date().toISOString().slice(0, 10),
   contactConfidence: 5,
   reviewStatus: "Needs Review",
-  notes: "",
   tags: [],
   lastContacted: null,
   nextFollowUp: null,
@@ -455,8 +454,6 @@ export default function VenuesPage() {
         <FieldSelect label="Relationship" value={editingVenue.relationshipStatus ?? "Cold"} onChange={(v) => patch("relationshipStatus", v)} options={relationStatusesForForm} />
         <FieldNumber label="Contact Confidence (1-10)" value={editingVenue.contactConfidence ?? 5} onChange={(v) => patch("contactConfidence", v)} />
         <FieldTags label="Tags" value={editingVenue.tags ?? []} onChange={(v) => patch("tags", v)} />
-        <FieldTextArea label="Notes" value={editingVenue.notes ?? ""} onChange={(v) => patch("notes", v)} />
-
         <button onClick={handleSave} className="w-full btn-gradient px-4 py-3 rounded-xl text-sm font-semibold mt-2">
           {editingId ? "Save Changes" : "Create Venue"}
         </button>
