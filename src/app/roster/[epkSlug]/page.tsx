@@ -25,7 +25,12 @@ function publicAssetUrl(metadata: unknown): string {
 
 function readLinks(input: unknown): GeneratedEpkLink[] {
   if (!input || typeof input !== "object" || Array.isArray(input)) return [];
-  const links = (input as Record<string, unknown>).links;
+  const record = input as Record<string, unknown>;
+  const artist =
+    record.artist && typeof record.artist === "object" && !Array.isArray(record.artist)
+      ? (record.artist as Record<string, unknown>)
+      : null;
+  const links = artist?.publicLinks ?? record.links;
   if (!Array.isArray(links)) return [];
   return links
     .filter(

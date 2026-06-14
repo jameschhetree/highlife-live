@@ -238,6 +238,7 @@ export default function EpksPage() {
   const [currentJobId, setCurrentJobId] = useState("");
   const [questions, setQuestions] = useState<FollowupQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [publishedEpkUrl, setPublishedEpkUrl] = useState("");
   const [generationRequested, setGenerationRequested] = useState<{
     jobId: string;
     prompt: string;
@@ -528,6 +529,36 @@ export default function EpksPage() {
     }
   }
 
+  async function publishGeneratedEpk(jobId: string) {
+    if (!data || submitting) return;
+    setSubmitting(true);
+    setFormError("");
+    setProgress("Publishing reviewed EPK media to the test site...");
+    try {
+      const response = await fetch(`/api/admin/epks/${jobId}/publish`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-epk-csrf": data.csrfToken },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Could not publish the generated EPK.");
+      }
+      setPublishedEpkUrl(String(payload.publishUrl ?? ""));
+      setProgress("");
+      await load();
+    } catch (error) {
+      setProgress("");
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Could not publish the generated EPK.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -740,6 +771,45 @@ export default function EpksPage() {
                     </pre>
                   </div>
                 </details>
+                <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-5">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-emerald-300">
+                    After Codex Integration
+                  </p>
+                  <h3 className="mt-1 font-display text-2xl uppercase">
+                    Publish reviewed EPK
+                  </h3>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    Use this only after the generated package has been reviewed,
+                    registered, and deployed to the test branch. It copies this
+                    job&apos;s approved media from private quarantine to public
+                    delivery and activates the EPK route.
+                  </p>
+                  {publishedEpkUrl ? (
+                    <Link
+                      href={publishedEpkUrl}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-emerald-200 hover:border-emerald-300/60"
+                    >
+                      <ExternalLink size={13} />
+                      View Published EPK
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={() =>
+                        void publishGeneratedEpk(generationRequested.jobId)
+                      }
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-emerald-200 hover:border-emerald-300/60 disabled:opacity-40"
+                    >
+                      {submitting ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={13} />
+                      )}
+                      Publish Reviewed EPK
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => {
