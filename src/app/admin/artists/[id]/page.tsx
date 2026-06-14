@@ -312,8 +312,6 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const socialLinks = Object.entries(artist.socials).filter(([, v]) => v);
-
   // Get profile photo from assets, fallback to artist.image
   const profilePhotoAsset = assets.find((a) => a.kind === "profile_photo");
   const profilePhotoUrl = profilePhotoAsset?.blobUrl || artist.image;
@@ -616,20 +614,8 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   </button>
                 )}
               </div>
-              {socialLinks.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {socialLinks.map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 capitalize">{key}</span>
-                      <span className="text-xs text-pink-300 inline-flex items-center gap-1">
-                        {value} <ExternalLink size={10} />
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
               {links.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-white/6">
+                <div className="space-y-2">
                   {links.map((link) => (
                     <div key={link.id} className="flex items-center justify-between">
                       <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">{link.title}</span>
@@ -655,7 +641,7 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
                   ))}
                 </div>
               )}
-              {socialLinks.length === 0 && links.length === 0 && (
+              {links.length === 0 && (
                 <p className="text-sm text-zinc-600 italic">No links added yet.</p>
               )}
             </motion.div>
