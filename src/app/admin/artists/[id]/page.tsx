@@ -372,9 +372,12 @@ export default function ArtistDetailPage({ params }: { params: Promise<{ id: str
           >
             <Megaphone size={14} /> Create Campaign
           </Link>
-          <button className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2">
+          <Link
+            href={`/admin/epks?artist=${id}`}
+            className="px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 bg-black/40 text-sm text-zinc-300 hover:text-foreground transition-colors inline-flex items-center gap-2"
+          >
             <FileImage size={14} /> Generate EPK
-          </button>
+          </Link>
           <button
             onClick={() => {
               const note = prompt("Add a quick internal note for this artist:");

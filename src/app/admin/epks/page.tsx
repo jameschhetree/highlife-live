@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import {
   AlertTriangle,
@@ -176,6 +177,7 @@ function parseManualPrompt(value: unknown): string {
 }
 
 export default function EpksPage() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<EpkData | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessError, setAccessError] = useState("");
@@ -223,6 +225,16 @@ export default function EpksPage() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [load]);
+
+  useEffect(() => {
+    const artistParam = searchParams.get("artist");
+    if (!artistParam || !data?.artists) return;
+    const match = data.artists.find((a) => a.id === artistParam);
+    if (match) {
+      setForm((f) => ({ ...f, artistName: match.name }));
+      setFormOpen(true);
+    }
+  }, [data?.artists, searchParams]);
 
   const selectedArtist = useMemo(
     () =>
