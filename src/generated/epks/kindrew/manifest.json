@@ -1,0 +1,35 @@
+{
+  "contractVersion": 1,
+  "jobId": "cmqe4n9fp000104jv5ttj19v5",
+  "artistId": "cmqd7c8qu000004l8byj0bh5z",
+  "artistSlug": "kindrew",
+  "routeSlug": "kindrew-epk",
+  "componentExport": "EpkPage",
+  "cssFile": "epk.css",
+  "assetsUsed": [
+    "cmqe4ozs4000704jvba9etra3",
+    "cmqe4qzhi000904jvxfpyrras",
+    "epk_asset_manual_1781463310108_kg4dld",
+    "epk_asset_manual_1781463310488_d7f43t"
+  ],
+  "externalLinksUsed": [
+    "https://www.tiktok.com/@kindrewshinobi",
+    "https://www.instagram.com/kindrew_",
+    "https://www.youtube.com/@kindrew6900?",
+    "https://music.apple.com/us/artist/kin-drew/1495915665",
+    "https://open.spotify.com/artist/11wrKAt51IaJMhsQ2ZN2vC?"
+  ],
+  "requiredRoutes": {
+    "roster": "/roster",
+    "events": "/events?artist=kindrew",
+    "booking": "/book?artist=kindrew"
+  },
+  "dependencies": [
+    "react",
+    "next",
+    "gsap",
+    "lucide-react"
+  ],
+  "requiresDependencyApproval": false,
+  "generatedAt": "2026-06-14T16:00:00-04:00"
+}
