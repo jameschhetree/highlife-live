@@ -11,6 +11,7 @@ import {
   epkAssetLinkSigningConfigured,
 } from "@/lib/epk/signed-asset-links";
 import { writeEpkAudit } from "@/lib/epk/audit";
+import { buildEpkWorkspaceFilename } from "@/lib/epk/constants";
 import {
   epkEmailConfigured,
   epkWorkOrderAddress,
@@ -137,11 +138,32 @@ export async function POST(
   if (!job) {
     return Response.json({ error: "EPK job not found." }, { status: 404 });
   }
+  const baseUrl = new URL(request.url).origin;
+  const acceptedAssets = job.assets.filter(
+    (asset) => asset.scanStatus !== "Rejected",
+  );
+  const describeAsset = (asset: (typeof acceptedAssets)[number]) => ({
+    id: asset.id,
+    kind: asset.kind,
+    filename: asset.filename,
+    workspaceFilename: buildEpkWorkspaceFilename({
+      assetId: asset.id,
+      filename: asset.filename,
+    }),
+  });
   if (job.status === "GenerationRequested") {
+    const workspaceAssets = acceptedAssets.map((asset) => ({
+      ...describeAsset(asset),
+      downloadUrl: new URL(
+        `/api/admin/epks/${job.id}/assets/${asset.id}`,
+        baseUrl,
+      ).toString(),
+    }));
     return Response.json({
       job,
       designPrompt: existingManualPrompt(job.input),
       emailedTo: epkWorkOrderAddress(),
+      workspaceAssets,
       status: "GenerationRequested",
     });
   }
@@ -173,6 +195,15 @@ export async function POST(
       { status: 400 },
     );
   }
+  if (acceptedAssets.length === 0) {
+    return Response.json(
+      {
+        error:
+          "Upload at least one supporting photo, video, audio file, or PDF before requesting generation. The roster profile picture does not count.",
+      },
+      { status: 400 },
+    );
+  }
 
   const missingConfiguration = [
     ...(process.env.OPENAI_API_KEY ? [] : ["OPENAI_API_KEY"]),
@@ -193,6 +224,15 @@ export async function POST(
       { status: 503 },
     );
   }
+
+  const workspaceAssets = acceptedAssets.map((asset) => ({
+    ...describeAsset(asset),
+    downloadUrl: createSignedAssetDownloadUrl({
+      baseUrl,
+      jobId: job.id,
+      assetId: asset.id,
+    }),
+  }));
 
   let prompt = existingManualPrompt(job.input);
   let reviewedImageAssetIds: string[] = [];
@@ -256,27 +296,13 @@ export async function POST(
     );
   }
 
-  const baseUrl = new URL(request.url).origin;
-  const emailAssets = job.assets
-    .filter((asset) => asset.scanStatus !== "Rejected")
-    .map((asset) => ({
-      id: asset.id,
-      kind: asset.kind,
-      filename: asset.filename,
-      downloadUrl: createSignedAssetDownloadUrl({
-        baseUrl,
-        jobId: job.id,
-        assetId: asset.id,
-      }),
-    }));
-
   let emailRunId: string;
   try {
     emailRunId = await sendEpkWorkOrder({
       jobId: job.id,
       artistName: job.epk.artist.name,
       prompt,
-      assets: emailAssets,
+      assets: workspaceAssets,
     });
   } catch (error) {
     await prisma.ePKGenerationJob.update({
@@ -331,6 +357,7 @@ export async function POST(
     job: updated,
     designPrompt: prompt,
     emailedTo: epkWorkOrderAddress(),
+    workspaceAssets,
     status: "GenerationRequested",
   });
 }

@@ -52,6 +52,13 @@ export function sanitizeEpkFilename(filename: string): string {
   return `${safeBase}${safeExtension}`.slice(0, 120);
 }
 
+export function buildEpkWorkspaceFilename(input: {
+  assetId: string;
+  filename: string;
+}): string {
+  return `${input.assetId}-${sanitizeEpkFilename(input.filename)}`;
+}
+
 export function buildEpkAssetPath(input: {
   jobId: string;
   kind: EpkAssetKind;
