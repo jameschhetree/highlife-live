@@ -21,7 +21,7 @@ export function StagedActionModal({
   onClose,
   title,
   body,
-  targetPhase = "Phase 4.5",
+  targetPhase = "a future update",
   icon,
 }: StagedActionModalProps) {
   return (

@@ -176,7 +176,6 @@ export default function ReportsPage() {
     return (
       <AgentStagedNotice
         pageTitle="Reports"
-        targetPhase="Phase 5.0"
         description="Analytics across the platform are owner-only this pass. Your scoped activity surfaces (Dashboard, Inquiries, Bookings, Auditions) already roll up your work."
       />
     );

@@ -17,14 +17,14 @@ interface AgentStagedNoticeProps {
   pageTitle: string;
   /** One-line description of what this tab will do once wired for agents. */
   description: string;
-  /** Defaults to Phase 5.5. */
+  /** Optional timeline label shown in the staged notice. */
   targetPhase?: string;
 }
 
 export function AgentStagedNotice({
   pageTitle,
   description,
-  targetPhase = "Phase 5.5",
+  targetPhase = "a future update",
 }: AgentStagedNoticeProps) {
   return (
     <div className="min-h-screen text-foreground">
@@ -42,7 +42,7 @@ export function AgentStagedNotice({
               <Sparkles size={20} className="text-pink-200" />
             </div>
             <div>
-              <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">Agent preview — {targetPhase}</p>
+              <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">Agent preview — coming soon</p>
               <h2 className="mt-1 font-display uppercase text-xl tracking-tight">Coming for agents</h2>
             </div>
           </div>

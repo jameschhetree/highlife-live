@@ -478,7 +478,6 @@ export default function EventsPage() {
         open={!!stagedTicketEvent}
         onClose={() => setStagedTicketEvent(null)}
         title="Tickets coming soon"
-        targetPhase="Phase 4.5"
         icon={<Ticket size={16} className="text-pink-200" />}
         body={
           stagedTicketEvent ? (

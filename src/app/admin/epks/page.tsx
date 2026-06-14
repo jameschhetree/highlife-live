@@ -38,7 +38,7 @@ export default function EpksPage() {
     return (
       <AgentStagedNotice
         pageTitle="EPKs"
-        description="EPK generation is owner-only today. Agent-facing EPK approvals + the generation pipeline ship in Phase 5.5 after the artist-conversion workflow lands."
+        description="EPK generation is owner-only today. Agent-facing EPK approvals + the generation pipeline coming in a future update after the artist-conversion workflow lands."
       />
     );
   }
@@ -177,12 +177,11 @@ export default function EpksPage() {
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}
         title="EPK generator coming soon"
-        targetPhase="Phase 5.5"
         icon={<FileImage size={16} className="text-pink-200" />}
         body={
           <>
             <p>
-              Automatic EPK generation — assembling artist bio, press quotes, social stats, performance highlights, and pulling cover art — ships in Phase 5.5.
+              Automatic EPK generation — assembling artist bio, press quotes, social stats, performance highlights, and pulling cover art — coming soon.
             </p>
             <p className="mt-2 text-xs text-zinc-400">
               No AI drafting is wired yet. For now, EPK rows can be created and edited manually via the artist detail screen.

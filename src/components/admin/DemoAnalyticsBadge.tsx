@@ -12,7 +12,7 @@ interface DemoAnalyticsBadgeProps {
 }
 
 export function DemoAnalyticsBadge({
-  hint = "Demo analytics — live reporting lands in Phase 4.5",
+  hint = "Demo analytics — live reporting coming soon",
   size = "sm",
   className = "",
 }: DemoAnalyticsBadgeProps) {
@@ -32,7 +32,7 @@ export function DemoAnalyticsBadge({
 /** Banner version for the top of pages with mostly-static content (e.g. /admin/reports). */
 export function DemoAnalyticsBanner({
   title = "Demo Analytics",
-  body = "Live reporting wiring lands in Phase 4.5. Numbers below are illustrative; do not present as production metrics.",
+  body = "Live reporting coming soon. Numbers below are illustrative; do not present as production metrics.",
 }: {
   title?: string;
   body?: string;
