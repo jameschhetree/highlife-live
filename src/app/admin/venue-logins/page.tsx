@@ -144,12 +144,24 @@ export default function VenueLoginsPage() {
 
   const updateRequestStatus = async (id: string, status: string) => {
     if (!session) return;
-    await fetch("/api/admin/venue-logins/requests", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-email": session.email },
-      body: JSON.stringify({ id, status }),
-    });
-    fetchRequests();
+    try {
+      const res = await fetch("/api/admin/venue-logins/requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-admin-email": session.email },
+        body: JSON.stringify({ id, status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "Unknown error" }));
+        console.error("[updateRequestStatus] failed:", res.status, data);
+        alert(`Failed to update status: ${data.error || res.statusText}`);
+        return;
+      }
+    } catch (err) {
+      console.error("[updateRequestStatus] network error:", err);
+      alert("Network error — could not update status. Please try again.");
+      return;
+    }
+    await fetchRequests();
   };
 
   const deleteRequest = async (id: string) => {

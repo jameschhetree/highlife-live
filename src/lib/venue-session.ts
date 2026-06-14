@@ -4,15 +4,27 @@ import { cookies } from "next/headers";
 const COOKIE_NAME = "hl_venue_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
+// Runtime-generated fallback — survives the process lifetime but rotates on
+// cold-start.  Only used when VENUE_SESSION_SECRET env var is missing.
+let _runtimeFallback: string | null = null;
+
 function getSecret(): string {
   const secret = process.env.VENUE_SESSION_SECRET;
   if (secret) return secret;
 
-  // In production, VENUE_SESSION_SECRET must be set -- no fallbacks.
+  // In production / preview without the env var, generate a per-process random
+  // secret so the app stays up (existing sessions will invalidate on cold-start,
+  // which is acceptable — better than a hard crash that blocks ALL logins).
   if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "VENUE_SESSION_SECRET is required in production. Set it in your environment variables."
-    );
+    if (!_runtimeFallback) {
+      _runtimeFallback = crypto.randomBytes(32).toString("hex");
+      console.warn(
+        "[venue-session] VENUE_SESSION_SECRET is not set — using a runtime-generated " +
+        "fallback. Sessions will not survive cold-starts. Set VENUE_SESSION_SECRET " +
+        "in your Vercel environment variables for all environments (Production + Preview)."
+      );
+    }
+    return _runtimeFallback;
   }
 
   // Dev-only fallback so local development works without env config.

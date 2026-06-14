@@ -55,11 +55,20 @@ export async function PATCH(request: NextRequest) {
     return Response.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const row = await prisma.partnerLoginRequest.update({
-    where: { id: body.id },
-    data: { status: body.status },
-  });
-  return Response.json(row);
+  try {
+    const row = await prisma.partnerLoginRequest.update({
+      where: { id: body.id },
+      data: { status: body.status },
+    });
+    return Response.json(row);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Update failed";
+    if (message.includes("Record to update not found") || message.includes("RecordNotFound")) {
+      return Response.json({ error: "Request not found" }, { status: 404 });
+    }
+    console.error("[venue-login-requests PATCH]", err);
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
 
 // Hard delete a request row (owner-admin only). Use for spam / mistake submissions.
