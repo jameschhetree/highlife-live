@@ -119,6 +119,7 @@ export function dbVenueToAdmin(v: PrismaVenue): AdminVenue {
     city: v.city,
     state: v.state,
     region: v.region,
+    zipCode: v.zipCode,
     venueType: v.venueType as AdminVenue["venueType"],
     capacity: v.capacity,
     typicalGenres: v.typicalGenres,
@@ -157,6 +158,7 @@ export function adminVenueToDbInput(v: Partial<AdminVenue>) {
   if (v.city !== undefined) data.city = v.city;
   if (v.state !== undefined) data.state = v.state;
   if (v.region !== undefined) data.region = v.region;
+  if (v.zipCode !== undefined) data.zipCode = v.zipCode;
   if (v.venueType !== undefined) data.venueType = v.venueType;
   if (v.capacity !== undefined) data.capacity = v.capacity;
   if (v.typicalGenres !== undefined) data.typicalGenres = v.typicalGenres;
