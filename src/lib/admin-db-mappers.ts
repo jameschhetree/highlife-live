@@ -115,6 +115,7 @@ export function dbVenueToAdmin(v: PrismaVenue): AdminVenue {
     phone: v.phone,
     website: v.website,
     instagram: v.instagram,
+    facebook: (v as PrismaVenue & { facebook?: string }).facebook ?? "",
     address: v.address,
     city: v.city,
     state: v.state,
@@ -153,6 +154,7 @@ export function adminVenueToDbInput(v: Partial<AdminVenue>) {
   if (v.phone !== undefined) data.phone = v.phone;
   if (v.website !== undefined) data.website = v.website;
   if (v.instagram !== undefined) data.instagram = v.instagram;
+  if (v.facebook !== undefined) data.facebook = v.facebook;
   if (v.address !== undefined) data.address = v.address;
   if (v.city !== undefined) data.city = v.city;
   if (v.state !== undefined) data.state = v.state;

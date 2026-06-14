@@ -94,6 +94,7 @@ export interface AdminVenue {
   phone: string;
   website: string;
   instagram: string;
+  facebook: string;
   address: string;
   city: string;
   state: string;
@@ -448,6 +449,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0901",
     website: "echostage.com",
     instagram: "@echostage",
+    facebook: "",
     address: "2135 Queens Chapel Rd NE",
     city: "Washington",
     state: "DC",
@@ -477,6 +479,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0930",
     website: "930.com",
     instagram: "@930club",
+    facebook: "",
     address: "815 V St NW",
     city: "Washington",
     state: "DC",
@@ -506,6 +509,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0800",
     website: "theanthemdc.com",
     instagram: "@theanthemdc",
+    facebook: "",
     address: "901 Wharf St SW",
     city: "Washington",
     state: "DC",
@@ -535,6 +539,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0444",
     website: "ultrabardc.com",
     instagram: "@ultrabardc",
+    facebook: "",
     address: "911 F St NW",
     city: "Washington",
     state: "DC",
@@ -564,6 +569,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(410) 555-0276",
     website: "creativealliance.org",
     instagram: "@creativealliance",
+    facebook: "",
     address: "3134 Eastern Ave",
     city: "Baltimore",
     state: "MD",
@@ -593,6 +599,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(410) 555-0662",
     website: "theottobar.com",
     instagram: "@ottobar",
+    facebook: "",
     address: "2549 N Howard St",
     city: "Baltimore",
     state: "MD",
@@ -622,6 +629,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0333",
     website: "pearlstreetwarehouse.com",
     instagram: "@pearlstwarehouse",
+    facebook: "",
     address: "33 Pearl St SW",
     city: "Washington",
     state: "DC",
@@ -651,6 +659,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0777",
     website: "broccolicity.com",
     instagram: "@broccolicity",
+    facebook: "",
     address: "RFK Festival Grounds",
     city: "Washington",
     state: "DC",
@@ -680,6 +689,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0172",
     website: "1722nightclub.com",
     instagram: "@1722dc",
+    facebook: "",
     address: "1722 I St NW",
     city: "Washington",
     state: "DC",
@@ -709,6 +719,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0411",
     website: "howard.edu",
     instagram: "@howardu",
+    facebook: "",
     address: "2455 6th St NW",
     city: "Washington",
     state: "DC",
@@ -738,6 +749,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(202) 555-0614",
     website: "thehamiltondc.com",
     instagram: "@thehamiltondc",
+    facebook: "",
     address: "600 14th St NW",
     city: "Washington",
     state: "DC",
@@ -767,6 +779,7 @@ export const demoVenues: AdminVenue[] = [
     phone: "(301) 555-0888",
     website: "reyesentertainment.com",
     instagram: "@reyesentdc",
+    facebook: "",
     address: "P.O. Box 5541",
     city: "Hyattsville",
     state: "MD",
