@@ -76,14 +76,7 @@ function getRightAngle(t: number): number {
 }
 
 function getMiddleAngle(t: number): number {
-  const phase = t % 6;
-  if (phase < 1.5) {
-    return lerp(0, -30, easeInOut(phase / 1.5));
-  } else if (phase < 4.5) {
-    return lerp(-30, 30, easeInOut((phase - 1.5) / 3));
-  } else {
-    return lerp(30, 0, easeInOut((phase - 4.5) / 1.5));
-  }
+  return -30 * Math.sin(2 * Math.PI * t / 6);
 }
 
 const SPOTS = [
