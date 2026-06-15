@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useTheme } from "@/components/ThemeProvider";
+import { usePathname } from "next/navigation";
 
 const COLORS: [number, number, number][] = [
   [59, 130, 246],   // blue
@@ -11,10 +12,6 @@ const COLORS: [number, number, number][] = [
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
-}
-
-function easeInOut(t: number) {
-  return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -86,23 +83,26 @@ const SPOTS = [
 ];
 
 export function HeroLights() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const beamRefs = useRef<(HTMLDivElement | null)[]>([]);
   const { animationsEnabled } = useTheme();
+  const pathname = usePathname();
+
+  const setBeamRef = useCallback((i: number) => (el: HTMLDivElement | null) => {
+    beamRefs.current[i] = el;
+  }, []);
 
   useEffect(() => {
     if (!animationsEnabled) return;
-    const container = containerRef.current;
-    if (!container) return;
 
-    const beams = container.querySelectorAll<HTMLDivElement>("[data-spotlight]");
     let raf: number;
     const startTime = performance.now();
 
     function animate(now: number) {
       const elapsed = (now - startTime) / 1000;
 
-      beams.forEach((beam, i) => {
-        const cfg = SPOTS[i];
+      SPOTS.forEach((cfg, i) => {
+        const beam = beamRefs.current[i];
+        if (!beam) return;
         const angle = cfg.getAngle(elapsed);
         const [r, g, b] = lerpColor(elapsed, cfg.colorPhase);
 
@@ -115,13 +115,12 @@ export function HeroLights() {
 
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
-  }, [animationsEnabled]);
+  }, [animationsEnabled, pathname]);
 
   if (!animationsEnabled) return null;
 
   return (
     <div
-      ref={containerRef}
       aria-hidden
       className="absolute top-0 left-0 right-0 h-[75vh] pointer-events-none"
       style={{ zIndex: 1 }}
@@ -130,6 +129,7 @@ export function HeroLights() {
         <div
           key={i}
           data-spotlight
+          ref={setBeamRef(i)}
           className="absolute"
           style={{
             top: "-2%",
