@@ -34,7 +34,7 @@ export function CookieBanner() {
       aria-label="Cookie notice"
       className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:px-6 sm:pb-6 pointer-events-none"
     >
-      <div className="max-w-2xl mx-auto glass-card rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 pointer-events-auto border border-white/10">
+      <div className="max-w-2xl mx-auto bg-zinc-900 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 pointer-events-auto border border-zinc-700/60 shadow-2xl">
         <p className="flex-1 text-[13px] text-silver leading-relaxed">
           This site uses essential cookies to operate. No advertising or tracking
           cookies are used.{" "}
