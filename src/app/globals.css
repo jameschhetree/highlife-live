@@ -25,12 +25,12 @@
 /* ─── Light theme overrides ─── */
 [data-theme="light"] {
   --color-background: #f5f3f0;
-  --color-foreground: #1a1a1a;
+  --color-foreground: #111111;
   --color-charcoal: #e8e6e3;
-  --color-silver: #666666;
+  --color-silver: #3d3d3d;
   --color-soft-gray: #f0eeeb;
-  --color-muted: #888888;
-  --color-border: #d4d2cf;
+  --color-muted: #555555;
+  --color-border: #c8c5c0;
   --color-card: #ffffff;
   --color-card-hover: #f8f7f5;
 }
@@ -226,6 +226,32 @@ html.no-animations[data-theme="light"] .bg-radial-atmosphere {
   background: rgba(0,0,0,0.08);
   color: #1a1a1a;
   border-color: rgba(0,0,0,0.22);
+}
+
+/* ─── Light mode: override hardcoded dark-first Tailwind classes ─── */
+[data-theme="light"] .text-zinc-300 { color: #444 !important; }
+[data-theme="light"] .text-zinc-400 { color: #555 !important; }
+[data-theme="light"] .text-zinc-500 { color: #666 !important; }
+[data-theme="light"] .text-white\/85,
+[data-theme="light"] .text-white\/60,
+[data-theme="light"] .text-white\/90 { color: #222 !important; }
+[data-theme="light"] .bg-black\/40,
+[data-theme="light"] .bg-black\/45,
+[data-theme="light"] .bg-black\/55 { background-color: rgba(0,0,0,0.06) !important; }
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/8,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/18,
+[data-theme="light"] .border-white\/20 { border-color: rgba(0,0,0,0.12) !important; }
+[data-theme="light"] .hover\:border-white\/20:hover,
+[data-theme="light"] .hover\:border-white\/25:hover { border-color: rgba(0,0,0,0.22) !important; }
+[data-theme="light"] .decoration-white\/40 { text-decoration-color: rgba(0,0,0,0.25) !important; }
+[data-theme="light"] .hover\:decoration-white\/80:hover { text-decoration-color: rgba(0,0,0,0.5) !important; }
+[data-theme="light"] .bg-charcoal\/50,
+[data-theme="light"] .bg-charcoal\/30 { background-color: rgba(0,0,0,0.03) !important; }
+[data-theme="light"] ::selection {
+  background: rgba(168, 85, 247, 0.25);
+  color: #111;
 }
 
 /* Marquee */
