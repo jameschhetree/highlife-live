@@ -139,6 +139,8 @@ export function HeroLights() {
             marginLeft: "-220px",
             transformOrigin: "50% 0%",
             clipPath: "polygon(50% 0%, 10% 100%, 90% 100%)",
+            maskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
             filter: "blur(40px)",
             willChange: "transform, background",
           }}
