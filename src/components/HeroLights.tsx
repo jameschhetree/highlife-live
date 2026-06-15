@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const LIGHTS = [
-  { x: 25, y: 6, size: 280, duration: 4, driftX: 18, driftY: 5, r: 255, g: 160, b: 50 },
-  { x: 50, y: 8, size: 240, duration: 4, driftX: 14, driftY: 4, r: 253, g: 200, b: 60 },
-  { x: 72, y: 5, size: 260, duration: 4, driftX: 16, driftY: 6, r: 255, g: 140, b: 40 },
+  { x: 20, y: 18, size: 340, duration: 4, driftX: 12, driftY: 4, r: 255, g: 160, b: 50 },
+  { x: 48, y: 12, size: 300, duration: 4, driftX: 10, driftY: 3, r: 253, g: 190, b: 55 },
+  { x: 78, y: 15, size: 320, duration: 4, driftX: 11, driftY: 5, r: 255, g: 145, b: 45 },
 ];
 
 export function HeroLights() {
@@ -33,15 +33,15 @@ export function HeroLights() {
         const dx = Math.sin((t + phase) * Math.PI * 2) * cfg.driftX;
         const dy = Math.cos((t + phase) * Math.PI * 2 * 0.6) * cfg.driftY;
 
-        const warmShift = Math.sin((t + phase * 1.3) * Math.PI * 2) * 15;
-        const r = Math.min(255, cfg.r + warmShift * 0.3);
-        const g = Math.max(100, cfg.g + warmShift);
-        const b = Math.max(20, cfg.b + warmShift * 0.5);
+        const warmShift = Math.sin((t + phase * 1.3) * Math.PI * 2) * 10;
+        const r = Math.min(255, cfg.r + warmShift * 0.2);
+        const g = Math.max(120, cfg.g + warmShift * 0.7);
+        const b = Math.max(25, cfg.b + warmShift * 0.3);
 
-        const pulse = 0.45 + Math.sin((t + phase) * Math.PI * 2 * 1.2) * 0.1;
+        const pulse = 0.22 + Math.sin((t + phase) * Math.PI * 2 * 1.2) * 0.08;
 
         orb.style.transform = `translate(${dx}px, ${dy}px)`;
-        orb.style.background = `radial-gradient(circle, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${pulse}) 0%, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.12) 45%, transparent 70%)`;
+        orb.style.background = `radial-gradient(circle, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${pulse}) 0%, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.06) 50%, transparent 75%)`;
       });
 
       raf = requestAnimationFrame(animate);
@@ -72,7 +72,7 @@ export function HeroLights() {
             top: `${light.y}%`,
             marginLeft: -light.size / 2,
             marginTop: -light.size / 2,
-            filter: "blur(35px)",
+            filter: "blur(55px)",
             willChange: "transform, background",
           }}
         />
