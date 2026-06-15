@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { GsapParallaxImage } from "@/components/GsapParallaxImage";
+import { HeroLights } from "@/components/HeroLights";
 import type { Artist } from "@/lib/data";
 
 const verticals = ["Live Events", "Music", "Culture", "Comedy", "Entertainment"];
@@ -33,6 +34,9 @@ export default function HomePage() {
     <div>
       {/* Hero — vibrant atmosphere + glass card centerpiece */}
       <section className="relative min-h-[100svh] flex items-center justify-center bg-radial-atmosphere pt-32 pb-24 sm:pt-28 sm:pb-20 overflow-x-clip">
+        {/* Three ambient lights — looping animation at top of hero */}
+        <HeroLights />
+
         {/* Atmospheric noise overlay */}
         <div
           aria-hidden
