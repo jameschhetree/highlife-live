@@ -17,40 +17,6 @@ function easeInOut(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
 
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
-  }
-  return [h, s, l];
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  if (s === 0) return [l * 255, l * 255, l * 255];
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return [
-    hue2rgb(p, q, h + 1 / 3) * 255,
-    hue2rgb(p, q, h) * 255,
-    hue2rgb(p, q, h - 1 / 3) * 255,
-  ];
-}
-
 function lerpColor(t: number, phase: number): [number, number, number] {
   const cycleTime = 6;
   const p = ((t / cycleTime) + phase / 3) % 1;
@@ -58,15 +24,15 @@ function lerpColor(t: number, phase: number): [number, number, number] {
   const i = Math.floor(idx) % 3;
   const frac = idx - Math.floor(idx);
   const next = (i + 1) % 3;
-  const r = lerp(COLORS[i][0], COLORS[next][0], frac);
-  const g = lerp(COLORS[i][1], COLORS[next][1], frac);
-  const b = lerp(COLORS[i][2], COLORS[next][2], frac);
-  const [h, s, l] = rgbToHsl(r, g, b);
-  return hslToRgb(h, Math.max(s, 0.75), l);
+  return [
+    lerp(COLORS[i][0], COLORS[next][0], frac),
+    lerp(COLORS[i][1], COLORS[next][1], frac),
+    lerp(COLORS[i][2], COLORS[next][2], frac),
+  ];
 }
 
 function getLeftAngle(t: number): number {
-  const p = (1 - Math.cos(2 * Math.PI * t / 7)) / 2;
+  const p = (1 - Math.cos(2 * Math.PI * t / 4)) / 2;
   return lerp(-45, 10, p);
 }
 
@@ -114,7 +80,7 @@ export function HeroLights() {
         const [r, g, b] = lerpColor(elapsed, cfg.colorPhase);
 
         beam.style.transform = `rotate(${angle}deg)`;
-        beam.style.background = `linear-gradient(180deg, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.22) 0%, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.09) 45%, transparent 82%)`;
+        beam.style.background = `linear-gradient(180deg, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.18) 0%, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.06) 45%, transparent 80%)`;
       });
 
       raf = requestAnimationFrame(animate);
@@ -130,7 +96,7 @@ export function HeroLights() {
     <div
       ref={containerRef}
       aria-hidden
-      className="absolute top-0 left-0 right-0 h-[75vh] pointer-events-none overflow-hidden"
+      className="absolute top-0 left-0 right-0 h-[65vh] pointer-events-none overflow-hidden"
       style={{ zIndex: 1 }}
     >
       {SPOTS.map((spot, i) => (
@@ -141,12 +107,12 @@ export function HeroLights() {
           style={{
             top: "-2%",
             left: `${spot.x}%`,
-            width: "440px",
-            height: "66vh",
-            marginLeft: "-220px",
+            width: "420px",
+            height: "58vh",
+            marginLeft: "-210px",
             transformOrigin: "50% 0%",
-            clipPath: "polygon(50% 0%, 10% 100%, 90% 100%)",
-            filter: "blur(40px)",
+            clipPath: "polygon(50% 0%, 12% 100%, 88% 100%)",
+            filter: "blur(30px)",
             willChange: "transform, background",
           }}
         />
