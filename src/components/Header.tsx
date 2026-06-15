@@ -27,6 +27,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showAnimTip, setShowAnimTip] = useState(false);
   const { theme, setTheme, animationsEnabled, setAnimationsEnabled } = useTheme();
   const hidden =
     pathname?.startsWith("/admin") ||
@@ -44,6 +45,16 @@ export function Header() {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
     };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname !== "/") { setShowAnimTip(false); return; }
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("hll_seen_anim_tip")) return;
+    setShowAnimTip(true);
+    localStorage.setItem("hll_seen_anim_tip", "1");
+    const timer = setTimeout(() => setShowAnimTip(false), 10000);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // Admin and standalone EPK microsites have their own shells.
@@ -89,6 +100,24 @@ export function Header() {
                 <Zap size={14} className="opacity-50" />
               )}
             </button>
+
+            {/* First-time animation tip bubble */}
+            <AnimatePresence>
+              {showAnimTip && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  className="absolute left-2 top-14 z-50 hidden sm:block"
+                >
+                  <div className="relative bg-white text-neutral-900 text-[11px] tracking-wide font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-white rotate-45" />
+                    Turn off animations
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Theme toggle — to the left of logo */}
             <button
