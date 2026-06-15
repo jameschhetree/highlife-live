@@ -80,9 +80,9 @@ function getMiddleAngle(t: number): number {
 }
 
 const SPOTS = [
-  { x: 22, colorPhase: 2, getAngle: getLeftAngle },
-  { x: 50, colorPhase: 1, getAngle: getMiddleAngle },
-  { x: 78, colorPhase: 0, getAngle: getRightAngle },
+  { x: 22, colorPhase: 2, getAngle: getLeftAngle, initAngle: -45, initColor: COLORS[2] },
+  { x: 50, colorPhase: 1, getAngle: getMiddleAngle, initAngle: 0, initColor: COLORS[1] },
+  { x: 78, colorPhase: 0, getAngle: getRightAngle, initAngle: 45, initColor: COLORS[0] },
 ];
 
 export function HeroLights() {
@@ -123,7 +123,7 @@ export function HeroLights() {
     <div
       ref={containerRef}
       aria-hidden
-      className="absolute top-0 left-0 right-0 h-[75vh] pointer-events-none overflow-hidden"
+      className="absolute top-0 left-0 right-0 h-[75vh] pointer-events-none"
       style={{ zIndex: 1 }}
     >
       {SPOTS.map((spot, i) => (
@@ -138,6 +138,8 @@ export function HeroLights() {
             height: "66vh",
             marginLeft: "-220px",
             transformOrigin: "50% 0%",
+            transform: `rotate(${spot.initAngle}deg)`,
+            background: `linear-gradient(180deg, rgba(${spot.initColor[0]},${spot.initColor[1]},${spot.initColor[2]},0.22) 0%, rgba(${spot.initColor[0]},${spot.initColor[1]},${spot.initColor[2]},0.09) 45%, transparent 82%)`,
             clipPath: "polygon(50% 0%, 10% 100%, 90% 100%)",
             maskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
