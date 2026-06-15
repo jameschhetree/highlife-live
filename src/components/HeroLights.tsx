@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const LIGHTS = [
-  { x: 18, color: [168, 85, 247], size: 220, duration: 12, driftX: 8, driftY: 3 },
-  { x: 50, color: [236, 72, 153], size: 180, duration: 15, driftX: 10, driftY: 4 },
-  { x: 80, color: [56, 189, 248], size: 200, duration: 13, driftX: 7, driftY: 3.5 },
+  { x: 15, size: 420, duration: 14, driftX: 30, driftY: 12 },
+  { x: 50, size: 380, duration: 18, driftX: 25, driftY: 10 },
+  { x: 85, size: 400, duration: 16, driftX: 28, driftY: 14 },
 ];
 
 const COLOR_CYCLE = [
@@ -27,7 +27,7 @@ export function HeroLights() {
     if (!container) return;
 
     const orbs = container.querySelectorAll<HTMLDivElement>("[data-hero-light]");
-    const frames: number[] = [];
+    let raf: number;
     const startTime = performance.now();
 
     function animate(now: number) {
@@ -36,9 +36,10 @@ export function HeroLights() {
       orbs.forEach((orb, i) => {
         const cfg = LIGHTS[i];
         const t = elapsed / cfg.duration;
-        const colorIdx = Math.floor((elapsed / 8) + i) % COLOR_CYCLE.length;
+
+        const colorIdx = Math.floor((elapsed / 6) + i * 1.7) % COLOR_CYCLE.length;
         const nextIdx = (colorIdx + 1) % COLOR_CYCLE.length;
-        const colorT = ((elapsed / 8) + i) % 1;
+        const colorT = ((elapsed / 6) + i * 1.7) % 1;
 
         const r = Math.round(COLOR_CYCLE[colorIdx][0] + (COLOR_CYCLE[nextIdx][0] - COLOR_CYCLE[colorIdx][0]) * colorT);
         const g = Math.round(COLOR_CYCLE[colorIdx][1] + (COLOR_CYCLE[nextIdx][1] - COLOR_CYCLE[colorIdx][1]) * colorT);
@@ -46,17 +47,17 @@ export function HeroLights() {
 
         const dx = Math.sin(t * Math.PI * 2) * cfg.driftX;
         const dy = Math.cos(t * Math.PI * 2 * 0.7) * cfg.driftY;
-        const pulse = 0.35 + Math.sin(t * Math.PI * 2 * 1.3) * 0.15;
+        const pulse = 0.55 + Math.sin(t * Math.PI * 2 * 1.3) * 0.2;
 
         orb.style.transform = `translate(${dx}px, ${dy}px)`;
-        orb.style.background = `radial-gradient(circle, rgba(${r},${g},${b},${pulse}) 0%, rgba(${r},${g},${b},0.08) 40%, transparent 70%)`;
+        orb.style.background = `radial-gradient(circle, rgba(${r},${g},${b},${pulse}) 0%, rgba(${r},${g},${b},0.2) 45%, transparent 72%)`;
       });
 
-      frames.push(requestAnimationFrame(animate));
+      raf = requestAnimationFrame(animate);
     }
 
-    frames.push(requestAnimationFrame(animate));
-    return () => frames.forEach(cancelAnimationFrame);
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
   }, [animationsEnabled]);
 
   if (!animationsEnabled) return null;
@@ -65,7 +66,7 @@ export function HeroLights() {
     <div
       ref={containerRef}
       aria-hidden
-      className="absolute top-0 left-0 right-0 h-[35vh] pointer-events-none overflow-hidden"
+      className="absolute top-0 left-0 right-0 h-[50vh] pointer-events-none"
       style={{ zIndex: 1 }}
     >
       {LIGHTS.map((light, i) => (
@@ -77,9 +78,10 @@ export function HeroLights() {
             width: light.size,
             height: light.size,
             left: `${light.x}%`,
-            top: "8%",
-            transform: "translate(-50%, -50%)",
-            filter: "blur(40px)",
+            top: "12%",
+            marginLeft: -light.size / 2,
+            marginTop: -light.size / 2,
+            filter: "blur(30px)",
             willChange: "transform, background",
           }}
         />
