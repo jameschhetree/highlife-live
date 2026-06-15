@@ -4,17 +4,9 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
 const LIGHTS = [
-  { x: 15, size: 420, duration: 14, driftX: 30, driftY: 12 },
-  { x: 50, size: 380, duration: 18, driftX: 25, driftY: 10 },
-  { x: 85, size: 400, duration: 16, driftX: 28, driftY: 14 },
-];
-
-const COLOR_CYCLE = [
-  [168, 85, 247],
-  [236, 72, 153],
-  [56, 189, 248],
-  [253, 224, 71],
-  [52, 211, 153],
+  { x: 25, y: 6, size: 280, duration: 4, driftX: 18, driftY: 5, r: 255, g: 160, b: 50 },
+  { x: 50, y: 8, size: 240, duration: 4, driftX: 14, driftY: 4, r: 253, g: 200, b: 60 },
+  { x: 72, y: 5, size: 260, duration: 4, driftX: 16, driftY: 6, r: 255, g: 140, b: 40 },
 ];
 
 export function HeroLights() {
@@ -36,21 +28,20 @@ export function HeroLights() {
       orbs.forEach((orb, i) => {
         const cfg = LIGHTS[i];
         const t = elapsed / cfg.duration;
+        const phase = i * 0.8;
 
-        const colorIdx = Math.floor((elapsed / 6) + i * 1.7) % COLOR_CYCLE.length;
-        const nextIdx = (colorIdx + 1) % COLOR_CYCLE.length;
-        const colorT = ((elapsed / 6) + i * 1.7) % 1;
+        const dx = Math.sin((t + phase) * Math.PI * 2) * cfg.driftX;
+        const dy = Math.cos((t + phase) * Math.PI * 2 * 0.6) * cfg.driftY;
 
-        const r = Math.round(COLOR_CYCLE[colorIdx][0] + (COLOR_CYCLE[nextIdx][0] - COLOR_CYCLE[colorIdx][0]) * colorT);
-        const g = Math.round(COLOR_CYCLE[colorIdx][1] + (COLOR_CYCLE[nextIdx][1] - COLOR_CYCLE[colorIdx][1]) * colorT);
-        const b = Math.round(COLOR_CYCLE[colorIdx][2] + (COLOR_CYCLE[nextIdx][2] - COLOR_CYCLE[colorIdx][2]) * colorT);
+        const warmShift = Math.sin((t + phase * 1.3) * Math.PI * 2) * 15;
+        const r = Math.min(255, cfg.r + warmShift * 0.3);
+        const g = Math.max(100, cfg.g + warmShift);
+        const b = Math.max(20, cfg.b + warmShift * 0.5);
 
-        const dx = Math.sin(t * Math.PI * 2) * cfg.driftX;
-        const dy = Math.cos(t * Math.PI * 2 * 0.7) * cfg.driftY;
-        const pulse = 0.55 + Math.sin(t * Math.PI * 2 * 1.3) * 0.2;
+        const pulse = 0.45 + Math.sin((t + phase) * Math.PI * 2 * 1.2) * 0.1;
 
         orb.style.transform = `translate(${dx}px, ${dy}px)`;
-        orb.style.background = `radial-gradient(circle, rgba(${r},${g},${b},${pulse}) 0%, rgba(${r},${g},${b},0.2) 45%, transparent 72%)`;
+        orb.style.background = `radial-gradient(circle, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${pulse}) 0%, rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.12) 45%, transparent 70%)`;
       });
 
       raf = requestAnimationFrame(animate);
@@ -66,7 +57,7 @@ export function HeroLights() {
     <div
       ref={containerRef}
       aria-hidden
-      className="absolute top-0 left-0 right-0 h-[50vh] pointer-events-none"
+      className="absolute top-0 left-0 right-0 h-[40vh] pointer-events-none"
       style={{ zIndex: 1 }}
     >
       {LIGHTS.map((light, i) => (
@@ -78,10 +69,10 @@ export function HeroLights() {
             width: light.size,
             height: light.size,
             left: `${light.x}%`,
-            top: "12%",
+            top: `${light.y}%`,
             marginLeft: -light.size / 2,
             marginTop: -light.size / 2,
-            filter: "blur(30px)",
+            filter: "blur(35px)",
             willChange: "transform, background",
           }}
         />
