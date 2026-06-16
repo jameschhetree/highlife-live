@@ -204,7 +204,7 @@ async function sendInternalAlert(application: {
 
   await resend.emails.send({
     from: "HighLife Live <admin@highlifelive.com>",
-    to: filterSuppressed(["findanagent@highlifelive.com", "liam@highlifedmv.com"]),
+    to: filterSuppressed(["findanagent@highlifelive.com", "liam@highlifelive.com"]),
     subject: `New audition: ${application.actStageName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f4f4f5;">

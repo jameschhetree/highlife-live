@@ -73,14 +73,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Send email notification — await so it actually completes before the lambda terminates.
-  // Failure to send must NOT fail the POST (booking is already saved).
-  try {
-    await sendNotificationEmail(booking);
-    console.log("[Booking email] Sent for", booking.id);
-  } catch (err) {
-    console.error("[Booking email] Failed to send notification:", err);
-  }
+  // Booking notification email removed — redundant with inquiry notifications.
 
   return Response.json({ id: booking.id, status: booking.status }, { status: 201 });
 }

@@ -249,6 +249,20 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
     }
   };
 
+  const deleteBooking = async () => {
+    if (!session || !booking) return;
+    if (!confirm("Delete this booking? This cannot be undone.")) return;
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-email": session.email },
+    });
+    if (res.ok) {
+      window.location.href = "/admin/bookings";
+    } else {
+      alert("Failed to delete booking.");
+    }
+  };
+
   const materialsByKind = useMemo(() => {
     const map: Record<string, Material[]> = {};
     booking?.materials.forEach((m) => {
@@ -299,14 +313,22 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
               </p>
             )}
           </div>
-          {!booking.eventId && (
+          <div className="flex items-center gap-2">
+            {!booking.eventId && (
+              <button
+                onClick={openEcr}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-pink-400/40 hover:border-pink-400/70 bg-pink-400/10 text-pink-200 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+              >
+                <CalendarPlus size={12} /> Request Event Card
+              </button>
+            )}
             <button
-              onClick={openEcr}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-pink-400/40 hover:border-pink-400/70 bg-pink-400/10 text-pink-200 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+              onClick={deleteBooking}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
             >
-              <CalendarPlus size={12} /> Request Event Card
+              <Trash2 size={12} /> Delete
             </button>
-          )}
+          </div>
         </div>
       </div>
 
