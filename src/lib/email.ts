@@ -105,7 +105,7 @@ export async function sendEmail(args: SendArgs): Promise<string> {
     // as a last-resort so the message still goes out.
     try {
       const fallbackArgs = fromDomain === "highlifelive.com" && primary === "zoho"
-        ? { ...args, from: "HighLife Live <bookings@highlifedmv.com>", replyTo: args.replyTo || args.from }
+        ? { ...args, from: "HighLife Live <liam@highlifedmv.com>", replyTo: args.replyTo || args.from }
         : args;
       const label = await fallback(fallbackArgs);
       console.log(`[EMAIL_SENDER_STATUS] from=${fallbackArgs.from} via=${label} (FALLBACK from ${primary})`);
@@ -117,8 +117,7 @@ export async function sendEmail(args: SendArgs): Promise<string> {
   }
 }
 
-const SUPPRESSED_RECIPIENTS = new Set([
-  "dok@highlifelive.com",
+const SUPPRESSED_RECIPIENTS = new Set<string>([
 ]);
 
 export function filterSuppressed(addresses: string | string[]): string[] {
@@ -132,6 +131,6 @@ export const SENDERS = {
   ownerAlert: "HighLife Live <info@highlifelive.com>",
   agentNotification: "HighLife Live <admin@highlifelive.com>",
   auditions: "HighLife Live <auditions@highlifelive.com>",
-  internalBookings: "HighLife Live <bookings@highlifedmv.com>", // legacy / fallback
+  internalBookings: "HighLife Live <liam@highlifedmv.com>", // fallback
   epkWorkOrder: "HighLife EPK Admin <admin@highlifelive.com>",
 } as const;

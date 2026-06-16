@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   // Send confirmation email to the requester
   try {
     await sendEmail({
-      from: SENDERS.publicConfirmation,
+      from: SENDERS.agentNotification,
       to: workEmail,
       subject: "Your Partner Login Request Has Been Received",
       html: `
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
   // Send admin notification email
   try {
     await sendEmail({
-      from: SENDERS.publicConfirmation,
+      from: SENDERS.agentNotification,
       to: "admin@highlifelive.com",
       subject: `New Partner Login Request: ${organizationName}`,
       html: `

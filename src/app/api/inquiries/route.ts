@@ -198,7 +198,7 @@ async function sendOwnerNotification(inquiry: {
   `;
 
   // Build recipient list: owners + inquiries inbox + assigned agent(s) for this artist
-  const recipients = ["liam@highlifedmv.com", "jaco@highlifedmv.com", "inquiries@highlifelive.com"];
+  const recipients = ["liam@highlifelive.com", "inquiries@highlifelive.com"];
   if (prisma) {
     try {
       const artist = await prisma.artist.findFirst({
@@ -231,6 +231,7 @@ async function sendOwnerNotification(inquiry: {
 
 async function sendConfirmationEmail(inquiry: {
   inquiryNumber: string;
+  source: string;
   artistName: string;
   venueName: string;
   contactName: string;
@@ -255,8 +256,11 @@ async function sendConfirmationEmail(inquiry: {
       </p>
     </div>
   `;
+  const from = inquiry.source === "venue_partner"
+    ? "HighLife Live <bookings@highlifelive.com>"
+    : SENDERS.publicConfirmation;
   await sendEmail({
-    from: "HighLife Live <no-reply@highlifelive.com>",
+    from,
     to: inquiry.contactEmail,
     subject: `Inquiry ${inquiry.inquiryNumber} received - HighLife Live`,
     html,
