@@ -1,12 +1,5 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-
-export const metadata: Metadata = {
-  title: "Page Not Found | HighLife Live",
-  description: "The page you are looking for does not exist. Browse the HighLife Live roster, events, or head back to the homepage.",
-  robots: { index: false, follow: true },
-};
 
 export default function NotFound() {
   return (

@@ -55,41 +55,19 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Length limits — prevent oversized payloads from hitting the DB
-  const SHORT = 500;
-  const LONG = 5000;
-  for (const [key, max] of [
-    ["artistSlug", SHORT], ["artistName", SHORT], ["venueName", SHORT],
-    ["venueAddress", SHORT], ["eventDate", SHORT], ["proposedOffer", SHORT],
-    ["contactName", SHORT], ["contactEmail", SHORT], ["contactPhone", SHORT],
-    ["eventDescription", LONG], ["messageToAgent", LONG],
-  ] as const) {
-    if (typeof body[key] === "string" && body[key].length > max) {
-      return Response.json(
-        { error: `Field ${key} exceeds maximum length` },
-        { status: 400 }
-      );
-    }
-  }
-
-  // Email format validation
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.contactEmail.trim())) {
-    return Response.json({ error: "Invalid email format" }, { status: 400 });
-  }
-
   const booking = await prisma.booking.create({
     data: {
-      artistSlug: body.artistSlug.slice(0, SHORT),
-      artistName: body.artistName.slice(0, SHORT),
-      venueName: body.venueName.slice(0, SHORT),
-      venueAddress: body.venueAddress.slice(0, SHORT),
-      eventDate: body.eventDate.slice(0, SHORT),
-      proposedOffer: body.proposedOffer.slice(0, SHORT),
-      contactName: body.contactName.slice(0, SHORT),
-      contactEmail: body.contactEmail.slice(0, SHORT),
-      contactPhone: body.contactPhone.slice(0, SHORT),
-      eventDescription: (body.eventDescription || "").slice(0, LONG),
-      messageToAgent: (body.messageToAgent || "").slice(0, LONG),
+      artistSlug: body.artistSlug,
+      artistName: body.artistName,
+      venueName: body.venueName,
+      venueAddress: body.venueAddress,
+      eventDate: body.eventDate,
+      proposedOffer: body.proposedOffer,
+      contactName: body.contactName,
+      contactEmail: body.contactEmail,
+      contactPhone: body.contactPhone,
+      eventDescription: body.eventDescription || "",
+      messageToAgent: body.messageToAgent || "",
       source: body.source === "authenticated" ? "authenticated" : "public",
       status: "New",
     },
