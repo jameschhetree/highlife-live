@@ -80,6 +80,12 @@ async function sendViaResend(args: SendArgs): Promise<string> {
  * Logs which sender succeeded; throws if every attempt fails.
  */
 export async function sendEmail(args: SendArgs): Promise<string> {
+  const filtered = filterSuppressed(args.to);
+  if (filtered.length === 0) {
+    console.log(`[EMAIL_SENDER_STATUS] all recipients suppressed, skipping`);
+    return "suppressed:all";
+  }
+  args = { ...args, to: filtered };
   const fromDomain = domainOf(args.from);
 
   // Primary transport by From-domain
@@ -109,6 +115,15 @@ export async function sendEmail(args: SendArgs): Promise<string> {
       throw fallbackErr;
     }
   }
+}
+
+const SUPPRESSED_RECIPIENTS = new Set([
+  "dok@highlifelive.com",
+]);
+
+export function filterSuppressed(addresses: string | string[]): string[] {
+  const arr = Array.isArray(addresses) ? addresses : [addresses];
+  return arr.filter((a) => !SUPPRESSED_RECIPIENTS.has(a.toLowerCase().trim()));
 }
 
 /** Pre-configured From addresses, switchable in one place when business decisions change. */

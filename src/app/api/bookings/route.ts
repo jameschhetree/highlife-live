@@ -2,6 +2,7 @@
 // POST /api/bookings -- create a new booking + send email notification
 
 import { prisma } from "@/lib/db";
+import { filterSuppressed } from "@/lib/email";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -182,7 +183,7 @@ async function sendNotificationEmail(booking: {
 
   const result = await resend.emails.send({
     from: "HighLife Live <admin@highlifelive.com>",
-    to: ["inquiries@highlifelive.com", "liam@highlifedmv.com"],
+    to: filterSuppressed(["inquiries@highlifelive.com", "liam@highlifedmv.com"]),
     subject: `New booking inquiry: ${booking.artistName} for ${booking.venueName}`,
     html,
   });
