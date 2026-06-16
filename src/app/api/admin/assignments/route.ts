@@ -2,6 +2,7 @@
 // POST /api/admin/assignments -- assign an audition to an agent (owner-only)
 
 import { prisma } from "@/lib/db";
+import { filterSuppressed } from "@/lib/email";
 import { getAdminEmailFromRequest, isOwnerAdminEmail } from "@/lib/admin-permissions";
 import type { NextRequest } from "next/server";
 
@@ -130,6 +131,7 @@ async function sendAssignmentEmail(
 ) {
   const rawKey = process.env.RESEND_API_KEY;
   if (!rawKey) return;
+  if (filterSuppressed([agent.email]).length === 0) return;
   const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
   const { Resend } = await import("resend");
   const resend = new Resend(apiKey);

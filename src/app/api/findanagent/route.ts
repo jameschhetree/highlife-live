@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { filterSuppressed } from "@/lib/email";
 
 const MAX_FILE_COUNT = 3;
 const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024;
@@ -203,7 +204,7 @@ async function sendInternalAlert(application: {
 
   await resend.emails.send({
     from: "HighLife Live <admin@highlifelive.com>",
-    to: ["findanagent@highlifelive.com", "liam@highlifedmv.com"],
+    to: filterSuppressed(["findanagent@highlifelive.com", "liam@highlifedmv.com"]),
     subject: `New audition: ${application.actStageName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;background:#0a0a0a;color:#f4f4f5;">
