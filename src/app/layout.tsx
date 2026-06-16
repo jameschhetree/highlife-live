@@ -29,9 +29,25 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
-  title: "HighLife Live | Talent Booking for Venues & Promoters",
+  title: {
+    default: "HighLife Live | Talent Booking for Venues & Promoters",
+    template: "%s",
+  },
   description:
     "HighLife Live connects venues, promoters, and talent buyers with a curated roster of artists. Inquiry-based bookings, live event culture, premium experiences.",
+  metadataBase: new URL("https://highlifelive.com"),
+  openGraph: {
+    siteName: "HighLife Live",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
