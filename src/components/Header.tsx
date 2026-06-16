@@ -110,10 +110,10 @@ export function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                    className="absolute left-1/2 -translate-x-1/2 top-10 z-50 hidden sm:block"
+                    className="absolute left-0 top-10 z-50 hidden sm:block"
                   >
                     <div className="relative bg-white text-neutral-900 text-[11px] tracking-wide font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
-                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45" />
+                      <div className="absolute -top-1.5 left-3.5 w-3 h-3 bg-white rotate-45" />
                       Turn off animations
                     </div>
                   </motion.div>
