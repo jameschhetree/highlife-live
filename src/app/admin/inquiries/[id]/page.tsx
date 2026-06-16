@@ -23,6 +23,7 @@ import {
   Briefcase,
   FileText,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 
@@ -95,6 +96,10 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
   const [publicNoteText, setPublicNoteText] = useState("");
   const [finalizing, setFinalizing] = useState(false);
   const [postingNote, setPostingNote] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingInquiry, setDeletingInquiry] = useState(false);
 
   useEffect(() => {
     setSession(getAdminSession());
@@ -202,6 +207,40 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
       }
     } finally {
       setFinalizing(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    setDeleteConfirmId("");
+    setDeleteError(null);
+    setDeleteOpen(true);
+  };
+
+  const executeDeleteInquiry = async () => {
+    if (!session || !inquiry) return;
+    if (!deleteConfirmId.trim()) {
+      setDeleteError("Type the inquiry ID to confirm.");
+      return;
+    }
+    setDeletingInquiry(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/inquiries/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": session.email,
+        },
+        body: JSON.stringify({ confirmId: deleteConfirmId.trim() }),
+      });
+      if (res.ok) {
+        window.location.href = "/admin/inquiries";
+      } else {
+        const data = await res.json().catch(() => null);
+        setDeleteError(data?.error || "Failed to delete inquiry.");
+      }
+    } finally {
+      setDeletingInquiry(false);
     }
   };
 
@@ -319,6 +358,16 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
                   className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border border-white/10 hover:border-zinc-400/40 text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <Archive size={11} /> Archive inquiry
+                </button>
+              </div>
+            )}
+            {inquiry.status === "Archived" && ownerAdmin && (
+              <div className="mt-4 pt-3 border-t border-white/5">
+                <button
+                  onClick={openDeleteModal}
+                  className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase rounded-full px-3 py-1.5 border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 hover:text-rose-200 transition-colors font-bold"
+                >
+                  <Trash2 size={11} /> Delete permanently
                 </button>
               </div>
             )}
@@ -490,6 +539,69 @@ export default function AdminInquiryDetailPage({ params }: { params: Promise<{ i
           </div>
         </motion.section>
       </div>
+
+      {deleteOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10 bg-black/70 backdrop-blur-sm"
+          onClick={() => !deletingInquiry && setDeleteOpen(false)}
+        >
+          <div
+            className="relative max-w-md w-full glass-card rounded-2xl p-6 sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <Trash2 size={18} className="text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-display tracking-tight text-foreground">Delete Inquiry</h2>
+                <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
+                  Permanently removes this archived inquiry
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] tracking-[0.18em] uppercase text-zinc-400 mb-1.5">
+                  Type the inquiry ID to confirm
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">
+                  Enter: <span className="text-zinc-300 font-mono font-medium">{inquiry.inquiryNumber}</span>
+                </p>
+                <input
+                  type="text"
+                  value={deleteConfirmId}
+                  onChange={(e) => setDeleteConfirmId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && executeDeleteInquiry()}
+                  placeholder="HL-10001"
+                  autoFocus
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground font-mono focus:outline-none focus:border-rose-400/60"
+                />
+              </div>
+              {deleteError && <p className="text-sm text-rose-300">{deleteError}</p>}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setDeleteOpen(false)}
+                  disabled={deletingInquiry}
+                  className="text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground px-3 py-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeDeleteInquiry}
+                  disabled={deletingInquiry || !deleteConfirmId.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={12} /> {deletingInquiry ? "Deleting..." : "Delete Permanently"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

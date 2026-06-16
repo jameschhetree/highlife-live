@@ -122,3 +122,46 @@ export async function PATCH(
   const updated = await prisma.inquiry.update({ where: { id }, data: patch });
   return Response.json(updated);
 }
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  if (!prisma) return Response.json({ error: "DB not connected" }, { status: 503 });
+  const email = getAdminEmailFromRequest(request);
+  if (!isOwnerAdminEmail(email)) {
+    return Response.json({ error: "Owner access required" }, { status: 403 });
+  }
+
+  const { id } = await context.params;
+
+  let body: { confirmId?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Request body required" }, { status: 400 });
+  }
+
+  const { confirmId } = body;
+  if (!confirmId) {
+    return Response.json({ error: "Inquiry ID confirmation required" }, { status: 400 });
+  }
+
+  const inquiry = await prisma.inquiry.findUnique({ where: { id } });
+  if (!inquiry) {
+    return Response.json({ error: "Inquiry not found" }, { status: 404 });
+  }
+
+  if (inquiry.status !== "Archived") {
+    return Response.json({ error: "Only archived inquiries can be deleted" }, { status: 400 });
+  }
+
+  if (confirmId.trim().toLowerCase() !== inquiry.inquiryNumber.toLowerCase()) {
+    return Response.json({ error: "Inquiry ID does not match" }, { status: 400 });
+  }
+
+  // Cascade behavior: InquiryNote and PartnerInquiryHidden cascade-delete.
+  // Booking.inquiryId and EventCardRequest.inquiryId set to null.
+  await prisma.inquiry.delete({ where: { id } });
+  return Response.json({ ok: true });
+}

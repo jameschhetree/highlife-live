@@ -23,8 +23,9 @@ import {
   Trash2,
   CalendarPlus,
   ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
-import { getAdminSession, type AdminSession } from "@/lib/admin-auth";
+import { getAdminSession, isOwnerAdmin, type AdminSession } from "@/lib/admin-auth";
 
 type Material = {
   id: string;
@@ -92,6 +93,13 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
   const [matFilename, setMatFilename] = useState("");
   const [matNote, setMatNote] = useState("");
   const [addingMaterial, setAddingMaterial] = useState(false);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [deleteStep, setDeleteStep] = useState<"password" | "name">("password");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [ecrOpen, setEcrOpen] = useState(false);
   const [ecrTitle, setEcrTitle] = useState("");
@@ -249,17 +257,51 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
     }
   };
 
-  const deleteBooking = async () => {
+  const openDeleteModal = () => {
+    setDeletePassword("");
+    setDeleteConfirmName("");
+    setDeleteStep("password");
+    setDeleteError(null);
+    setDeleteOpen(true);
+  };
+
+  const proceedToNameStep = () => {
+    if (!deletePassword.trim()) {
+      setDeleteError("Enter your password.");
+      return;
+    }
+    setDeleteError(null);
+    setDeleteStep("name");
+  };
+
+  const executeDelete = async () => {
     if (!session || !booking) return;
-    if (!confirm("Delete this booking? This cannot be undone.")) return;
-    const res = await fetch(`/api/bookings/${id}`, {
-      method: "DELETE",
-      headers: { "x-admin-email": session.email },
-    });
-    if (res.ok) {
-      window.location.href = "/admin/bookings";
-    } else {
-      alert("Failed to delete booking.");
+    if (!deleteConfirmName.trim()) {
+      setDeleteError("Type the booking name to confirm.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": session.email,
+        },
+        body: JSON.stringify({
+          password: deletePassword,
+          confirmName: deleteConfirmName.trim(),
+        }),
+      });
+      if (res.ok) {
+        window.location.href = "/admin/bookings";
+      } else {
+        const data = await res.json().catch(() => null);
+        setDeleteError(data?.error || "Failed to delete booking.");
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -322,12 +364,14 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
                 <CalendarPlus size={12} /> Request Event Card
               </button>
             )}
-            <button
-              onClick={deleteBooking}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
-            >
-              <Trash2 size={12} /> Delete
-            </button>
+            {isOwnerAdmin(session) && (
+              <button
+                onClick={openDeleteModal}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+              >
+                <Trash2 size={12} /> Delete
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -587,6 +631,103 @@ export default function AdminBookingDetailPage({ params }: { params: Promise<{ i
           </div>
         </motion.section>
       </div>
+
+      {deleteOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10 bg-black/70 backdrop-blur-sm"
+          onClick={() => !deleting && setDeleteOpen(false)}
+        >
+          <div
+            className="relative max-w-md w-full glass-card rounded-2xl p-6 sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <ShieldAlert size={18} className="text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-display tracking-tight text-foreground">Delete Booking</h2>
+                <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
+                  This action is permanent and cannot be undone
+                </p>
+              </div>
+            </div>
+
+            {deleteStep === "password" ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] tracking-[0.18em] uppercase text-zinc-400 mb-1.5">
+                    Enter your owner password
+                  </label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && proceedToNameStep()}
+                    placeholder="Password"
+                    autoFocus
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-rose-400/60"
+                  />
+                </div>
+                {deleteError && <p className="text-sm text-rose-300">{deleteError}</p>}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setDeleteOpen(false)}
+                    className="text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground px-3 py-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={proceedToNameStep}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] tracking-[0.18em] uppercase text-zinc-400 mb-1.5">
+                    Type the booking name to confirm
+                  </label>
+                  <p className="text-xs text-zinc-500 mb-2">
+                    Enter: <span className="text-zinc-300 font-medium">{eventTitle || `${booking.artistName} at ${booking.venueName}`}</span>
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmName}
+                    onChange={(e) => setDeleteConfirmName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && executeDelete()}
+                    placeholder="Type booking name..."
+                    autoFocus
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-rose-400/60"
+                  />
+                </div>
+                {deleteError && <p className="text-sm text-rose-300">{deleteError}</p>}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setDeleteStep("password")}
+                    disabled={deleting}
+                    className="text-xs tracking-[0.18em] uppercase text-zinc-400 hover:text-foreground px-3 py-2"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={executeDelete}
+                    disabled={deleting || !deleteConfirmName.trim()}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 text-rose-300 text-[10px] tracking-[0.18em] uppercase font-bold transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 size={12} /> {deleting ? "Deleting..." : "Delete Permanently"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {ecrOpen && (
         <div

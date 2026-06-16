@@ -1,8 +1,13 @@
 // GET /api/bookings/[id] -- get single booking
 // PATCH /api/bookings/[id] -- update status + adminNotes
-// DELETE /api/bookings/[id] -- delete booking
+// DELETE /api/bookings/[id] -- owner-only, requires password + name confirmation
 
 import { prisma } from "@/lib/db";
+import {
+  getAdminEmailFromRequest,
+  isOwnerAdminEmail,
+} from "@/lib/admin-permissions";
+import { verifyPassword } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
 
@@ -50,13 +55,60 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!prisma) {
     return Response.json({ error: "Database not connected" }, { status: 503 });
   }
+
+  const email = getAdminEmailFromRequest(request);
+  if (!isOwnerAdminEmail(email)) {
+    return Response.json({ error: "Owner access required" }, { status: 403 });
+  }
+
   const { id } = await params;
+
+  let body: { password?: string; confirmName?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Request body required" }, { status: 400 });
+  }
+
+  const { password, confirmName } = body;
+  if (!password || !confirmName) {
+    return Response.json({ error: "Password and confirmation name are required" }, { status: 400 });
+  }
+
+  // Verify password against the owner's AgentLogin record
+  const agent = await prisma.agentLogin.findUnique({ where: { email } });
+  if (!agent) {
+    return Response.json({ error: "Account not found" }, { status: 403 });
+  }
+  const passwordValid = await verifyPassword(password, agent.passwordHash);
+  if (!passwordValid) {
+    return Response.json({ error: "Incorrect password" }, { status: 403 });
+  }
+
+  // Load booking and verify name confirmation
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) {
+    return Response.json({ error: "Booking not found" }, { status: 404 });
+  }
+
+  const expectedNames = [
+    booking.eventTitle,
+    `${booking.artistName} at ${booking.venueName}`,
+  ].filter(Boolean);
+
+  const nameMatches = expectedNames.some(
+    (name) => name!.toLowerCase() === confirmName.trim().toLowerCase(),
+  );
+  if (!nameMatches) {
+    return Response.json({ error: "Booking name does not match" }, { status: 400 });
+  }
+
   await prisma.booking.delete({ where: { id } });
   return Response.json({ ok: true });
 }

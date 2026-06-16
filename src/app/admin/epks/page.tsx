@@ -10,6 +10,8 @@ import {
   Copy,
   Download,
   ExternalLink,
+  Eye,
+  EyeOff,
   FileAudio,
   FileImage,
   FileText,
@@ -72,6 +74,7 @@ type JobSummary = {
 type EpkSummary = {
   id: string;
   status: string;
+  epkPageVisible: boolean;
   generatedUrl?: string | null;
   updatedAt: string;
   artist: ArtistOption;
@@ -245,6 +248,7 @@ export default function EpksPage() {
     emailedTo: string;
     workspaceAssets: WorkspaceAsset[];
   } | null>(null);
+  const [togglingEpkId, setTogglingEpkId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -556,6 +560,30 @@ export default function EpksPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function toggleEpkVisibility(epkId: string, currentVisible: boolean) {
+    if (!data || togglingEpkId) return;
+    setTogglingEpkId(epkId);
+    try {
+      const response = await fetch("/api/admin/epks", {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "x-epk-csrf": data.csrfToken,
+        },
+        body: JSON.stringify({
+          epkId,
+          epkPageVisible: !currentVisible,
+        }),
+      });
+      if (response.ok) {
+        await load();
+      }
+    } finally {
+      setTogglingEpkId(null);
     }
   }
 
@@ -1119,12 +1147,28 @@ export default function EpksPage() {
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {epk.generatedUrl && (
-                        <Link
-                          href={epk.generatedUrl}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-emerald-200"
-                        >
-                          <ExternalLink size={11} /> Open Generated EPK
-                        </Link>
+                        <>
+                          <Link
+                            href={epk.generatedUrl}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-emerald-200"
+                          >
+                            <ExternalLink size={11} /> Open Generated EPK
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => toggleEpkVisibility(epk.id, epk.epkPageVisible)}
+                            disabled={togglingEpkId === epk.id}
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[10px] uppercase tracking-[0.16em] transition-colors disabled:opacity-40 ${
+                              epk.epkPageVisible
+                                ? "border-emerald-400/20 text-emerald-200 hover:border-emerald-400/40"
+                                : "border-amber-400/20 text-amber-200 hover:border-amber-400/40"
+                            }`}
+                            title={epk.epkPageVisible ? "EPK page is visible — click to hide" : "EPK page is hidden — click to show"}
+                          >
+                            {epk.epkPageVisible ? <Eye size={11} /> : <EyeOff size={11} />}
+                            {togglingEpkId === epk.id ? "Updating..." : epk.epkPageVisible ? "Visible" : "Hidden"}
+                          </button>
+                        </>
                       )}
                     </div>
                   </article>

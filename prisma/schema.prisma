@@ -232,6 +232,7 @@ model EPK {
   artist         Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
   status         String   @default("Draft") // Draft, Approved, Published, Archived
   publishUrl     String?
+  epkPageVisible Boolean  @default(true)
   isDemo         Boolean  @default(false)
   createdByEmail String   @default("")
   createdAt      DateTime @default(now())
