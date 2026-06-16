@@ -83,41 +83,43 @@ export function Header() {
           {/* Left: Toggle controls + Logo */}
           <div className="flex items-center gap-2.5">
             {/* Animations toggle — leftmost */}
-            <button
-              type="button"
-              onClick={toggleAnimations}
-              aria-label={animationsEnabled ? "Disable animations" : "Enable animations"}
-              title={animationsEnabled ? "Disable animations" : "Enable animations"}
-              className={`relative w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
-                ${isLight
-                  ? "border-black/12 bg-white/60 hover:bg-white/90 text-neutral-600 hover:text-neutral-900"
-                  : "border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90"
-                }`}
-            >
-              {animationsEnabled ? (
-                <Sparkles size={14} />
-              ) : (
-                <Zap size={14} className="opacity-50" />
-              )}
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={toggleAnimations}
+                aria-label={animationsEnabled ? "Disable animations" : "Enable animations"}
+                title={animationsEnabled ? "Disable animations" : "Enable animations"}
+                className={`relative w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
+                  ${isLight
+                    ? "border-black/12 bg-white/60 hover:bg-white/90 text-neutral-600 hover:text-neutral-900"
+                    : "border-white/10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white/90"
+                  }`}
+              >
+                {animationsEnabled ? (
+                  <Sparkles size={14} />
+                ) : (
+                  <Zap size={14} className="opacity-50" />
+                )}
+              </button>
 
-            {/* First-time animation tip bubble */}
-            <AnimatePresence>
-              {showAnimTip && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                  className="absolute left-2 top-14 z-50 hidden sm:block"
-                >
-                  <div className="relative bg-white text-neutral-900 text-[11px] tracking-wide font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
-                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-white rotate-45" />
-                    Turn off animations
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* First-time animation tip bubble */}
+              <AnimatePresence>
+                {showAnimTip && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                    className="absolute left-1/2 -translate-x-1/2 top-10 z-50 hidden sm:block"
+                  >
+                    <div className="relative bg-white text-neutral-900 text-[11px] tracking-wide font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45" />
+                      Turn off animations
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Theme toggle — to the left of logo */}
             <button
