@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import {
   getGeneratedEpkByRoute,
@@ -67,6 +67,7 @@ async function loadEpkData(routeSlug: string) {
       epks: {
         take: 1,
         select: {
+          epkPageVisible: true,
           assets: {
             where: { isPublished: true, scanStatus: "Clean" },
             orderBy: { createdAt: "asc" },
@@ -91,6 +92,12 @@ async function loadEpkData(routeSlug: string) {
   if (!artist) return null;
 
   const epk = artist.epks[0];
+
+  // If EPK page visibility is toggled off, redirect to the artist roster page
+  if (epk && epk.epkPageVisible === false) {
+    redirect(`/roster/${registration.manifest.artistSlug}`);
+  }
+
   const assets: GeneratedEpkAsset[] = (epk?.assets ?? [])
     .map((asset) => ({
       id: asset.id,
