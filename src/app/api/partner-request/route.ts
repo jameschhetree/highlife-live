@@ -72,20 +72,31 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "A valid requested login email is required." }, { status: 400 });
   }
 
+  // Length limits — prevent oversized payloads
+  const SHORT = 500;
+  const LONG = 2000;
+  if (organizationName.length > SHORT || address.length > SHORT ||
+      contactName.length > SHORT || workPhone.length > 50 ||
+      mobilePhone.length > 50 || workEmail.length > SHORT ||
+      requestedLoginEmail.length > SHORT || howHeard.length > LONG ||
+      preferredGenre.length > SHORT || extraNotes.length > LONG) {
+    return Response.json({ error: "One or more fields exceed maximum length." }, { status: 400 });
+  }
+
   const created = await prisma.partnerLoginRequest.create({
     data: {
       accountType,
-      organizationName,
-      address,
+      organizationName: organizationName.slice(0, SHORT),
+      address: address.slice(0, SHORT),
       role,
-      contactName,
-      workPhone,
-      mobilePhone,
-      workEmail,
-      requestedLoginEmail,
-      howHeard,
-      preferredGenre,
-      extraNotes,
+      contactName: contactName.slice(0, SHORT),
+      workPhone: workPhone.slice(0, 50),
+      mobilePhone: mobilePhone.slice(0, 50),
+      workEmail: workEmail.slice(0, SHORT),
+      requestedLoginEmail: requestedLoginEmail.slice(0, SHORT),
+      howHeard: howHeard.slice(0, LONG),
+      preferredGenre: preferredGenre.slice(0, SHORT),
+      extraNotes: extraNotes.slice(0, LONG),
       status: "New",
     },
   });
