@@ -126,40 +126,6 @@ export async function GET(request: Request) {
   });
 }
 
-export async function PATCH(request: Request) {
-  const session = getOwnerSessionFromRequest(request);
-  if (!session) {
-    return Response.json({ error: "Secure owner session required." }, { status: 401 });
-  }
-  if (!prisma) {
-    return Response.json({ error: "Database not connected." }, { status: 503 });
-  }
-
-  let body: { epkId?: string; epkPageVisible?: boolean };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
-  }
-
-  const { epkId, epkPageVisible } = body;
-  if (!epkId || typeof epkPageVisible !== "boolean") {
-    return Response.json({ error: "epkId and epkPageVisible (boolean) are required." }, { status: 400 });
-  }
-
-  const epk = await prisma.ePK.findUnique({ where: { id: epkId } });
-  if (!epk) {
-    return Response.json({ error: "EPK not found." }, { status: 404 });
-  }
-
-  const updated = await prisma.ePK.update({
-    where: { id: epkId },
-    data: { epkPageVisible },
-  });
-
-  return Response.json({ ok: true, epkPageVisible: updated.epkPageVisible });
-}
-
 export async function POST(request: Request) {
   const session = getOwnerSessionFromRequest(request);
   if (!session) {
