@@ -70,7 +70,7 @@ function isSupportedMediaType(contentType: string): boolean {
   return contentType.startsWith("audio/") || contentType.startsWith("video/");
 }
 
-export default function FindAnAgentPage() {
+export default function FindAnAgentPageClient() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
