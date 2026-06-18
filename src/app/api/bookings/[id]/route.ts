@@ -3,10 +3,8 @@
 // DELETE /api/bookings/[id] -- owner-only, requires password + name confirmation
 
 import { prisma } from "@/lib/db";
-import {
-  getAdminEmailFromRequest,
-  isOwnerAdminEmail,
-} from "@/lib/admin-permissions";
+import { getAdminEmailFromRequest } from "@/lib/admin-permissions";
+import { isOwnerEmail } from "@/lib/admin-permissions-server";
 import { verifyPassword } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +61,7 @@ export async function DELETE(
   }
 
   const email = getAdminEmailFromRequest(request);
-  if (!isOwnerAdminEmail(email)) {
+  if (!(await isOwnerEmail(email))) {
     return Response.json({ error: "Owner access required" }, { status: 403 });
   }
 
