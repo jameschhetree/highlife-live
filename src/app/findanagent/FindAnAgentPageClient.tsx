@@ -370,7 +370,7 @@ export default function FindAnAgentPageClient() {
           </div>
 
           <Field
-            label="Act Description"
+            label="Performance Description"
             id="field-actDescription"
             hint="Optional: describe your act — vibe, set length, what makes it land for a HighLife venue."
           >
