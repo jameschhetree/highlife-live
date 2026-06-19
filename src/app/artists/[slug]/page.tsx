@@ -126,8 +126,6 @@ export default function ArtistDetailPage() {
               role="img"
               aria-label={`Portrait of ${artist.name}`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.22),transparent_60%)] mix-blend-screen" />
 
           </motion.div>
 

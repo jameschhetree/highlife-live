@@ -39,8 +39,6 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
             role="img"
             aria-label={`Photo of ${artist.name}`}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-          <div className={`absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.18),transparent_60%)] mix-blend-screen transition-opacity duration-700 ${artist.epkUrl ? "opacity-0 group-hover:opacity-100" : "opacity-0"}`} />
         </div>
 
         {/* Info */}
