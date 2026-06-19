@@ -34,7 +34,7 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden">
           <div
-            className={`absolute inset-0 bg-cover bg-center img-bw transition-transform duration-700 ${artist.epkUrl ? "group-hover:scale-105" : ""}`}
+            className={`absolute inset-0 bg-cover bg-center transition-transform duration-700 ${artist.epkUrl ? "group-hover:scale-105" : ""}`}
             style={{ backgroundImage: `url(${artist.image})` }}
             role="img"
             aria-label={`Photo of ${artist.name}`}

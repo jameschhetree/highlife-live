@@ -121,7 +121,7 @@ export default function ArtistDetailPage() {
             className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/8"
           >
             <div
-              className="absolute inset-0 bg-cover bg-center img-bw"
+              className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${artist.image})` }}
               role="img"
               aria-label={`Portrait of ${artist.name}`}
