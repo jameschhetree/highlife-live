@@ -121,12 +121,13 @@ export default function ArtistDetailPage() {
             className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/8"
           >
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-center img-bw"
               style={{ backgroundImage: `url(${artist.image})` }}
               role="img"
               aria-label={`Portrait of ${artist.name}`}
             />
-
+            <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.22),transparent_60%)] mix-blend-screen" />
           </motion.div>
 
           <motion.div
