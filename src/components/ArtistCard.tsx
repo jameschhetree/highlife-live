@@ -34,11 +34,13 @@ export function ArtistCard({ artist, index = 0 }: ArtistCardProps) {
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden">
           <div
-            className={`absolute inset-0 bg-cover bg-center transition-transform duration-700 ${artist.epkUrl ? "group-hover:scale-105" : ""}`}
+            className={`absolute inset-0 bg-cover bg-center img-bw transition-transform duration-700 ${artist.epkUrl ? "group-hover:scale-105" : ""}`}
             style={{ backgroundImage: `url(${artist.image})` }}
             role="img"
             aria-label={`Photo of ${artist.name}`}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(236,72,153,0.22),transparent_60%)] mix-blend-screen" />
         </div>
 
         {/* Info */}
