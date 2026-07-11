@@ -27,6 +27,7 @@ import {
   EPK_ASSET_LIMITS,
   type EpkAssetKind,
 } from "@/lib/epk/constants";
+import { buildEpkWorkspaceHandoff } from "@/lib/epk/workspace-handoff";
 
 type ArtistOption = {
   id: string;
@@ -121,11 +122,6 @@ const STATUS_STYLES: Record<string, string> = {
   Failed: "text-rose-200 border-rose-400/30 bg-rose-400/10",
 };
 
-const EPK_WORKSPACE_INPUT =
-  "/Users/dokworkmakk/Documents/Website Things HLL/EPK Generator Workspace/current/input";
-const EPK_WORKSPACE_COMMAND =
-  "Reload the current EPK workspace instructions, then build the single EPK_BUILD_REQUEST_V1 file currently under current/input. Use only the listed local files under current/input/assets. Do not read Codex attachments.";
-
 function formatBytes(value: number): string {
   if (value < 1024 * 1024) return `${Math.ceil(value / 1024)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
@@ -192,10 +188,6 @@ function parseManualPrompt(value: unknown): string {
   return typeof prompt === "string" ? prompt : "";
 }
 
-function requestFilename(jobId: string): string {
-  return `epk-build-request-${jobId}.txt`;
-}
-
 function downloadTextFile(filename: string, contents: string) {
   const url = URL.createObjectURL(
     new Blob([contents], { type: "text/plain;charset=utf-8" }),
@@ -241,10 +233,15 @@ export default function EpksPage() {
   const [publishedEpkUrl, setPublishedEpkUrl] = useState("");
   const [generationRequested, setGenerationRequested] = useState<{
     jobId: string;
+    artistName: string;
+    artistSlug: string;
     prompt: string;
     emailedTo: string;
     workspaceAssets: WorkspaceAsset[];
   } | null>(null);
+  const workspaceHandoff = generationRequested
+    ? buildEpkWorkspaceHandoff(generationRequested)
+    : null;
 
   const load = useCallback(async () => {
     try {
@@ -483,6 +480,8 @@ export default function EpksPage() {
       if (!response.ok) throw new Error(payload?.error ?? "Could not save answers.");
       setGenerationRequested({
         jobId: currentJobId,
+        artistName: String(payload.artistName ?? selectedArtist?.name ?? "Artist"),
+        artistSlug: String(payload.artistSlug ?? ""),
         prompt: String(payload.designPrompt ?? ""),
         emailedTo: String(payload.emailedTo ?? "epk@highlifelive.com"),
         workspaceAssets: Array.isArray(payload.workspaceAssets)
@@ -667,7 +666,7 @@ export default function EpksPage() {
 
         {formOpen && (
           <section className="glass-card rounded-3xl p-5 sm:p-8">
-            {generationRequested ? (
+            {generationRequested && workspaceHandoff ? (
               <div className="space-y-6">
                 <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/5 p-5">
                   <CheckCircle2 className="mb-4 text-emerald-300" size={24} />
@@ -695,13 +694,13 @@ export default function EpksPage() {
                     <li>
                       <strong className="text-white">1. Download the request file.</strong>
                       <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                        Move it into <code className="text-zinc-300">{EPK_WORKSPACE_INPUT}</code>.
+                        Move it into <code className="text-zinc-300">{workspaceHandoff.inputPath}</code>.
                       </p>
                       <button
                         type="button"
                         onClick={() =>
                           downloadTextFile(
-                            requestFilename(generationRequested.jobId),
+                            workspaceHandoff.requestFilename,
                             generationRequested.prompt,
                           )
                         }
@@ -714,7 +713,7 @@ export default function EpksPage() {
                     <li>
                       <strong className="text-white">2. Download every supporting file.</strong>
                       <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                        Move them into <code className="text-zinc-300">{EPK_WORKSPACE_INPUT}/assets</code>.
+                        Move them into <code className="text-zinc-300">{workspaceHandoff.assetsPath}</code>.
                         The downloads already use the filenames expected by the request.
                       </p>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -732,14 +731,14 @@ export default function EpksPage() {
                       </div>
                     </li>
                     <li>
-                      <strong className="text-white">3. Open the EPK Workspace thread and send this command.</strong>
+                      <strong className="text-white">3. Open {workspaceHandoff.threadName} and send this command.</strong>
                       <pre className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-white/8 bg-black/35 p-3 text-xs leading-relaxed text-zinc-300">
-                        {EPK_WORKSPACE_COMMAND}
+                        {workspaceHandoff.command}
                       </pre>
                       <button
                         type="button"
                         onClick={() =>
-                          void navigator.clipboard.writeText(EPK_WORKSPACE_COMMAND)
+                          void navigator.clipboard.writeText(workspaceHandoff.command)
                         }
                         className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-zinc-300 hover:border-white/25"
                       >
@@ -1102,6 +1101,11 @@ export default function EpksPage() {
                                 setAnswers(parseAnswers(latestJob.answers));
                                 setGenerationRequested({
                                   jobId: latestJob.id,
+                                  artistName: epk.artist.name,
+                                  artistSlug: buildEpkWorkspaceHandoff({
+                                    artistName: epk.artist.name,
+                                    jobId: latestJob.id,
+                                  }).artistSlug,
                                   prompt: parseManualPrompt(latestJob.input),
                                   emailedTo: "epk@highlifelive.com",
                                   workspaceAssets: workspaceAssetsForJob(latestJob),
