@@ -11,7 +11,10 @@ import {
   epkAssetLinkSigningConfigured,
 } from "@/lib/epk/signed-asset-links";
 import { writeEpkAudit } from "@/lib/epk/audit";
-import { buildEpkWorkspaceFilename } from "@/lib/epk/constants";
+import {
+  buildEpkWorkspaceFilename,
+  slugifyEpkValue,
+} from "@/lib/epk/constants";
 import {
   epkEmailConfigured,
   epkWorkOrderAddress,
@@ -138,6 +141,7 @@ export async function POST(
   if (!job) {
     return Response.json({ error: "EPK job not found." }, { status: 404 });
   }
+  const artistSlug = slugifyEpkValue(job.epk.artist.name);
   const baseUrl = new URL(request.url).origin;
   const acceptedAssets = job.assets.filter(
     (asset) => asset.scanStatus !== "Rejected",
@@ -163,6 +167,8 @@ export async function POST(
       job,
       designPrompt: existingManualPrompt(job.input),
       emailedTo: epkWorkOrderAddress(),
+      artistName: job.epk.artist.name,
+      artistSlug,
       workspaceAssets,
       status: "GenerationRequested",
     });
@@ -301,6 +307,7 @@ export async function POST(
     emailRunId = await sendEpkWorkOrder({
       jobId: job.id,
       artistName: job.epk.artist.name,
+      artistSlug,
       prompt,
       assets: workspaceAssets,
     });
@@ -333,7 +340,7 @@ export async function POST(
       externalRunId: emailRunId,
       failureCode: null,
       failureMessage:
-        "Work order emailed. Waiting for the manual Codex EPK Workspace build.",
+        `Work order emailed. Waiting for the manual EPK | ${job.epk.artist.name} build.`,
     },
     include: { assets: true },
   });
@@ -357,6 +364,8 @@ export async function POST(
     job: updated,
     designPrompt: prompt,
     emailedTo: epkWorkOrderAddress(),
+    artistName: job.epk.artist.name,
+    artistSlug,
     workspaceAssets,
     status: "GenerationRequested",
   });

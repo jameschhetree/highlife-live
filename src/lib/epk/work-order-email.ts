@@ -1,6 +1,7 @@
 import "server-only";
 
 import { SENDERS, sendEmail } from "@/lib/email";
+import { buildEpkWorkspaceHandoff } from "@/lib/epk/workspace-handoff";
 
 type WorkOrderAsset = {
   id: string;
@@ -34,19 +35,26 @@ export function epkEmailConfigured(): boolean {
 export async function sendEpkWorkOrder(input: {
   jobId: string;
   artistName: string;
+  artistSlug: string;
   prompt: string;
   assets: WorkOrderAsset[];
 }): Promise<string> {
   const address = epkWorkOrderAddress();
+  const handoff = buildEpkWorkspaceHandoff(input);
   const assetLines = input.assets.map(
     (asset) =>
-      `- [${asset.kind}] Save as current/input/assets/${asset.workspaceFilename}\n  Original: ${asset.filename}\n  ${asset.downloadUrl}`,
+      `- [${asset.kind}] Save as artists/${handoff.artistSlug}/input/assets/${asset.workspaceFilename}\n  Original: ${asset.filename}\n  ${asset.downloadUrl}`,
   );
   const text = [
     `EPK generation requested for ${input.artistName}`,
     `Job: ${input.jobId}`,
     "",
-    "Download every supporting file and place it under current/input/assets. The download already uses the exact workspace filename required by the prompt.",
+    `Artist task: ${handoff.threadName}`,
+    `Save the downloaded request as: ${handoff.requestRelativePath}`,
+    `Save every supporting file under: artists/${handoff.artistSlug}/input/assets`,
+    `Durable approved media lives under: artists/${handoff.artistSlug}/media`,
+    `Generated output belongs under: artists/${handoff.artistSlug}/output`,
+    "Each download already uses the exact workspace filename required by the request.",
     "",
     "SIGNED PRIVATE MEDIA LINKS (expire after seven days)",
     assetLines.length > 0 ? assetLines.join("\n") : "No media uploaded.",
@@ -74,7 +82,9 @@ export async function sendEpkWorkOrder(input: {
       <div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:28px;color:#171717">
         <h1 style="font-size:24px;margin:0 0 8px">EPK generation requested</h1>
         <p style="margin:0 0 20px"><strong>${escapeHtml(input.artistName)}</strong><br>Job ${escapeHtml(input.jobId)}</p>
-        <p>Download every supporting file and place it under <code>current/input/assets</code>. Each download already uses the exact workspace filename required by the prompt.</p>
+        <p>Open <strong>${escapeHtml(handoff.threadName)}</strong>.</p>
+        <p>Save the request as <code>${escapeHtml(handoff.requestRelativePath)}</code>.</p>
+        <p>Save every supporting file under <code>artists/${escapeHtml(handoff.artistSlug)}/input/assets</code>. Durable approved media belongs under <code>artists/${escapeHtml(handoff.artistSlug)}/media</code>, and generated output belongs under <code>artists/${escapeHtml(handoff.artistSlug)}/output</code>.</p>
         <h2 style="font-size:18px;margin-top:28px">Signed private media links</h2>
         <p style="color:#52525b">These links expire after seven days. Do not forward this email.</p>
         ${assetHtml}
